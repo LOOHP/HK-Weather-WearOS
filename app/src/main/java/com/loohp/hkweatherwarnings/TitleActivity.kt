@@ -32,6 +32,8 @@ import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
+import com.loohp.hkweatherwarnings.compose.AutoResizeText
+import com.loohp.hkweatherwarnings.compose.FontSizeRange
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.theme.HKWeatherWarningsTheme
 import com.loohp.hkweatherwarnings.utils.RemoteActivityUtils
@@ -70,6 +72,8 @@ fun MainElements(instance: TitleActivity) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            UsageText(instance)
+            Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
             OpenHKOAppButton(instance)
             Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
             LanguageButton(instance)
@@ -78,7 +82,7 @@ fun MainElements(instance: TitleActivity) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(0.dp, 15.dp),
+                .padding(0.dp, 10.dp),
             verticalArrangement = Arrangement.Bottom
         ) {
             CreditVersionText(instance)
@@ -170,6 +174,23 @@ fun LanguageButton(instance: TitleActivity) {
                 text = if (Registry.getInstance(instance).language == "en") "中文" else "English"
             )
         }
+    )
+}
+
+@Composable
+fun UsageText(instance: TitleActivity) {
+    AutoResizeText(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(5.dp, 0.dp),
+        textAlign = TextAlign.Center,
+        color = MaterialTheme.colors.primary,
+        maxLines = 1,
+        fontSizeRange = FontSizeRange(
+            min = TextUnit(1F, TextUnitType.Sp),
+            max = TextUnit(15F, TextUnitType.Sp)
+        ),
+        text = if (Registry.getInstance(instance).language == "en") "Add tiles to view weather info!" else "添加資訊方塊查看天氣資訊"
     )
 }
 
