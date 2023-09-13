@@ -1,5 +1,5 @@
 # HK-Weather-Warnings-WearOS
-A weather tile app for checking HK current active weather warnings and special weather tips for Wear OS.
+A weather tile app for checking current active weather warnings and special weather tips issued by the Hong Kong Observatory for Wear OS.
 
 For more info, check out the app listing on Google Play with the link below.
 
