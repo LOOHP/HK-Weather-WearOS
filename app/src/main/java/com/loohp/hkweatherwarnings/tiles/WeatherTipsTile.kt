@@ -270,7 +270,7 @@ class WeatherTipsTile : TileService() {
             tips[currentIndex]
         }
         val tipText = if (tip == null) (if (Registry.getInstance(this).language == "en") "There are currently no active special weather tips." else "目前沒有任何特別天氣提示") else tip.first
-        val tipTextSize = StringUtils.findOptimalSp(this, tipText, ScreenSizeUtils.getScreenWidth(this) - 50, 4, 1F, 15F)
+        val tipTextSize = StringUtils.findOptimalSpForHeight(this, tipText, ScreenSizeUtils.getScreenWidth(this) - 50, (ScreenSizeUtils.getScreenHeight(this) * 0.4).toInt(), 1F, 15F)
 
         layouts.add(
             LayoutElementBuilders.Box.Builder()
@@ -296,7 +296,7 @@ class WeatherTipsTile : TileService() {
                                 )
                                 .build()
                         )
-                        .setMaxLines(4)
+                        .setMaxLines(Int.MAX_VALUE)
                         .build()
                 )
                 .build()

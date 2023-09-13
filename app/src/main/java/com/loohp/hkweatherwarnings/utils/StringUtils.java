@@ -70,4 +70,23 @@ public class StringUtils {
         return minSp;
     }
 
+    public static float findOptimalSpForHeight(Context context, String text, int targetWidth, int targetHeight, float minSp, float maxSp) {
+        TextPaint paint = new TextPaint();
+        paint.density = context.getResources().getDisplayMetrics().density;
+        for (float sp = maxSp; sp >= minSp; sp--) {
+            paint.setTextSize(UnitUtils.spToPixels(context, sp));
+            paint.setTypeface(Typeface.DEFAULT);
+
+            StaticLayout staticLayout = StaticLayout.Builder.obtain(text, 0, text.length(), paint, targetWidth)
+                    .setMaxLines(Integer.MAX_VALUE)
+                    .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                    .build();
+
+            if (staticLayout.getHeight() < targetHeight) {
+                return sp;
+            }
+        }
+        return minSp;
+    }
+
 }
