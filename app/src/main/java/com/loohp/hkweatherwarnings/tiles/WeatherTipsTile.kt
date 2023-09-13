@@ -22,8 +22,10 @@ import com.loohp.hkweatherwarnings.MainActivity
 import com.loohp.hkweatherwarnings.TitleActivity
 import com.loohp.hkweatherwarnings.R
 import com.loohp.hkweatherwarnings.shared.Registry
+import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
+import com.loohp.hkweatherwarnings.utils.timeZone
 import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
@@ -35,6 +37,7 @@ private var currentUpdateSuccess: Boolean = false
 private var currentUpdatedTime: Long = 0
 private var currentIndex: Int = 0
 private var state = false
+
 
 class WeatherTipsTile : TileService() {
 
@@ -167,7 +170,7 @@ class WeatherTipsTile : TileService() {
 
     private fun buildTitle(updateSuccess: Boolean, updatedTime: Long): LayoutElementBuilders.LayoutElement {
         var lastUpdateText = (if (Registry.getInstance(this).language == "en") "Updated: " else "更新時間: ").plus(
-            DateFormat.getTimeFormat(this).format(Date(updatedTime)))
+            DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date(updatedTime)))
         if (!updateSuccess) {
             lastUpdateText = lastUpdateText.plus(if (Registry.getInstance(this).language == "en") " (Update Failed)" else " (無法更新)")
         }
@@ -304,9 +307,9 @@ class WeatherTipsTile : TileService() {
 
         if (tip != null) {
             val date = Date(tip.second)
-            val lastUpdateText = DateFormat.getDateFormat(this).format(date)
+            val lastUpdateText = DateFormat.getDateFormat(this).timeZone(Shared.HK_TIMEZONE).format(date)
                 .plus(" ")
-                .plus(DateFormat.getTimeFormat(this).format(date))
+                .plus(DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(date))
 
             layouts.add(
                 LayoutElementBuilders.Box.Builder()

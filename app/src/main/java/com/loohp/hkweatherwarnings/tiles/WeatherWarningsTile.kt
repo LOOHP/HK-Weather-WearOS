@@ -17,7 +17,9 @@ import com.loohp.hkweatherwarnings.MainActivity
 import com.loohp.hkweatherwarnings.TitleActivity
 import com.loohp.hkweatherwarnings.R
 import com.loohp.hkweatherwarnings.shared.Registry
+import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.utils.StringUtils
+import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.warnings.WeatherWarningsType
 import java.util.Date
 import java.util.concurrent.Callable
@@ -131,7 +133,7 @@ class WeatherWarningsTile : TileService() {
 
     private fun buildTitle(updateSuccess: Boolean): LayoutElementBuilders.LayoutElement {
         var lastUpdateText = (if (Registry.getInstance(this).language == "en") "Updated: " else "更新時間: ").plus(
-            DateFormat.getTimeFormat(this).format(Date()))
+            DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date()))
         if (!updateSuccess) {
             lastUpdateText = lastUpdateText.plus(if (Registry.getInstance(this).language == "en") " (Update Failed)" else " (無法更新)")
         }
