@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">HK Weather Warnings</string>
+    <string name="weather_warnings_tile">Real-time Weather Warnings</string>
+    <string name="weather_tips_tile">Real-time Special Weather Tips</string>
+</resources>

@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">香港天氣警告提示</string>
+    <string name="weather_warnings_tile">即時天氣警告</string>
+    <string name="weather_tips_tile">即時特別天氣提示</string>
+</resources>
