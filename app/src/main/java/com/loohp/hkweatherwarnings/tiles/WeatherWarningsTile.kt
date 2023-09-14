@@ -279,150 +279,150 @@ class WeatherWarningsTile : TileService() {
                                 .setValue(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
                                 .build()
                         )
-                        when (images.size) {
-                            1 -> {
-                                element.addContent(
-                                    LayoutElementBuilders.Row.Builder()
-                                        .setWidth(DimensionBuilders.wrap())
-                                        .setHeight(DimensionBuilders.wrap())
-                                        .setVerticalAlignment(
-                                            LayoutElementBuilders.VerticalAlignmentProp.Builder()
-                                                .setValue(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
-                                                .build()
-                                        )
-                                        .addContent(
-                                            images[0]
-                                                .setWidth(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(70F, this)
-                                                    ).build())
-                                                .setHeight(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(70F, this)
-                                                    ).build())
-                                                .build()
-                                        )
-                                        .build()
-                                )
-                            }
-                            2 -> {
-                                element.addContent(
-                                    LayoutElementBuilders.Row.Builder()
-                                        .setWidth(DimensionBuilders.wrap())
-                                        .setHeight(DimensionBuilders.wrap())
-                                        .setVerticalAlignment(
-                                            LayoutElementBuilders.VerticalAlignmentProp.Builder()
-                                                .setValue(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
-                                                .build()
-                                        )
-                                        .addContent(
-                                            images[0]
-                                                .setWidth(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(60F, this)
-                                                    ).build())
-                                                .setHeight(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(60F, this)
-                                                    ).build())
-                                                .build()
-                                        )
-                                        .addContent(
-                                            images[1]
-                                                .setWidth(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(60F, this)
-                                                    ).build())
-                                                .setHeight(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(60F, this)
-                                                    ).build())
-                                                .build()
-                                        )
-                                        .build()
-                                )
-                            }
-                            3 -> {
-                                element.addContent(
-                                    LayoutElementBuilders.Row.Builder()
-                                        .setWidth(DimensionBuilders.wrap())
-                                        .setHeight(DimensionBuilders.wrap())
-                                        .setVerticalAlignment(
-                                            LayoutElementBuilders.VerticalAlignmentProp.Builder()
-                                                .setValue(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
-                                                .build()
-                                        )
-                                        .addContent(
-                                            images[0]
-                                                .setWidth(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(50F, this)
-                                                    ).build())
-                                                .setHeight(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(50F, this)
-                                                    ).build())
-                                                .build()
-                                        )
-                                        .addContent(
-                                            images[1]
-                                                .setWidth(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(50F, this)
-                                                    ).build())
-                                                .setHeight(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(50F, this)
-                                                    ).build())
-                                                .build()
-                                        )
-                                        .addContent(
-                                            images[2]
-                                                .setWidth(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(50F, this)
-                                                    ).build())
-                                                .setHeight(
-                                                    DimensionBuilders.DpProp.Builder(
-                                                        StringUtils.scaledSize(50F, this)
-                                                    ).build())
-                                                .build()
-                                        )
-                                        .build()
-                                )
-                            }
-                            else -> {
-                                for (i in images.indices step 4) {
-                                    val row = LayoutElementBuilders.Row.Builder()
-                                        .setWidth(DimensionBuilders.wrap())
-                                        .setHeight(DimensionBuilders.wrap())
-                                        .setVerticalAlignment(
-                                            LayoutElementBuilders.VerticalAlignmentProp.Builder()
-                                                .setValue(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
-                                                .build()
-                                        )
-                                    for (u in i until (i + 4).coerceAtMost(images.size)) {
-                                        row.addContent(images[u]
+                    when (images.size) {
+                        1 -> {
+                            element.addContent(
+                                LayoutElementBuilders.Row.Builder()
+                                    .setWidth(DimensionBuilders.wrap())
+                                    .setHeight(DimensionBuilders.wrap())
+                                    .setVerticalAlignment(
+                                        LayoutElementBuilders.VerticalAlignmentProp.Builder()
+                                            .setValue(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                                            .build()
+                                    )
+                                    .addContent(
+                                        images[0]
                                             .setWidth(
                                                 DimensionBuilders.DpProp.Builder(
-                                                    StringUtils.scaledSize(
-                                                        40F,
-                                                        this
-                                                    )
+                                                    StringUtils.scaledSize(70F, this)
                                                 ).build())
                                             .setHeight(
                                                 DimensionBuilders.DpProp.Builder(
-                                                    StringUtils.scaledSize(
-                                                        40F,
-                                                        this
-                                                    )
+                                                    StringUtils.scaledSize(70F, this)
                                                 ).build())
-                                            .build())
-                                    }
-                                    element.addContent(row.build())
+                                            .build()
+                                    )
+                                    .build()
+                            )
+                        }
+                        2 -> {
+                            element.addContent(
+                                LayoutElementBuilders.Row.Builder()
+                                    .setWidth(DimensionBuilders.wrap())
+                                    .setHeight(DimensionBuilders.wrap())
+                                    .setVerticalAlignment(
+                                        LayoutElementBuilders.VerticalAlignmentProp.Builder()
+                                            .setValue(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                                            .build()
+                                    )
+                                    .addContent(
+                                        images[0]
+                                            .setWidth(
+                                                DimensionBuilders.DpProp.Builder(
+                                                    StringUtils.scaledSize(60F, this)
+                                                ).build())
+                                            .setHeight(
+                                                DimensionBuilders.DpProp.Builder(
+                                                    StringUtils.scaledSize(60F, this)
+                                                ).build())
+                                            .build()
+                                    )
+                                    .addContent(
+                                        images[1]
+                                            .setWidth(
+                                                DimensionBuilders.DpProp.Builder(
+                                                    StringUtils.scaledSize(60F, this)
+                                                ).build())
+                                            .setHeight(
+                                                DimensionBuilders.DpProp.Builder(
+                                                    StringUtils.scaledSize(60F, this)
+                                                ).build())
+                                            .build()
+                                    )
+                                    .build()
+                            )
+                        }
+                        3 -> {
+                            element.addContent(
+                                LayoutElementBuilders.Row.Builder()
+                                    .setWidth(DimensionBuilders.wrap())
+                                    .setHeight(DimensionBuilders.wrap())
+                                    .setVerticalAlignment(
+                                        LayoutElementBuilders.VerticalAlignmentProp.Builder()
+                                            .setValue(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                                            .build()
+                                    )
+                                    .addContent(
+                                        images[0]
+                                            .setWidth(
+                                                DimensionBuilders.DpProp.Builder(
+                                                    StringUtils.scaledSize(50F, this)
+                                                ).build())
+                                            .setHeight(
+                                                DimensionBuilders.DpProp.Builder(
+                                                    StringUtils.scaledSize(50F, this)
+                                                ).build())
+                                            .build()
+                                    )
+                                    .addContent(
+                                        images[1]
+                                            .setWidth(
+                                                DimensionBuilders.DpProp.Builder(
+                                                    StringUtils.scaledSize(50F, this)
+                                                ).build())
+                                            .setHeight(
+                                                DimensionBuilders.DpProp.Builder(
+                                                    StringUtils.scaledSize(50F, this)
+                                                ).build())
+                                            .build()
+                                    )
+                                    .addContent(
+                                        images[2]
+                                            .setWidth(
+                                                DimensionBuilders.DpProp.Builder(
+                                                    StringUtils.scaledSize(50F, this)
+                                                ).build())
+                                            .setHeight(
+                                                DimensionBuilders.DpProp.Builder(
+                                                    StringUtils.scaledSize(50F, this)
+                                                ).build())
+                                            .build()
+                                    )
+                                    .build()
+                            )
+                        }
+                        else -> {
+                            for (i in images.indices step 4) {
+                                val row = LayoutElementBuilders.Row.Builder()
+                                    .setWidth(DimensionBuilders.wrap())
+                                    .setHeight(DimensionBuilders.wrap())
+                                    .setVerticalAlignment(
+                                        LayoutElementBuilders.VerticalAlignmentProp.Builder()
+                                            .setValue(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                                            .build()
+                                    )
+                                for (u in i until (i + 4).coerceAtMost(images.size)) {
+                                    row.addContent(images[u]
+                                        .setWidth(
+                                            DimensionBuilders.DpProp.Builder(
+                                                StringUtils.scaledSize(
+                                                    40F,
+                                                    this
+                                                )
+                                            ).build())
+                                        .setHeight(
+                                            DimensionBuilders.DpProp.Builder(
+                                                StringUtils.scaledSize(
+                                                    40F,
+                                                    this
+                                                )
+                                            ).build())
+                                        .build())
                                 }
+                                element.addContent(row.build())
                             }
                         }
+                    }
                     element.build()
                 }
             )
