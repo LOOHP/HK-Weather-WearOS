@@ -7,10 +7,12 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,8 +23,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -76,8 +80,14 @@ fun MainElements(instance: TitleActivity) {
             Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
             OpenHKOAppButton(instance)
             Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
-            LanguageButton(instance)
-            Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
+            Row (
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LanguageButton(instance)
+                Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
+                UpdateTilesButton(instance)
+            }
         }
         Column(
             modifier = Modifier
@@ -132,8 +142,8 @@ fun OpenHKOAppButton(instance: TitleActivity) {
             )
         },
         modifier = Modifier
-            .width(StringUtils.scaledSize(StringUtils.scaledSize(220, instance), instance).dp)
-            .height(StringUtils.scaledSize(StringUtils.scaledSize(45, instance), instance).dp),
+            .width(StringUtils.scaledSize(220, instance).dp)
+            .height(StringUtils.scaledSize(45, instance).dp),
         colors = ButtonDefaults.buttonColors(
             backgroundColor = MaterialTheme.colors.secondary,
             contentColor = MaterialTheme.colors.primary
@@ -159,8 +169,8 @@ fun LanguageButton(instance: TitleActivity) {
             instance.finish()
         },
         modifier = Modifier
-            .width(StringUtils.scaledSize(StringUtils.scaledSize(220, instance), instance).dp)
-            .height(StringUtils.scaledSize(StringUtils.scaledSize(45, instance), instance).dp),
+            .width(StringUtils.scaledSize(90, instance).dp)
+            .height(StringUtils.scaledSize(35, instance).dp),
         colors = ButtonDefaults.buttonColors(
             backgroundColor = MaterialTheme.colors.secondary,
             contentColor = MaterialTheme.colors.primary
@@ -172,6 +182,32 @@ fun LanguageButton(instance: TitleActivity) {
                 color = MaterialTheme.colors.primary,
                 fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp),
                 text = if (Registry.getInstance(instance).language == "en") "中文" else "English"
+            )
+        }
+    )
+}
+
+@Composable
+fun UpdateTilesButton(instance: TitleActivity) {
+    Button(
+        onClick = {
+            Registry.getInstance(instance).updateTileService(instance)
+            instance.runOnUiThread {
+                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Refreshing all tiles" else "正在更新所有資訊方塊", Toast.LENGTH_SHORT).show()
+            }
+        },
+        modifier = Modifier
+            .width(StringUtils.scaledSize(35, instance).dp)
+            .height(StringUtils.scaledSize(35, instance).dp),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = MaterialTheme.colors.secondary,
+            contentColor = Color(0xFFFFFFFF)
+        ),
+        content = {
+            Image(
+                modifier = Modifier.size(StringUtils.scaledSize(19, instance).dp),
+                painter = painterResource(R.mipmap.reload),
+                contentDescription = if (Registry.getInstance(instance).language == "en") "Refresh all tiles" else "更新所有資訊方塊"
             )
         }
     )

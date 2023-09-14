@@ -30,6 +30,7 @@ import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.TimeUnit
+import kotlin.math.roundToInt
 
 private const val RESOURCES_VERSION = "0"
 private var currentTips: List<Pair<String, Long>> = emptyList()
@@ -273,7 +274,8 @@ class WeatherTipsTile : TileService() {
             tips[currentIndex]
         }
         val tipText = if (tip == null) (if (Registry.getInstance(this).language == "en") "There are currently no active special weather tips." else "目前沒有任何特別天氣提示") else tip.first
-        val tipTextSize = StringUtils.findOptimalSpForHeight(this, tipText, ScreenSizeUtils.getScreenWidth(this) - 50, (ScreenSizeUtils.getScreenHeight(this) * 0.4).toInt(), 1F, 15F)
+        val heightMultiplier = if (Registry.getInstance(this).language == "en") 0.45F else 0.35F
+        val tipTextSize = StringUtils.findOptimalSpForHeight(this, tipText, ScreenSizeUtils.getScreenWidth(this) - 50, (ScreenSizeUtils.getScreenHeight(this).toFloat() * heightMultiplier).roundToInt(), 1F, 15F)
 
         layouts.add(
             LayoutElementBuilders.Box.Builder()
