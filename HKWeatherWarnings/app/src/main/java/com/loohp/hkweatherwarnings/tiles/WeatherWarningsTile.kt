@@ -8,13 +8,13 @@ import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.StateBuilders
 import androidx.wear.protolayout.TimelineBuilders
+import androidx.wear.tiles.EventBuilders
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import androidx.wear.tiles.TileService
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.loohp.hkweatherwarnings.MainActivity
-import com.loohp.hkweatherwarnings.TitleActivity
 import com.loohp.hkweatherwarnings.R
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
@@ -27,11 +27,19 @@ import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.TimeUnit
 import kotlin.streams.toList
 
+private const val REFRESH_INTERVAL: Long = 900000
 private const val RESOURCES_VERSION = "0"
 private var lastWarnings: Set<WeatherWarningsType> = emptySet()
+private var currentUpdatedTime: Long = 0
 private var state = false
 
 class WeatherWarningsTile : TileService() {
+
+    override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
+        if (System.currentTimeMillis() - currentUpdatedTime > REFRESH_INTERVAL) {
+            Registry.getInstance(this).updateTileService(this)
+        }
+    }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
         return Futures.submit(Callable {
@@ -41,6 +49,7 @@ class WeatherWarningsTile : TileService() {
                 false
             } else {
                 lastWarnings = warnings
+                currentUpdatedTime = System.currentTimeMillis()
                 true
             }
 
@@ -97,7 +106,7 @@ class WeatherWarningsTile : TileService() {
 
             TileBuilders.Tile.Builder()
                 .setResourcesVersion(RESOURCES_VERSION)
-                .setFreshnessIntervalMillis(900000)
+                .setFreshnessIntervalMillis(REFRESH_INTERVAL)
                 .setTileTimeline(
                     TimelineBuilders.Timeline.Builder().addTimelineEntry(
                         TimelineBuilders.TimelineEntry.Builder().setLayout(
