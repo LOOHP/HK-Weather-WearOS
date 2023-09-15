@@ -8,7 +8,7 @@ This WearOS (Android) app is in the native language of Hong Kong: **Traditional 
 In addition, it also supports **English**.
 
 ## Live Demonstration & Screenshots
-*Coming Soon*
+*Coming Soon, Waiting for Approval*
 
 ## Data Sources
 - [DATA.GOV.HK](https://data.gov.hk)
