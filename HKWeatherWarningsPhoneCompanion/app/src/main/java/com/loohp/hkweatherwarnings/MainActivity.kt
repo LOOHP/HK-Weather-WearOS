@@ -72,7 +72,7 @@ fun PhoneElements(instance: MainActivity) {
         Image(
             modifier = Modifier.clickable {
                 openGooglePlay(instance)
-            },
+            }.size(100.dp),
             painter = painterResource(R.mipmap.icon),
             contentDescription = instance.resources.getString(R.string.app_name)
         )
