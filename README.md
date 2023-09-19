@@ -8,7 +8,7 @@ This WearOS (Android) app is in the native language of Hong Kong: **Traditional 
 In addition, it also supports **English**.
 
 ## Live Demonstration & Screenshots
-*Coming Soon, Waiting for Approval*
+<a href='https://play.google.com/store/apps/details?id=com.loohp.hkweatherwarnings&utm_source=GitHub-Repo&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width="200"/></a>
 
 ## Data Sources
 - [DATA.GOV.HK](https://data.gov.hk)
