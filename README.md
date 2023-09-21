@@ -1,5 +1,5 @@
-# HK-Weather-Warnings-WearOS
-A weather tile app for checking current active weather warnings and special weather tips issued by the Hong Kong Observatory for Wear OS, designed as an unofficial watch companion app for the official MyOverservtory app and an addon to the base weather app in WearOS smartwatches for users in Hong Kong.
+# HK-Weather-WearOS
+A weather tile app for checking current weather, active weather warnings and special weather tips issued by the Hong Kong Observatory for Wear OS, designed as an unofficial watch companion app for the official MyOverservtory app and an addon to the base weather app in WearOS smartwatches for users in Hong Kong.
 
 For more info, check out the app listing on Google Play with the link below.
 
@@ -16,7 +16,8 @@ In addition, it also supports **English**.
 
 ## Privacy Policy
 I hereby state, to the best of my knowledge and belief, that I have **not programmed this app to collect any personally identifiable information**.<br>
-The only data stored locally on your device is your preferred language, which can be **simply erased by clearing the app's data or uninstalling the app**.<br>
+The only data stored locally on your device is your preferred language and weather location, which can be **simply erased by clearing the app's data or uninstalling the app**.<br>
+**GPS information** used to locate your nearest weather station (if opted in) is **only used at the moment and is not stored or collected**.<br>
 HTTPS Requests are made to the above data sources to retrieve weather information. **No personally identifiable information** (apart from information essentially needed to perform a request, such as the IP address) is sent in such requests.
 
 ## Disclaimer
