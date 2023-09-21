@@ -13,7 +13,7 @@ class Shared {
 
         val HK_TIMEZONE: TimeZone = TimeZone.getTimeZone(ZoneId.of("Asia/Hong_Kong"))
 
-        val DEFAULT_LOCATION: LocationResult = LocationResult.fromLatLng(114.1741666, 22.3019444)
+        val DEFAULT_LOCATION: LocationResult = LocationResult.fromLatLng(22.3019444, 114.1741666)
 
         const val DEFAULT_REFRESH_INTERVAL: Long = 900000
 

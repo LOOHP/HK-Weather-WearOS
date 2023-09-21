@@ -277,8 +277,9 @@ public class Registry {
                 })).orElse(null);
                 JSONObject forecastStationData = HTTPRequestUtils.getJSONResponse("https://maps.weather.gov.hk/ocf/dat/" + forecastStation + ".xml");
                 JSONArray forecastDailyData = forecastStationData.optJSONArray("DailyForecast");
+                List<JSONObject> dailyForecastArray = JsonUtils.toList(forecastDailyData, JSONObject.class);
 
-                String chanceOfRainStr = forecastDailyData.optJSONObject(0).optString("ForecastChanceOfRain");
+                String chanceOfRainStr = dailyForecastArray.get(0).optString("ForecastChanceOfRain");
                 float chanceOfRain = Float.parseFloat(chanceOfRainStr.substring(0, chanceOfRainStr.length() - 1));
 
                 List<JSONObject> sunData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=SRS&year=" + today.getYear() + "&rformat=csv", s -> s.replaceAll("[^a-zA-Z.0-9:\\-,]", ""));
@@ -309,9 +310,11 @@ public class Registry {
 
                 for (int i = 0; i < dayArray.length(); i++) {
                     JSONObject forecastDayObj = dayArray.optJSONObject(i);
-                    JSONObject forecastStationDayObj = i < forecastStationData.length() ? forecastDailyData.optJSONObject(i) : null;
 
-                    LocalDate forecastDate = LocalDate.parse(forecastDayObj.optString("forecastDate"), dateFormatter);
+                    String forecastDateStr = forecastDayObj.optString("forecastDate");
+                    JSONObject forecastStationDayObj = dailyForecastArray.stream().filter(e -> e.optString("ForecastDate").equals(forecastDateStr)).findFirst().orElse(null);
+
+                    LocalDate forecastDate = LocalDate.parse(forecastDateStr, dateFormatter);
                     float forecastHighestTemperature = (float) forecastDayObj.optJSONObject("forecastMaxtemp").optDouble("value");
                     float forecastLowestTemperature = (float) forecastDayObj.optJSONObject("forecastMintemp").optDouble("value");
                     float forecastMaxRelativeHumidity = (float) forecastDayObj.optJSONObject("forecastMaxrh").optDouble("value");

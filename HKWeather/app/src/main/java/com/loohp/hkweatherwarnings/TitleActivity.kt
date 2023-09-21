@@ -737,10 +737,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colors.primary,
                                     fontSize = TextUnit(10F, TextUnitType.Sp).clamp(max = 10.dp),
-                                    text = if (dayInfo.chanceOfRain >= 0) String.format(
-                                        "%.0f",
-                                        dayInfo.chanceOfRain
-                                    ).plus("%") else "??%"
+                                    text = if (dayInfo.chanceOfRain >= 0) String.format("%.0f", dayInfo.chanceOfRain).plus("%") else "??%"
                                 )
                                 Image(
                                     modifier = Modifier
