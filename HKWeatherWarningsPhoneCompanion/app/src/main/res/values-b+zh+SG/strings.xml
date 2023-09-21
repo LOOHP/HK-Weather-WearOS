@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">香港天氣警告提示 (Wear OS)</string>
+    <string name="app_name">香港天氣 (Wear OS)</string>
     <string name="description_1">本手機配套應用程式在於讓你更輕鬆找到 香港天氣警告提示 從而下載到WearOS手錶上</string>
     <string name="description_2">所有功能都已經包含在WearOS手錶應用程式中 你可以隨時移除此手機配套應用程式</string>
     <string name="description_3">我們亦建議你在手機上下載官方我的天文台應用程式配合使用</string>
-    <string name="download_description">如果您尚未在手錶上下載 香港天氣警告提示 歡迎點擊下面按鈕！</string>
+    <string name="download_description">如果您尚未在手錶上下載 香港天氣 歡迎點擊下面按鈕！</string>
     <string name="download">Google Play 下載</string>
 </resources>

@@ -23,6 +23,9 @@ import com.loohp.hkweatherwarnings.MainActivity
 import com.loohp.hkweatherwarnings.R
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.DEFAULT_REFRESH_INTERVAL
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentTips
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentTipsLastUpdated
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.timeZone
@@ -32,9 +35,7 @@ import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 
-private const val REFRESH_INTERVAL: Long = 900000
 private const val RESOURCES_VERSION = "0"
-private var currentTips: List<Pair<String, Long>> = emptyList()
 private var currentUpdateSuccess: Boolean = false
 private var currentUpdatedTime: Long = 0
 private var currentIndex: Int = 0
@@ -44,7 +45,7 @@ private var state = false
 class WeatherTipsTile : TileService() {
 
     override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
-        if (System.currentTimeMillis() - currentUpdatedTime > REFRESH_INTERVAL) {
+        if (System.currentTimeMillis() - currentUpdatedTime > DEFAULT_REFRESH_INTERVAL) {
             Registry.getInstance(this).updateTileService(this)
         }
     }
@@ -66,6 +67,7 @@ class WeatherTipsTile : TileService() {
                     currentUpdateSuccess = true
                 }
                 currentUpdatedTime = System.currentTimeMillis()
+                currentTipsLastUpdated = currentUpdatedTime
             }
 
             val content = buildContent(tips)
@@ -151,7 +153,7 @@ class WeatherTipsTile : TileService() {
 
             TileBuilders.Tile.Builder()
                 .setResourcesVersion(RESOURCES_VERSION)
-                .setFreshnessIntervalMillis(REFRESH_INTERVAL)
+                .setFreshnessIntervalMillis(DEFAULT_REFRESH_INTERVAL)
                 .setTileTimeline(
                     TimelineBuilders.Timeline.Builder().addTimelineEntry(
                         TimelineBuilders.TimelineEntry.Builder().setLayout(

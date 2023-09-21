@@ -11,8 +11,8 @@ android {
         applicationId = "com.loohp.hkweatherwarnings"
         minSdk = 24
         targetSdk = 33
-        versionCode = 13
-        versionName = "1.0.1"
+        versionCode = 19
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

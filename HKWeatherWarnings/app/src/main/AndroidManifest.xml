@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.type.watch" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:ignore="CoarseFineLocation" />
 
     <application
         android:allowBackup="true"
@@ -32,6 +34,27 @@
             android:exported="true"
             android:theme="@android:style/Theme.DeviceDefault">
         </activity>
+
+        <activity
+            android:name=".ChangeLocationActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault">
+        </activity>
+
+        <service
+            android:name=".tiles.WeatherOverviewTile"
+            android:exported="true"
+            android:label="@string/weather_overview_tile"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@mipmap/weather_overview_tile" />
+        </service>
 
         <service
             android:name=".tiles.WeatherWarningsTile"

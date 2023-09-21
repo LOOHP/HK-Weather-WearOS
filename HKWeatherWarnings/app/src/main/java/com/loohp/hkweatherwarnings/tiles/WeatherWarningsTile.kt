@@ -18,25 +18,26 @@ import com.loohp.hkweatherwarnings.MainActivity
 import com.loohp.hkweatherwarnings.R
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.DEFAULT_REFRESH_INTERVAL
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWarnings
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWarningsLastUpdated
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.timeZone
-import com.loohp.hkweatherwarnings.warnings.WeatherWarningsType
+import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
 import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.TimeUnit
 import kotlin.streams.toList
 
-private const val REFRESH_INTERVAL: Long = 900000
 private const val RESOURCES_VERSION = "0"
-private var lastWarnings: Set<WeatherWarningsType> = emptySet()
 private var currentUpdatedTime: Long = 0
 private var state = false
 
 class WeatherWarningsTile : TileService() {
 
     override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
-        if (System.currentTimeMillis() - currentUpdatedTime > REFRESH_INTERVAL) {
+        if (System.currentTimeMillis() - currentUpdatedTime > DEFAULT_REFRESH_INTERVAL) {
             Registry.getInstance(this).updateTileService(this)
         }
     }
@@ -45,11 +46,12 @@ class WeatherWarningsTile : TileService() {
         return Futures.submit(Callable {
             var warnings = Registry.getInstance(this).getActiveWarnings(this).get(9, TimeUnit.SECONDS)
             val updateSuccess = if (warnings == null) {
-                warnings = lastWarnings
+                warnings = currentWarnings
                 false
             } else {
-                lastWarnings = warnings
+                currentWarnings = warnings
                 currentUpdatedTime = System.currentTimeMillis()
+                currentWarningsLastUpdated = currentUpdatedTime
                 true
             }
 
@@ -106,7 +108,7 @@ class WeatherWarningsTile : TileService() {
 
             TileBuilders.Tile.Builder()
                 .setResourcesVersion(RESOURCES_VERSION)
-                .setFreshnessIntervalMillis(REFRESH_INTERVAL)
+                .setFreshnessIntervalMillis(DEFAULT_REFRESH_INTERVAL)
                 .setTileTimeline(
                     TimelineBuilders.Timeline.Builder().addTimelineEntry(
                         TimelineBuilders.TimelineEntry.Builder().setLayout(
