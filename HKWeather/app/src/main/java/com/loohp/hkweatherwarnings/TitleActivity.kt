@@ -564,7 +564,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                         color = Color(uvIndexType.color),
                         fontSize = TextUnit(25F, TextUnitType.Sp),
                         fontWeight = FontWeight.Bold,
-                        text = String.format("%.0f", weatherInfo.chanceOfRain).plus(" ").plus(if (Registry.getInstance(instance).language == "en") uvIndexType.en else uvIndexType.zh)
+                        text = String.format("%.0f", weatherInfo.uvIndex).plus(" ").plus(if (Registry.getInstance(instance).language == "en") uvIndexType.en else uvIndexType.zh)
                     )
                 } else {
                     Text(

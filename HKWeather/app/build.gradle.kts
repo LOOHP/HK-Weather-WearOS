@@ -11,7 +11,7 @@ android {
         applicationId = "com.loohp.hkweatherwarnings"
         minSdk = 30
         targetSdk = 33
-        versionCode = 22
+        versionCode = 23
         versionName = "1.1.0"
 
     }
