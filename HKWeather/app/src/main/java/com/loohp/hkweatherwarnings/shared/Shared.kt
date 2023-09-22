@@ -3,9 +3,12 @@ package com.loohp.hkweatherwarnings.shared
 import android.util.Pair
 import com.loohp.hkweatherwarnings.utils.LocationUtils.LocationResult
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
+import com.loohp.hkweatherwarnings.weather.LunarDate
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
+import java.time.LocalDate
 import java.time.ZoneId
 import java.util.TimeZone
+import java.util.concurrent.ConcurrentHashMap
 
 class Shared {
 
@@ -25,6 +28,8 @@ class Shared {
 
         var currentTipsLastUpdated: Long = 0
         var currentTips: List<Pair<String, Long>> = emptyList()
+
+        val convertedLunarDates: MutableMap<LocalDate, LunarDate> = ConcurrentHashMap()
 
     }
 

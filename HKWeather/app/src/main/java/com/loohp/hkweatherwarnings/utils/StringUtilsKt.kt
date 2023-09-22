@@ -1,4 +1,4 @@
-package com.loohp.hkbuseta.presentation.utils
+package com.loohp.hkweatherwarnings.utils
 
 import android.graphics.Typeface
 import android.text.Spanned

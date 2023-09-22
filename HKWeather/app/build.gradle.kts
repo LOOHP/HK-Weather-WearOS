@@ -11,7 +11,7 @@ android {
         applicationId = "com.loohp.hkweatherwarnings"
         minSdk = 30
         targetSdk = 33
-        versionCode = 21
+        versionCode = 22
         versionName = "1.1.0"
 
     }
@@ -72,6 +72,7 @@ dependencies {
     implementation("androidx.wear:wear-ongoing:1.0.0")
     implementation("androidx.wear:wear-phone-interactions:1.0.1")
     implementation("androidx.wear:wear-remote-interactions:1.0.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")

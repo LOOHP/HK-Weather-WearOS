@@ -62,7 +62,7 @@ import com.loohp.hkweatherwarnings.compose.FontSizeRange
 import com.loohp.hkweatherwarnings.compose.verticalScrollWithScrollbar
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
-import com.loohp.hkweatherwarnings.theme.HKWeatherWarningsTheme
+import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
 import com.loohp.hkweatherwarnings.utils.LocationUtils
 import com.loohp.hkweatherwarnings.utils.RemoteActivityUtils
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
@@ -72,10 +72,13 @@ import com.loohp.hkweatherwarnings.utils.clamp
 import com.loohp.hkweatherwarnings.utils.sp
 import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
+import com.loohp.hkweatherwarnings.weather.LunarDate
 import com.loohp.hkweatherwarnings.weather.UVIndexType
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -97,9 +100,12 @@ class TitleActivity : ComponentActivity() {
 
 @Composable
 fun MainElements(instance: TitleActivity) {
+    val today = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
+
     var weatherInfo: CurrentWeatherInfo? by remember { mutableStateOf(Shared.currentWeatherInfo) }
     var weatherWarnings: Set<WeatherWarningsType> by remember { mutableStateOf(Shared.currentWarnings) }
     var weatherTips: List<Pair<String, Long>> by remember { mutableStateOf(Shared.currentTips) }
+    var lunarDate: LunarDate? by remember { mutableStateOf(Shared.convertedLunarDates[today]) }
 
     LaunchedEffect (Unit) {
         ForkJoinPool.commonPool().execute {
@@ -121,10 +127,14 @@ fun MainElements(instance: TitleActivity) {
                 Shared.currentTips = weatherTips
                 Shared.currentTipsLastUpdated = System.currentTimeMillis()
             }
+            if (lunarDate == null) {
+                lunarDate = Registry.getInstance(instance).getLunarDate(instance, today).get()
+                Shared.convertedLunarDates[today] = lunarDate!!
+            }
         }
     }
 
-    HKWeatherWarningsTheme {
+    HKWeatherTheme {
         val focusRequester = remember { FocusRequester() }
         val scroll = rememberScrollState()
         val scope = rememberCoroutineScope()
@@ -170,7 +180,7 @@ fun MainElements(instance: TitleActivity) {
                 )
                 .focusable()
         ) {
-            WeatherInfoElements(weatherInfo, weatherWarnings, weatherTips, instance)
+            WeatherInfoElements(weatherInfo, weatherWarnings, weatherTips, lunarDate, instance)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -201,7 +211,9 @@ fun MainElements(instance: TitleActivity) {
 }
 
 @Composable
-fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<WeatherWarningsType>, weatherTips: List<Pair<String, Long>>, instance: TitleActivity) {
+fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<WeatherWarningsType>, weatherTips: List<Pair<String, Long>>, lunarDate: LunarDate?, instance: TitleActivity) {
+    val systemTimeFormat = DateFormat.getTimeFormat(instance)
+    val timeFormat = DateTimeFormatter.ofPattern(if (systemTimeFormat is SimpleDateFormat) systemTimeFormat.toPattern() else "HH:mm")
     if (weatherInfo == null) {
         Box(
             modifier = Modifier
@@ -303,7 +315,6 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                         Text(
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontWeight = FontWeight.Bold,
                             fontSize = TextUnit(11F.dp.sp.value, TextUnitType.Sp),
                             text = lastUpdateText
                         )
@@ -417,6 +428,35 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                val today = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
+                if (Registry.getInstance(instance).language == "en") {
+                    Text(
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colors.primary,
+                        fontSize = TextUnit(13F, TextUnitType.Sp),
+                        fontWeight = FontWeight.Bold,
+                        text = today.format(DateTimeFormatter.ofPattern("dd MMM yyyy (EEEE)", Locale.ENGLISH))
+                    )
+                } else {
+                    Text(
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colors.primary,
+                        fontSize = TextUnit(13F, TextUnitType.Sp),
+                        fontWeight = FontWeight.Bold,
+                        text = today.format(DateTimeFormatter.ofPattern("yyyy年 MM月 dd日 (EEEE)", Locale.TRADITIONAL_CHINESE))
+                    )
+                    if (lunarDate != null) {
+                        Spacer(modifier = Modifier.size(2.dp))
+                        Text(
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colors.primary,
+                            fontSize = TextUnit(13F, TextUnitType.Sp),
+                            fontWeight = FontWeight.Bold,
+                            text = " ".plus(lunarDate.toString())
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.size(25.dp))
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
@@ -478,10 +518,10 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                             modifier = Modifier.padding(20.dp, 0.dp),
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(17F, TextUnitType.Sp),
+                            fontSize = TextUnit(15F, TextUnitType.Sp),
                             text = tip.first
                         )
-                        Spacer(modifier = Modifier.size(2.dp))
+                        Spacer(modifier = Modifier.size(4.dp))
                         val date = Date(tip.second)
                         val lastUpdateText = DateFormat.getDateFormat(instance).timeZone(Shared.HK_TIMEZONE).format(date)
                             .plus(" ")
@@ -490,7 +530,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                             modifier = Modifier.padding(5.dp, 0.dp),
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(9F, TextUnitType.Sp),
+                            fontSize = TextUnit(10F, TextUnitType.Sp),
                             text = lastUpdateText
                         )
                         Spacer(modifier = Modifier.size(10.dp))
@@ -589,7 +629,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                     color = Color(0xFFFFC32B),
                     fontSize = TextUnit(25F, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
-                    text = weatherInfo.sunriseTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+                    text = weatherInfo.sunriseTime.format(timeFormat)
                 )
                 Spacer(modifier = Modifier.size(10.dp))
                 Row (
@@ -617,7 +657,29 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                     color = Color(0xFFFF802B),
                     fontSize = TextUnit(25F, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
-                    text = weatherInfo.sunsetTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+                    text = weatherInfo.sunsetTime.format(timeFormat)
+                )
+                Spacer(modifier = Modifier.size(10.dp))
+                Button(
+                    onClick = {
+                        instance.startActivity(Intent(instance, RadarActivity::class.java))
+                    },
+                    modifier = Modifier
+                        .width(StringUtils.scaledSize(180, instance).dp)
+                        .height(StringUtils.scaledSize(45, instance).dp),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = MaterialTheme.colors.secondary,
+                        contentColor = MaterialTheme.colors.primary
+                    ),
+                    content = {
+                        Text(
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colors.primary,
+                            fontSize = TextUnit(16F, TextUnitType.Sp),
+                            text = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64 公里)"
+                        )
+                    }
                 )
                 Spacer(modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier
@@ -648,7 +710,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                             color = MaterialTheme.colors.primary,
                             fontSize = TextUnit(15F, TextUnitType.Sp).clamp(max = 15.dp),
                             fontWeight = FontWeight.Bold,
-                            text = hourInfo.time.format(DateTimeFormatter.ofPattern("HH:mm")).plus("     ")
+                            text = hourInfo.time.format(timeFormat).plus("     ")
                         )
                         Image(
                             modifier = Modifier

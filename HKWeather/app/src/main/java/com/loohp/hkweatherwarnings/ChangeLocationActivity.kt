@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -43,18 +42,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.rememberSwipeableState
 import com.loohp.hkweatherwarnings.compose.AutoResizeText
 import com.loohp.hkweatherwarnings.compose.FontSizeRange
 import com.loohp.hkweatherwarnings.compose.verticalScrollWithScrollbar
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
-import com.loohp.hkweatherwarnings.theme.HKWeatherWarningsTheme
+import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
 import com.loohp.hkweatherwarnings.utils.LocationUtils
 import com.loohp.hkweatherwarnings.utils.LocationUtils.LocationResult
 import com.loohp.hkweatherwarnings.utils.StringUtils
@@ -65,7 +62,6 @@ import kotlinx.coroutines.launch
 class ChangeLocationActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContent {
             MainElements(this)
@@ -76,7 +72,7 @@ class ChangeLocationActivity : ComponentActivity() {
 
 @Composable
 fun MainElements(instance: ChangeLocationActivity) {
-    HKWeatherWarningsTheme {
+    HKWeatherTheme {
         val focusRequester = remember { FocusRequester() }
         val scroll = rememberScrollState()
         val scope = rememberCoroutineScope()

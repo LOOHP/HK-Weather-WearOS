@@ -17,6 +17,7 @@ import com.loohp.hkweatherwarnings.utils.JsonUtils;
 import com.loohp.hkweatherwarnings.utils.LocationUtils;
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.HourlyWeatherInfo;
+import com.loohp.hkweatherwarnings.weather.LunarDate;
 import com.loohp.hkweatherwarnings.weather.WeatherInfo;
 import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon;
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType;
@@ -224,6 +225,28 @@ public class Registry {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    public Future<LunarDate> getLunarDate(Context context, LocalDate date) {
+        if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        CompletableFuture<LunarDate> future = new CompletableFuture<>();
+        new Thread(() -> {
+            try {
+                String dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                JSONObject data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/lunardate.php?date=" + dateStr);
+                if (data == null) {
+                    future.complete(null);
+                    return;
+                }
+                String[] s = data.optString("LunarYear").split("，");
+                future.complete(new LunarDate(s[0].replace("年", ""), s[1], data.optString("LunarDate")));
+            } catch (Throwable e) {
+                future.complete(null);
+            }
+        }).start();
+        return future;
     }
 
     public Future<CurrentWeatherInfo> getCurrentWeatherInfo(Context context, LocationUtils.LocationResult locationResult) {

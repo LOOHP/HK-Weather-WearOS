@@ -41,6 +41,12 @@
             android:theme="@android:style/Theme.DeviceDefault">
         </activity>
 
+        <activity
+            android:name=".RadarActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault">
+        </activity>
+
         <service
             android:name=".tiles.WeatherOverviewTile"
             android:exported="true"

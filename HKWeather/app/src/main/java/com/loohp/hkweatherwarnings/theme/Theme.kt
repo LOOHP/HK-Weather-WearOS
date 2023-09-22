@@ -2,11 +2,9 @@ package com.loohp.hkweatherwarnings.theme
 
 import androidx.compose.runtime.Composable
 import androidx.wear.compose.material.MaterialTheme
-import com.loohp.hkweatherwarnings.theme.Typography
-import com.loohp.hkweatherwarnings.theme.wearColorPalette
 
 @Composable
-fun HKWeatherWarningsTheme(
+fun HKWeatherTheme(
         content: @Composable () -> Unit
 ) {
     MaterialTheme(
