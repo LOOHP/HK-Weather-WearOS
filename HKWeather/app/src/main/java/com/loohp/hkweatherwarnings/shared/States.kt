@@ -53,7 +53,7 @@ class MapValueState<K, V>(
 
 class DataState<T>(
     private val initialValue: T,
-    private val freshness: () -> Long,
+    private val freshness: (Context) -> Long,
     private val updateFunction: (Context, DataState<T>) -> UpdateResult<T>,
     private val updateSuccessCallback: (Context, DataState<T>) -> Unit = { _, _ -> }
 ) {
@@ -63,7 +63,7 @@ class DataState<T>(
     private var isLastUpdateSuccessful: Boolean = false
 
     fun getLatestValue(context: Context, executor: ExecutorService, forceReload: Boolean = false, suppressUpdateSuccessCallback: Boolean = false): Future<T> {
-        return if (forceReload || System.currentTimeMillis() - lastSuccessfulUpdateTime > freshness.invoke()) {
+        return if (forceReload || System.currentTimeMillis() - lastSuccessfulUpdateTime > freshness.invoke(context)) {
             update(context, executor, suppressUpdateSuccessCallback)
         } else {
             CompletableFuture.completedFuture(state.value)

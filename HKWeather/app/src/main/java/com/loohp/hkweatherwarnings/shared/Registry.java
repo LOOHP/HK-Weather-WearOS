@@ -111,6 +111,33 @@ public class Registry {
         return language;
     }
 
+    public void setRefreshRate(long refreshRate, Context context) {
+        try {
+            if (PREFERENCES == null) {
+                PREFERENCES = new JSONObject();
+            }
+            PREFERENCES.put("refreshRate", refreshRate);
+            try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(context.getApplicationContext().openFileOutput(PREFERENCES_FILE_NAME, Context.MODE_PRIVATE), StandardCharsets.UTF_8))) {
+                pw.write(PREFERENCES.toString());
+                pw.flush();
+            }
+            updateTileServices(context);
+        } catch (IOException | JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public long getRefreshRate() {
+        if (PREFERENCES == null) {
+            return 1800000;
+        }
+        long refreshRate = PREFERENCES.optLong("refreshRate", -1);
+        if (refreshRate < 0) {
+            return 1800000;
+        }
+        return refreshRate;
+    }
+
     public Pair<String, Location> getLocation() {
         if (PREFERENCES == null) {
             return Pair.create("", null);
@@ -221,6 +248,7 @@ public class Registry {
             try {
                 PREFERENCES = new JSONObject();
                 PREFERENCES.put("language", "zh");
+                PREFERENCES.put("refreshRate", 1800000L);
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
@@ -234,6 +262,14 @@ public class Registry {
         CompletableFuture<LunarDate> future = new CompletableFuture<>();
         new Thread(() -> {
             try {
+                String climatology = null;
+                if (date.equals(LocalDate.now(Shared.Companion.getHK_TIMEZONE().toZoneId()))) {
+                    JSONObject data = HTTPRequestUtils.getJSONResponse("https://pda.weather.gov.hk/locspc/android_data/lunar_date_uc.xml");
+                    if (data != null) {
+                        String term = data.optString("solar_term");
+                        climatology = term.isEmpty() ? null : term;
+                    }
+                }
                 String dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                 JSONObject data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/lunardate.php?date=" + dateStr);
                 if (data == null) {
@@ -241,7 +277,7 @@ public class Registry {
                     return;
                 }
                 String[] s = data.optString("LunarYear").split("，");
-                future.complete(new LunarDate(s[0].replace("年", ""), s[1], data.optString("LunarDate")));
+                future.complete(new LunarDate(s[0].replace("年", ""), s[1], data.optString("LunarDate"), climatology));
             } catch (Throwable e) {
                 future.complete(null);
             }

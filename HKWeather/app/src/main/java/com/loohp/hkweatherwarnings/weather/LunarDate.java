@@ -7,11 +7,13 @@ public class LunarDate {
     private final String year;
     private final String zodiac;
     private final String date;
+    private final String climatology;
 
-    public LunarDate(String year, String zodiac, String date) {
+    public LunarDate(String year, String zodiac, String date, String climatology) {
         this.year = year;
         this.zodiac = zodiac;
         this.date = date;
+        this.climatology = climatology;
     }
 
     public String getYear() {
@@ -24,6 +26,14 @@ public class LunarDate {
 
     public String getDate() {
         return date;
+    }
+
+    public boolean hasClimatology() {
+        return climatology != null;
+    }
+
+    public String getClimatology() {
+        return climatology;
     }
 
     @NonNull

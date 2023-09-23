@@ -104,7 +104,7 @@ class WeatherWarningsTile : TileService() {
 
             TileBuilders.Tile.Builder()
                 .setResourcesVersion(RESOURCES_VERSION)
-                .setFreshnessIntervalMillis(FRESHNESS_TIME)
+                .setFreshnessIntervalMillis(FRESHNESS_TIME.invoke(this))
                 .setTileTimeline(
                     TimelineBuilders.Timeline.Builder().addTimelineEntry(
                         TimelineBuilders.TimelineEntry.Builder().setLayout(
