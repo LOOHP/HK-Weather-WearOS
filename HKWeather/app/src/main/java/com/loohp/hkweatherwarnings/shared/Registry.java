@@ -78,7 +78,7 @@ public class Registry {
         }
     }
 
-    public void updateTileService(Context context) {
+    public void updateTileServices(Context context) {
         TileService.getUpdater(context).requestUpdate(WeatherOverviewTile.class);
         TileService.getUpdater(context).requestUpdate(WeatherWarningsTile.class);
         TileService.getUpdater(context).requestUpdate(WeatherTipsTile.class);
@@ -94,7 +94,7 @@ public class Registry {
                 pw.write(PREFERENCES.toString());
                 pw.flush();
             }
-            updateTileService(context);
+            updateTileServices(context);
         } catch (IOException | JSONException e) {
             throw new RuntimeException(e);
         }
@@ -136,7 +136,7 @@ public class Registry {
                 pw.write(PREFERENCES.toString());
                 pw.flush();
             }
-            updateTileService(context);
+            updateTileServices(context);
         } catch (IOException | JSONException e) {
             throw new RuntimeException(e);
         }
@@ -152,7 +152,7 @@ public class Registry {
                 pw.write(PREFERENCES.toString());
                 pw.flush();
             }
-            updateTileService(context);
+            updateTileServices(context);
         } catch (IOException | JSONException e) {
             throw new RuntimeException(e);
         }
@@ -168,7 +168,7 @@ public class Registry {
                 pw.write(PREFERENCES.toString());
                 pw.flush();
             }
-            updateTileService(context);
+            updateTileServices(context);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -273,7 +273,7 @@ public class Registry {
                 AtomicDouble minDistance = new AtomicDouble(Double.MAX_VALUE);
                 JSONObject weatherStation = WEATHER_STATIONS.stream().min(Comparator.comparing(s -> {
                     JSONArray pos = s.optJSONObject("geometry").optJSONArray("coordinates");
-                    double distance = findDistance(location.getLatitude(), location.getLongitude(), pos.optDouble(0), pos.optDouble(1));
+                    double distance = findDistance(location.getLatitude(), location.getLongitude(), pos.optDouble(1), pos.optDouble(0));
                     if (distance < minDistance.get()) {
                         minDistance.set(distance);
                     }

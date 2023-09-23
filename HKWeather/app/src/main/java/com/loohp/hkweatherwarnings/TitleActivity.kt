@@ -63,7 +63,6 @@ import com.loohp.hkweatherwarnings.compose.verticalScrollWithScrollbar
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
-import com.loohp.hkweatherwarnings.utils.LocationUtils
 import com.loohp.hkweatherwarnings.utils.RemoteActivityUtils
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
@@ -102,37 +101,10 @@ class TitleActivity : ComponentActivity() {
 fun MainElements(instance: TitleActivity) {
     val today = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
 
-    var weatherInfo: CurrentWeatherInfo? by remember { mutableStateOf(Shared.currentWeatherInfo) }
-    var weatherWarnings: Set<WeatherWarningsType> by remember { mutableStateOf(Shared.currentWarnings) }
-    var weatherTips: List<Pair<String, Long>> by remember { mutableStateOf(Shared.currentTips) }
-    var lunarDate: LunarDate? by remember { mutableStateOf(Shared.convertedLunarDates[today]) }
-
-    LaunchedEffect (Unit) {
-        ForkJoinPool.commonPool().execute {
-            val now = System.currentTimeMillis()
-            if (now - Shared.currentWeatherInfoLastUpdated > Shared.DEFAULT_REFRESH_INTERVAL) {
-                val locationType = Registry.getInstance(instance).location
-                val location = if (locationType.first == "GPS") LocationUtils.getGPSLocation(instance).get() else LocationUtils.LocationResult.ofNullable(locationType.second)
-                weatherInfo = Registry.getInstance(instance).getCurrentWeatherInfo(instance, location).get()
-                Shared.currentWeatherInfo = weatherInfo
-                Shared.currentWeatherInfoLastUpdated = System.currentTimeMillis()
-            }
-            if (now - Shared.currentWarningsLastUpdated > Shared.DEFAULT_REFRESH_INTERVAL) {
-                weatherWarnings = Registry.getInstance(instance).getActiveWarnings(instance).get()
-                Shared.currentWarnings = weatherWarnings
-                Shared.currentWarningsLastUpdated = System.currentTimeMillis()
-            }
-            if (now - Shared.currentTipsLastUpdated > Shared.DEFAULT_REFRESH_INTERVAL) {
-                weatherTips = Registry.getInstance(instance).getWeatherTips(instance).get()
-                Shared.currentTips = weatherTips
-                Shared.currentTipsLastUpdated = System.currentTimeMillis()
-            }
-            if (lunarDate == null) {
-                lunarDate = Registry.getInstance(instance).getLunarDate(instance, today).get()
-                Shared.convertedLunarDates[today] = lunarDate!!
-            }
-        }
-    }
+    val weatherInfo: CurrentWeatherInfo? by remember { Shared.currentWeatherInfo.getState(instance, ForkJoinPool.commonPool()) }
+    val weatherWarnings: Set<WeatherWarningsType> by remember { Shared.currentWarnings.getState(instance, ForkJoinPool.commonPool()) }
+    val weatherTips: List<Pair<String, Long>> by remember { Shared.currentTips.getState(instance, ForkJoinPool.commonPool()) }
+    val lunarDate: LunarDate? by remember { Shared.convertedLunarDates.getValueState(today, instance, ForkJoinPool.commonPool()) }
 
     HKWeatherTheme {
         val focusRequester = remember { FocusRequester() }
@@ -236,7 +208,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
             contentAlignment = Alignment.Center
         ) {
             Text(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(0.8F),
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
                 fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp),
@@ -311,7 +283,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                         horizontalArrangement = Arrangement.Center
                     ) {
                         val lastUpdateText = (if (Registry.getInstance(instance).language == "en") "Updated: " else "更新時間: ").plus(
-                            DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE).format(Date()))
+                            DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE).format(Date(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime())))
                         Text(
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
@@ -323,17 +295,24 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                                 .padding(3.dp, 0.dp)
                                 .size(11.dp)
                                 .clickable {
-                                    Shared.currentWeatherInfoLastUpdated = 0
-                                    Shared.currentWarningsLastUpdated = 0
-                                    Shared.currentTipsLastUpdated = 0
-                                    Shared.currentWeatherInfo = null
-                                    instance.startActivity(
-                                        Intent(
-                                            instance,
-                                            TitleActivity::class.java
-                                        )
+                                    Shared.currentWeatherInfo.reset()
+                                    Shared.currentWarnings.reset()
+                                    Shared.currentTips.reset()
+                                    Shared.currentWeatherInfo.getLatestValue(
+                                        instance,
+                                        ForkJoinPool.commonPool(),
+                                        true
                                     )
-                                    instance.finishAffinity()
+                                    Shared.currentWarnings.getLatestValue(
+                                        instance,
+                                        ForkJoinPool.commonPool(),
+                                        true
+                                    )
+                                    Shared.currentTips.getLatestValue(
+                                        instance,
+                                        ForkJoinPool.commonPool(),
+                                        true
+                                    )
                                 },
                             painter = painterResource(R.mipmap.reload),
                             contentDescription = if (Registry.getInstance(instance).language == "en") "Reload" else "重新載入"
@@ -435,7 +414,12 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                         color = MaterialTheme.colors.primary,
                         fontSize = TextUnit(13F, TextUnitType.Sp),
                         fontWeight = FontWeight.Bold,
-                        text = today.format(DateTimeFormatter.ofPattern("dd MMM yyyy (EEEE)", Locale.ENGLISH))
+                        text = today.format(
+                            DateTimeFormatter.ofPattern(
+                                "dd MMM yyyy (EEEE)",
+                                Locale.ENGLISH
+                            )
+                        )
                     )
                 } else {
                     Text(
@@ -443,7 +427,12 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                         color = MaterialTheme.colors.primary,
                         fontSize = TextUnit(13F, TextUnitType.Sp),
                         fontWeight = FontWeight.Bold,
-                        text = today.format(DateTimeFormatter.ofPattern("yyyy年 MM月 dd日 (EEEE)", Locale.TRADITIONAL_CHINESE))
+                        text = today.format(
+                            DateTimeFormatter.ofPattern(
+                                "yyyy年 MM月 dd日 (EEEE)",
+                                Locale.TRADITIONAL_CHINESE
+                            )
+                        )
                     )
                     if (lunarDate != null) {
                         Spacer(modifier = Modifier.size(2.dp))
@@ -476,7 +465,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                 } else {
                     val list = weatherWarnings.toList()
                     for (i in list.indices step 3) {
-                        Row (
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -523,9 +512,14 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         val date = Date(tip.second)
-                        val lastUpdateText = DateFormat.getDateFormat(instance).timeZone(Shared.HK_TIMEZONE).format(date)
-                            .plus(" ")
-                            .plus(DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE).format(date))
+                        val lastUpdateText =
+                            DateFormat.getDateFormat(instance).timeZone(Shared.HK_TIMEZONE)
+                                .format(date)
+                                .plus(" ")
+                                .plus(
+                                    DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE)
+                                        .format(date)
+                                )
                         Text(
                             modifier = Modifier.padding(5.dp, 0.dp),
                             textAlign = TextAlign.Center,
@@ -537,7 +531,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                     }
                 }
                 Spacer(modifier = Modifier.size(10.dp))
-                Row (
+                Row(
                     modifier = Modifier
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -564,7 +558,8 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                         color = Color(uvIndexType.color),
                         fontSize = TextUnit(25F, TextUnitType.Sp),
                         fontWeight = FontWeight.Bold,
-                        text = String.format("%.0f", weatherInfo.uvIndex).plus(" ").plus(if (Registry.getInstance(instance).language == "en") uvIndexType.en else uvIndexType.zh)
+                        text = String.format("%.0f", weatherInfo.uvIndex).plus(" ")
+                            .plus(if (Registry.getInstance(instance).language == "en") uvIndexType.en else uvIndexType.zh)
                     )
                 } else {
                     Text(
@@ -576,7 +571,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                     )
                 }
                 Spacer(modifier = Modifier.size(10.dp))
-                Row (
+                Row(
                     modifier = Modifier
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -604,7 +599,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                     text = String.format("%.0f", weatherInfo.currentHumidity).plus("%")
                 )
                 Spacer(modifier = Modifier.size(10.dp))
-                Row (
+                Row(
                     modifier = Modifier
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -632,7 +627,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                     text = weatherInfo.sunriseTime.format(timeFormat)
                 )
                 Spacer(modifier = Modifier.size(10.dp))
-                Row (
+                Row(
                     modifier = Modifier
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -672,154 +667,178 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                         contentColor = MaterialTheme.colors.primary
                     ),
                     content = {
-                        Text(
-                            modifier = Modifier.fillMaxWidth(),
+                        AutoResizeText(
+                            modifier = Modifier
+                                .fillMaxWidth(0.9F)
+                                .align(Alignment.Center),
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(16F, TextUnitType.Sp),
+                            fontSizeRange = FontSizeRange(
+                                min = TextUnit(1F, TextUnitType.Sp),
+                                max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
+                            ),
                             text = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64 公里)"
                         )
                     }
                 )
                 Spacer(modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier
-                    .padding(20.dp, 0.dp)
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(Color(0xFF333333)))
-                Spacer(modifier = Modifier.size(20.dp))
-                var count = 0
-                val nowHour = LocalDateTime.now(Shared.HK_TIMEZONE.toZoneId())
-                for (hourInfo in weatherInfo.hourlyWeatherInfo) {
-                    if (hourInfo.time.isBefore(nowHour)) {
-                        continue
-                    }
-                    if (++count > 12) {
-                        break
-                    }
-                    Spacer(modifier = Modifier.size(5.dp))
-                    Row (
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp, 0.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(15F, TextUnitType.Sp).clamp(max = 15.dp),
-                            fontWeight = FontWeight.Bold,
-                            text = hourInfo.time.format(timeFormat).plus("     ")
-                        )
-                        Image(
-                            modifier = Modifier
-                                .padding(3.dp, 3.dp)
-                                .size(15.dp),
-                            painter = painterResource(R.mipmap.humidity),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
-                        )
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(15F, TextUnitType.Sp).clamp(max = 15.dp),
-                            text = String.format("%.0f", hourInfo.humidity).plus("%  ")
-                        )
-                        Image(
-                            modifier = Modifier
-                                .padding(3.dp, 3.dp)
-                                .size(20.dp),
-                            painter = painterResource(hourInfo.weatherIcon.iconId),
-                            contentDescription = hourInfo.weatherIcon.iconName
-                        )
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(15F, TextUnitType.Sp).clamp(max = 15.dp),
-                            fontWeight = FontWeight.Bold,
-                            text = String.format("%.1f", hourInfo.temperature).plus("°")
-                        )
-                    }
-                    Spacer(modifier = Modifier.size(5.dp))
-                }
-                Spacer(modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier
-                    .padding(20.dp, 0.dp)
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(Color(0xFF333333)))
+                Spacer(
+                    modifier = Modifier
+                        .padding(20.dp, 0.dp)
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0xFF333333))
+                )
                 Spacer(modifier = Modifier.size(20.dp))
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(20.dp, 0.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    content = {
-                        for (dayInfo in weatherInfo.forecastInfo) {
-                            Spacer(modifier = Modifier.size(5.dp))
-                            Row (
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    var count = 0
+                    val nowHour = LocalDateTime.now(Shared.HK_TIMEZONE.toZoneId())
+                    for (hourInfo in weatherInfo.hourlyWeatherInfo) {
+                        if (hourInfo.time.isBefore(nowHour)) {
+                            continue
+                        }
+                        if (++count > 12) {
+                            break
+                        }
+                        Spacer(modifier = Modifier.size(5.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            val small = ScreenSizeUtils.getScreenWidth(instance) < 450
+                            Text(
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colors.primary,
+                                fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
+                                fontWeight = FontWeight.Bold,
+                                text = hourInfo.time.format(timeFormat).plus(if (small) " " else "     ")
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    modifier = Modifier.width(35.dp),
-                                    textAlign = TextAlign.Start,
-                                    color = MaterialTheme.colors.primary,
-                                    fontSize = TextUnit(15F, TextUnitType.Sp).clamp(max = 15.dp),
-                                    fontWeight = FontWeight.Bold,
-                                    text = dayInfo.dayOfWeek.getDisplayName(
-                                        TextStyle.SHORT,
-                                        if (Registry.getInstance(instance).language == "en") Locale.ENGLISH else Locale.TRADITIONAL_CHINESE
-                                    )
-                                )
+                                val size = if (small) 10 else 15
                                 Image(
                                     modifier = Modifier
                                         .padding(1.dp, 1.dp)
-                                        .size(11.dp),
+                                        .size(size.dp),
                                     painter = painterResource(R.mipmap.humidity),
                                     contentDescription = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
                                 )
                                 Text(
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colors.primary,
-                                    fontSize = TextUnit(10F, TextUnitType.Sp).clamp(max = 10.dp),
-                                    text = String.format(
-                                        "%.0f",
-                                        (dayInfo.minRelativeHumidity + dayInfo.maxRelativeHumidity) / 2F
-                                    ).plus("%")
-                                )
-                                Image(
-                                    modifier = Modifier
-                                        .padding(1.dp, 1.dp)
-                                        .size(11.dp),
-                                    painter = painterResource(R.mipmap.umbrella),
-                                    contentDescription = if (Registry.getInstance(instance).language == "en") "Chance of Rain" else "降雨概率"
-                                )
-                                Text(
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colors.primary,
-                                    fontSize = TextUnit(10F, TextUnitType.Sp).clamp(max = 10.dp),
-                                    text = if (dayInfo.chanceOfRain >= 0) String.format("%.0f", dayInfo.chanceOfRain).plus("%") else "??%"
-                                )
-                                Image(
-                                    modifier = Modifier
-                                        .padding(1.dp, 1.dp)
-                                        .size(20.dp),
-                                    painter = painterResource(dayInfo.weatherIcon.iconId),
-                                    contentDescription = dayInfo.weatherIcon.iconName
-                                )
-                                Text(
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colors.primary,
-                                    fontSize = TextUnit(15F, TextUnitType.Sp).clamp(max = 15.dp),
-                                    fontWeight = FontWeight.Bold,
-                                    text = String.format("%.0f", dayInfo.lowestTemperature).plus("-").plus(String.format("%.0f", dayInfo.highestTemperature)).plus("°")
+                                    fontSize = TextUnit(size - 1F, TextUnitType.Sp).clamp(max = (size - 1).dp),
+                                    text = String.format("%.0f", hourInfo.humidity).plus("%").plus(if (small) " " else "  ")
                                 )
                             }
-                            Spacer(modifier = Modifier.size(5.dp))
+                            Image(
+                                modifier = Modifier
+                                    .padding(1.dp, 1.dp)
+                                    .size(20.dp),
+                                painter = painterResource(hourInfo.weatherIcon.iconId),
+                                contentDescription = hourInfo.weatherIcon.iconName
+                            )
+                            Text(
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colors.primary,
+                                fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
+                                fontWeight = FontWeight.Bold,
+                                text = String.format("%.1f", hourInfo.temperature).plus("°")
+                            )
                         }
+                        Spacer(modifier = Modifier.size(5.dp))
                     }
+                }
+                Spacer(modifier = Modifier.size(20.dp))
+                Spacer(
+                    modifier = Modifier
+                        .padding(20.dp, 0.dp)
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0xFF333333))
                 )
+                Spacer(modifier = Modifier.size(20.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp, 0.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    for (dayInfo in weatherInfo.forecastInfo) {
+                        Spacer(modifier = Modifier.size(5.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                modifier = Modifier.width(30.dp),
+                                textAlign = TextAlign.Start,
+                                color = MaterialTheme.colors.primary,
+                                fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
+                                fontWeight = FontWeight.Bold,
+                                text = dayInfo.dayOfWeek.getDisplayName(
+                                    TextStyle.SHORT,
+                                    if (Registry.getInstance(instance).language == "en") Locale.ENGLISH else Locale.TRADITIONAL_CHINESE
+                                )
+                            )
+                            Image(
+                                modifier = Modifier
+                                    .padding(1.dp, 1.dp)
+                                    .size(10.dp),
+                                painter = painterResource(R.mipmap.humidity),
+                                contentDescription = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
+                            )
+                            Text(
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colors.primary,
+                                fontSize = TextUnit(9F, TextUnitType.Sp).clamp(max = 9.dp),
+                                text = String.format(
+                                    "%.0f",
+                                    (dayInfo.minRelativeHumidity + dayInfo.maxRelativeHumidity) / 2F
+                                ).plus("%")
+                            )
+                            Image(
+                                modifier = Modifier
+                                    .padding(1.dp, 1.dp)
+                                    .size(10.dp),
+                                painter = painterResource(R.mipmap.umbrella),
+                                contentDescription = if (Registry.getInstance(instance).language == "en") "Chance of Rain" else "降雨概率"
+                            )
+                            Text(
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colors.primary,
+                                fontSize = TextUnit(9F, TextUnitType.Sp).clamp(max = 9.dp),
+                                text = if (dayInfo.chanceOfRain >= 0) String.format(
+                                    "%.0f",
+                                    dayInfo.chanceOfRain
+                                ).plus("%") else "??%"
+                            )
+                            Image(
+                                modifier = Modifier
+                                    .padding(1.dp, 1.dp)
+                                    .size(20.dp),
+                                painter = painterResource(dayInfo.weatherIcon.iconId),
+                                contentDescription = dayInfo.weatherIcon.iconName
+                            )
+                            Text(
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colors.primary,
+                                fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
+                                fontWeight = FontWeight.Bold,
+                                text = String.format("%.0f", dayInfo.lowestTemperature).plus("-")
+                                    .plus(String.format("%.0f", dayInfo.highestTemperature))
+                                    .plus("°")
+                            )
+                        }
+                        Spacer(modifier = Modifier.size(5.dp))
+                    }
+                }
                 Spacer(modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier
                     .padding(20.dp, 0.dp)
@@ -922,10 +941,9 @@ fun LanguageButton(instance: TitleActivity) {
     Button(
         onClick = {
             Registry.getInstance(instance).setLanguage(if (Registry.getInstance(instance).language == "en") "zh" else "en", instance)
-            Shared.currentWeatherInfoLastUpdated = 0
-            Shared.currentWarningsLastUpdated = 0
-            Shared.currentTipsLastUpdated = 0
-            Shared.currentWeatherInfo = null
+            Shared.currentWeatherInfo.reset()
+            Shared.currentWarnings.reset()
+            Shared.currentTips.reset()
             instance.startActivity(Intent(instance, TitleActivity::class.java))
             instance.finishAffinity()
         },
@@ -952,16 +970,13 @@ fun LanguageButton(instance: TitleActivity) {
 fun UpdateTilesButton(instance: TitleActivity) {
     Button(
         onClick = {
-            Shared.currentWeatherInfoLastUpdated = 0
-            Shared.currentWarningsLastUpdated = 0
-            Shared.currentTipsLastUpdated = 0
-            Shared.currentWeatherInfo = null
-            Registry.getInstance(instance).updateTileService(instance)
+            Shared.currentWeatherInfo.reset()
+            Shared.currentWarnings.reset()
+            Shared.currentTips.reset()
+            Registry.getInstance(instance).updateTileServices(instance)
             instance.runOnUiThread {
                 Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Refreshing all tiles" else "正在更新所有資訊方塊", Toast.LENGTH_SHORT).show()
             }
-            instance.startActivity(Intent(instance, TitleActivity::class.java))
-            instance.finishAffinity()
         },
         modifier = Modifier
             .width(StringUtils.scaledSize(35, instance).dp)

@@ -8,6 +8,9 @@ import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.StateBuilders
 import androidx.wear.protolayout.TimelineBuilders
+import androidx.wear.protolayout.expression.AppDataKey
+import androidx.wear.protolayout.expression.DynamicBuilders
+import androidx.wear.protolayout.expression.DynamicDataBuilders
 import androidx.wear.tiles.EventBuilders
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
@@ -18,42 +21,35 @@ import com.loohp.hkweatherwarnings.MainActivity
 import com.loohp.hkweatherwarnings.R
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
-import com.loohp.hkweatherwarnings.shared.Shared.Companion.DEFAULT_REFRESH_INTERVAL
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.FRESHNESS_TIME
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWarnings
-import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWarningsLastUpdated
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
 import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
-import java.util.concurrent.TimeUnit
 import kotlin.streams.toList
 
 private const val RESOURCES_VERSION = "0"
-private var currentUpdatedTime: Long = 0
+private var tileUpdatedTime: Long = 0
 private var state = false
 
 class WeatherWarningsTile : TileService() {
 
     override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
-        if (System.currentTimeMillis() - currentUpdatedTime > DEFAULT_REFRESH_INTERVAL) {
-            Registry.getInstance(this).updateTileService(this)
+        if (tileUpdatedTime < currentWarnings.getLastSuccessfulUpdateTime()) {
+            getUpdater(this).requestUpdate(javaClass)
         }
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
         return Futures.submit(Callable {
-            var warnings = Registry.getInstance(this).getActiveWarnings(this).get(9, TimeUnit.SECONDS)
-            val updateSuccess = if (warnings == null) {
-                warnings = currentWarnings
-                false
-            } else {
-                currentWarnings = warnings
-                currentUpdatedTime = System.currentTimeMillis()
-                currentWarningsLastUpdated = currentUpdatedTime
-                true
-            }
+            val isReload = requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicBuilders.DynamicString>("reload"))
+            val warnings = currentWarnings.getLatestValue(this, ForkJoinPool.commonPool(), isReload).get()
+            val updateSuccess = currentWarnings.isLastUpdateSuccess()
+            val updateTime = currentWarnings.getLastSuccessfulUpdateTime()
+            tileUpdatedTime = System.currentTimeMillis()
 
             var element: LayoutElementBuilders.LayoutElement =
                 LayoutElementBuilders.Column.Builder()
@@ -87,7 +83,7 @@ class WeatherWarningsTile : TileService() {
                             .build()
                     )
                     .addContent(
-                        buildTitle(updateSuccess)
+                        buildTitle(updateTime, updateSuccess)
                     )
                     .addContent(
                         buildContent(warnings)
@@ -108,7 +104,7 @@ class WeatherWarningsTile : TileService() {
 
             TileBuilders.Tile.Builder()
                 .setResourcesVersion(RESOURCES_VERSION)
-                .setFreshnessIntervalMillis(DEFAULT_REFRESH_INTERVAL)
+                .setFreshnessIntervalMillis(FRESHNESS_TIME)
                 .setTileTimeline(
                     TimelineBuilders.Timeline.Builder().addTimelineEntry(
                         TimelineBuilders.TimelineEntry.Builder().setLayout(
@@ -142,9 +138,9 @@ class WeatherWarningsTile : TileService() {
         return Futures.immediateFuture(bundle.build())
     }
 
-    private fun buildTitle(updateSuccess: Boolean): LayoutElementBuilders.LayoutElement {
+    private fun buildTitle(updateTime: Long, updateSuccess: Boolean): LayoutElementBuilders.LayoutElement {
         var lastUpdateText = (if (Registry.getInstance(this).language == "en") "Updated: " else "更新時間: ").plus(
-            DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date()))
+            DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date(updateTime)))
         if (!updateSuccess) {
             lastUpdateText = lastUpdateText.plus(if (Registry.getInstance(this).language == "en") " (Update Failed)" else " (無法更新)")
         }
@@ -221,8 +217,16 @@ class WeatherWarningsTile : TileService() {
                                                 ModifiersBuilders.Clickable.Builder()
                                                     .setId("refresh")
                                                     .setOnClick(
-                                                        ActionBuilders.LoadAction.Builder().setRequestState(
-                                                            StateBuilders.State.Builder().build()).build()
+                                                        ActionBuilders.LoadAction.Builder()
+                                                            .setRequestState(
+                                                                StateBuilders.State.Builder()
+                                                                    .addKeyToValueMapping(
+                                                                        AppDataKey<DynamicBuilders.DynamicString>("reload"),
+                                                                        DynamicDataBuilders.DynamicDataValue.fromString("")
+                                                                    )
+                                                                    .build()
+                                                            )
+                                                            .build()
                                                     )
                                                     .build()
                                             )

@@ -23,21 +23,18 @@ import com.loohp.hkweatherwarnings.MainActivity
 import com.loohp.hkweatherwarnings.R
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
-import com.loohp.hkweatherwarnings.shared.Shared.Companion.DEFAULT_REFRESH_INTERVAL
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.FRESHNESS_TIME
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentTips
-import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentTipsLastUpdated
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.timeZone
 import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
-import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 
 private const val RESOURCES_VERSION = "0"
-private var currentUpdateSuccess: Boolean = false
-private var currentUpdatedTime: Long = 0
+private var tileUpdatedTime: Long = 0
 private var currentIndex: Int = 0
 private var state = false
 
@@ -45,30 +42,21 @@ private var state = false
 class WeatherTipsTile : TileService() {
 
     override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
-        if (System.currentTimeMillis() - currentUpdatedTime > DEFAULT_REFRESH_INTERVAL) {
-            Registry.getInstance(this).updateTileService(this)
+        if (tileUpdatedTime < currentTips.getLastSuccessfulUpdateTime()) {
+            getUpdater(this).requestUpdate(javaClass)
         }
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
         return Futures.submit(Callable {
-            val tips: List<Pair<String, Long>>
-            if (currentUpdateSuccess && requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicString>("next"))) {
-                tips = currentTips
+            if (requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicString>("next"))) {
                 currentIndex++
-            } else {
-                val newTips = Registry.getInstance(this).getWeatherTips(this).get(9, TimeUnit.SECONDS)
-                if (newTips == null) {
-                    tips = currentTips
-                    currentUpdateSuccess = false
-                } else {
-                    currentTips = newTips
-                    tips = newTips
-                    currentUpdateSuccess = true
-                }
-                currentUpdatedTime = System.currentTimeMillis()
-                currentTipsLastUpdated = currentUpdatedTime
             }
+            val isReload = requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicString>("reload"))
+            val tips = currentTips.getLatestValue(this, ForkJoinPool.commonPool(), isReload).get()
+            val updateSuccess = currentTips.isLastUpdateSuccess()
+            val updateTime = currentTips.getLastSuccessfulUpdateTime()
+            tileUpdatedTime = System.currentTimeMillis()
 
             val content = buildContent(tips)
             val elementBuilder = LayoutElementBuilders.Box.Builder()
@@ -128,7 +116,7 @@ class WeatherTipsTile : TileService() {
                                 .build()
                         )
                         .addContent(
-                            buildTitle(currentUpdateSuccess, currentUpdatedTime)
+                            buildTitle(updateSuccess, updateTime)
                         )
                         .addContent(
                             content[0]
@@ -153,7 +141,7 @@ class WeatherTipsTile : TileService() {
 
             TileBuilders.Tile.Builder()
                 .setResourcesVersion(RESOURCES_VERSION)
-                .setFreshnessIntervalMillis(DEFAULT_REFRESH_INTERVAL)
+                .setFreshnessIntervalMillis(FRESHNESS_TIME)
                 .setTileTimeline(
                     TimelineBuilders.Timeline.Builder().addTimelineEntry(
                         TimelineBuilders.TimelineEntry.Builder().setLayout(
@@ -257,8 +245,16 @@ class WeatherTipsTile : TileService() {
                                                 ModifiersBuilders.Clickable.Builder()
                                                     .setId("refresh")
                                                     .setOnClick(
-                                                        LoadAction.Builder().setRequestState(
-                                                            StateBuilders.State.Builder().build()).build()
+                                                        LoadAction.Builder()
+                                                            .setRequestState(
+                                                                StateBuilders.State.Builder()
+                                                                    .addKeyToValueMapping(
+                                                                        AppDataKey<DynamicString>("reload"),
+                                                                        DynamicDataBuilders.DynamicDataValue.fromString("")
+                                                                    )
+                                                                    .build()
+                                                            )
+                                                            .build()
                                                     )
                                                     .build()
                                             )

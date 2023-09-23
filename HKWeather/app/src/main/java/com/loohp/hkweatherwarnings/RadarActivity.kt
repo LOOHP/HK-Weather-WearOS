@@ -3,6 +3,9 @@ package com.loohp.hkweatherwarnings
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
@@ -11,13 +14,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -72,6 +74,22 @@ fun RadarElement(instance: RadarActivity) {
         var zoom by remember { mutableStateOf(false) }
         var showLegend by remember { mutableStateOf(false) }
         val ready: MutableMap<Int, Boolean> = remember { mutableStateMapOf() }
+
+        var currentProgress by remember { mutableStateOf(0F) }
+        val progressAnimation by animateFloatAsState(
+            targetValue = currentProgress,
+            animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+            label = "LoadingProgressAnimation"
+        )
+        LaunchedEffect (Unit) {
+            while (true) {
+                currentProgress = ready.values.sumOf { (if (it) 1 else 0).toInt() } / 20F
+                if (currentProgress >= 0.999999F) {
+                    break
+                }
+                delay(200)
+            }
+        }
 
         LaunchedEffect (Unit) {
             focusRequester.requestFocus()
@@ -159,6 +177,16 @@ fun RadarElement(instance: RadarActivity) {
                             model = "https://pda.weather.gov.hk/locspc/android_data/radar/rad_064_320/${index}_64km.png",
                             contentDescription = if (Registry.getInstance(instance).language == "en") "Radar Image $index / 20" else "雷達圖像 $index / 20",
                             alpha = if (currentPosition == index) 1F else 0F
+                        )
+                    }
+                    if (currentProgress < 0.999999F) {
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth(),
+                            color = Color(0xFFF9DE09),
+                            trackColor = Color(0xFF797979),
+                            progress = progressAnimation
                         )
                     }
                 }

@@ -11,6 +11,9 @@ import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.StateBuilders
 import androidx.wear.protolayout.TimelineBuilders
+import androidx.wear.protolayout.expression.AppDataKey
+import androidx.wear.protolayout.expression.DynamicBuilders
+import androidx.wear.protolayout.expression.DynamicDataBuilders
 import androidx.wear.tiles.EventBuilders
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
@@ -21,10 +24,8 @@ import com.loohp.hkweatherwarnings.MainActivity
 import com.loohp.hkweatherwarnings.R
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
-import com.loohp.hkweatherwarnings.shared.Shared.Companion.DEFAULT_REFRESH_INTERVAL
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.FRESHNESS_TIME
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWeatherInfo
-import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWeatherInfoLastUpdated
-import com.loohp.hkweatherwarnings.utils.LocationUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.clampSp
@@ -39,31 +40,24 @@ import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
 
 private const val RESOURCES_VERSION = "0"
-private var currentUpdatedTime: Long = 0
+private var tileUpdatedTime: Long = 0
 private var state = false
 
 class WeatherOverviewTile : TileService() {
 
     override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
-        if (System.currentTimeMillis() - currentUpdatedTime > DEFAULT_REFRESH_INTERVAL) {
-            Registry.getInstance(this).updateTileService(this)
+        if (tileUpdatedTime < currentWeatherInfo.getLastSuccessfulUpdateTime()) {
+            getUpdater(this).requestUpdate(javaClass)
         }
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
         return Futures.submit(Callable {
-            val locationType = Registry.getInstance(this).location
-            val location = if (locationType.first == "GPS") LocationUtils.getGPSLocation(this).get() else LocationUtils.LocationResult.ofNullable(locationType.second)
-            var weatherInfo = Registry.getInstance(this).getCurrentWeatherInfo(this, location).get()
-            val updateSuccess = if (weatherInfo == null) {
-                weatherInfo = currentWeatherInfo
-                false
-            } else {
-                currentWeatherInfo = weatherInfo
-                currentUpdatedTime = System.currentTimeMillis()
-                currentWeatherInfoLastUpdated = currentUpdatedTime
-                true
-            }
+            val isReload = requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicBuilders.DynamicString>("reload"))
+            val weatherInfo = currentWeatherInfo.getLatestValue(this, ForkJoinPool.commonPool(), isReload).get()
+            val updateSuccess = currentWeatherInfo.isLastUpdateSuccess()
+            val updateTime = Shared.currentWarnings.getLastSuccessfulUpdateTime()
+            tileUpdatedTime = System.currentTimeMillis()
 
             var element: LayoutElementBuilders.LayoutElement =
                 LayoutElementBuilders.Column.Builder()
@@ -89,7 +83,7 @@ class WeatherOverviewTile : TileService() {
                             .build()
                     )
                     .addContent(
-                        buildContent(updateSuccess, weatherInfo)
+                        buildContent(updateTime, updateSuccess, weatherInfo)
                     )
                     .build()
 
@@ -107,7 +101,7 @@ class WeatherOverviewTile : TileService() {
 
             TileBuilders.Tile.Builder()
                 .setResourcesVersion(RESOURCES_VERSION)
-                .setFreshnessIntervalMillis(DEFAULT_REFRESH_INTERVAL)
+                .setFreshnessIntervalMillis(FRESHNESS_TIME)
                 .setTileTimeline(
                     TimelineBuilders.Timeline.Builder().addTimelineEntry(
                         TimelineBuilders.TimelineEntry.Builder().setLayout(
@@ -183,9 +177,9 @@ class WeatherOverviewTile : TileService() {
         return Futures.immediateFuture(bundle.build())
     }
 
-    private fun buildTitle(updateSuccess: Boolean, weatherInfo: CurrentWeatherInfo?): LayoutElementBuilders.LayoutElement {
+    private fun buildTitle(updateTime: Long, updateSuccess: Boolean, weatherInfo: CurrentWeatherInfo?): LayoutElementBuilders.LayoutElement {
         var lastUpdateText = (if (Registry.getInstance(this).language == "en") "Updated: " else "更新時間: ").plus(
-            DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date()))
+            DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date(updateTime)))
         if (!updateSuccess) {
             lastUpdateText = lastUpdateText.plus(if (Registry.getInstance(this).language == "en") " (Update Failed)" else " (無法更新)")
         }
@@ -309,8 +303,16 @@ class WeatherOverviewTile : TileService() {
                                                 ModifiersBuilders.Clickable.Builder()
                                                     .setId("refresh")
                                                     .setOnClick(
-                                                        ActionBuilders.LoadAction.Builder().setRequestState(
-                                                            StateBuilders.State.Builder().build()).build()
+                                                        ActionBuilders.LoadAction.Builder()
+                                                            .setRequestState(
+                                                                StateBuilders.State.Builder()
+                                                                    .addKeyToValueMapping(
+                                                                        AppDataKey<DynamicBuilders.DynamicString>("reload"),
+                                                                        DynamicDataBuilders.DynamicDataValue.fromString("")
+                                                                    )
+                                                                    .build()
+                                                            )
+                                                            .build()
                                                     )
                                                     .build()
                                             )
@@ -326,7 +328,7 @@ class WeatherOverviewTile : TileService() {
             .build()
     }
 
-    private fun buildContent(updateSuccess: Boolean, weatherInfo: CurrentWeatherInfo?): LayoutElementBuilders.LayoutElement {
+    private fun buildContent(updateTime: Long, updateSuccess: Boolean, weatherInfo: CurrentWeatherInfo?): LayoutElementBuilders.LayoutElement {
         return if (weatherInfo == null) {
             LayoutElementBuilders.Column.Builder()
                 .setWidth(DimensionBuilders.expand())
@@ -344,7 +346,7 @@ class WeatherOverviewTile : TileService() {
                         ).build()
                 )
                 .addContent(
-                    buildTitle(updateSuccess, null)
+                    buildTitle(updateTime, updateSuccess, null)
                 )
                 .addContent(
                     LayoutElementBuilders.Box.Builder()
@@ -408,7 +410,7 @@ class WeatherOverviewTile : TileService() {
                                 .build()
                         )
                         .addContent(
-                            buildTitle(updateSuccess, weatherInfo)
+                            buildTitle(updateTime, updateSuccess, weatherInfo)
                         )
                         .build()
                 )

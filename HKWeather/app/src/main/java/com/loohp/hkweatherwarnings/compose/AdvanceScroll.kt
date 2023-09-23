@@ -1,5 +1,6 @@
 package com.loohp.hkweatherwarnings.compose
 
+import android.content.res.Configuration
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateFloatAsState
@@ -42,37 +43,53 @@ fun Modifier.scrollbar(
 
         val contentOffset = state.value
         val viewPortLength = if (direction == Orientation.Vertical) size.height else size.width
-        val contentLength = (viewPortLength + state.maxValue).coerceAtLeast(0.001f)  // To prevent divide by zero error
-        val indicatorLength = (viewPortLength / contentLength) * 60F
+        val contentLength = (viewPortLength + state.maxValue).coerceAtLeast(0.001f)
+        val indicatorLength = viewPortLength / contentLength
         val indicatorThicknessPx = indicatorThickness.toPx()
         val halfIndicatorThicknessPx = (indicatorThickness.value / 2F).dp.toPx()
-        val scrollOffsetViewPort = contentOffset / contentLength * 60F
+        val scrollOffsetViewPort = contentOffset / contentLength
 
-        val topLeft = Offset(halfIndicatorThicknessPx, halfIndicatorThicknessPx)
-        val size = Size(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, configuration.screenHeightDp.dp.toPx() - indicatorThicknessPx)
-        val style = Stroke(width = indicatorThicknessPx, cap = StrokeCap.Round)
-
-        drawArc(
-            startAngle = -30F,
-            sweepAngle = 60F,
-            useCenter = false,
-            color = Color.DarkGray,
-            topLeft = topLeft,
-            size = size,
-            alpha = alpha,
-            style = style
-        )
-
-        drawArc(
-            startAngle = -30F + scrollOffsetViewPort,
-            sweepAngle = indicatorLength,
-            useCenter = false,
-            color = indicatorColor,
-            topLeft = topLeft,
-            size = size,
-            alpha = alpha,
-            style = style
-        )
+        if (configuration.screenLayout and Configuration.SCREENLAYOUT_ROUND_MASK == Configuration.SCREENLAYOUT_ROUND_YES) {
+            val topLeft = Offset(halfIndicatorThicknessPx, halfIndicatorThicknessPx)
+            val size = Size(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, configuration.screenHeightDp.dp.toPx() - indicatorThicknessPx)
+            val style = Stroke(width = indicatorThicknessPx, cap = StrokeCap.Round)
+            drawArc(
+                startAngle = -30F,
+                sweepAngle = 60F,
+                useCenter = false,
+                color = Color.DarkGray,
+                topLeft = topLeft,
+                size = size,
+                alpha = alpha,
+                style = style
+            )
+            drawArc(
+                startAngle = -30F + scrollOffsetViewPort * 60F,
+                sweepAngle = indicatorLength * 60F,
+                useCenter = false,
+                color = indicatorColor,
+                topLeft = topLeft,
+                size = size,
+                alpha = alpha,
+                style = style
+            )
+        } else {
+            val cornerRadius = CornerRadius(indicatorThicknessPx / 2F)
+            val topLeft = Offset(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, viewPortLength * 0.125F)
+            val size = Size(indicatorThicknessPx, viewPortLength * 0.75F)
+            drawRoundRect(
+                color = Color.DarkGray,
+                topLeft = topLeft,
+                size = size,
+                cornerRadius = cornerRadius
+            )
+            drawRoundRect(
+                color = indicatorColor,
+                topLeft = Offset(topLeft.x, topLeft.y + scrollOffsetViewPort * size.height),
+                size = Size(size.width, size.height * indicatorLength),
+                cornerRadius = cornerRadius
+            )
+        }
     }
 }
 
