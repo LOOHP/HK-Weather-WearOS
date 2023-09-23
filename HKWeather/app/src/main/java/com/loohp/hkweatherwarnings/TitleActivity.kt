@@ -91,16 +91,24 @@ class TitleActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MainElements(this)
+            var today by remember { mutableStateOf(LocalDate.now(Shared.HK_TIMEZONE.toZoneId())) }
+            LaunchedEffect (Unit) {
+                while (true) {
+                    val newNow = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
+                    if (newNow != today) {
+                        today = newNow
+                    }
+                    delay(500)
+                }
+            }
+            MainElements(today, this)
         }
     }
 
 }
 
 @Composable
-fun MainElements(instance: TitleActivity) {
-    val today = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
-
+fun MainElements(today: LocalDate, instance: TitleActivity) {
     val weatherInfo: CurrentWeatherInfo? by remember { Shared.currentWeatherInfo.getState(instance, ForkJoinPool.commonPool()) }
     val weatherWarnings: Set<WeatherWarningsType> by remember { Shared.currentWarnings.getState(instance, ForkJoinPool.commonPool()) }
     val weatherTips: List<Pair<String, Long>> by remember { Shared.currentTips.getState(instance, ForkJoinPool.commonPool()) }
