@@ -1,6 +1,9 @@
 package com.loohp.hkweatherwarnings.weather;
 
+import com.loohp.hkweatherwarnings.shared.Shared;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
@@ -56,6 +59,32 @@ public class CurrentWeatherInfo extends WeatherInfo {
 
     public LocalTime getSunsetTime() {
         return sunsetTime;
+    }
+
+    public HourlyWeatherInfo getCurrentHourlyWeatherInfo() {
+        LocalDateTime now = LocalDateTime.now(Shared.Companion.getHK_TIMEZONE().toZoneId());
+        LocalDateTime nowHourStart = now.withMinute(0);
+        LocalDateTime nowHourEnd = now.plusHours(1);
+        return hourlyWeatherInfo.stream().filter(h -> {
+            LocalDateTime time = h.getTime();
+            return (nowHourStart.isEqual(time) || nowHourStart.isBefore(time)) && nowHourEnd.isAfter(time);
+        }).findFirst().orElse(null);
+    }
+
+    public float getWindDirection() {
+        HourlyWeatherInfo hourly = getCurrentHourlyWeatherInfo();
+        if (hourly == null) {
+            return -1F;
+        }
+        return hourly.getWindDirection();
+    }
+
+    public float getWindSpeed() {
+        HourlyWeatherInfo hourly = getCurrentHourlyWeatherInfo();
+        if (hourly == null) {
+            return -1F;
+        }
+        return hourly.getWindSpeed();
     }
 
     public List<WeatherInfo> getForecastInfo() {

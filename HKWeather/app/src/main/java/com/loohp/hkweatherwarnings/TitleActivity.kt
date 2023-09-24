@@ -70,6 +70,7 @@ import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.clamp
 import com.loohp.hkweatherwarnings.utils.sp
 import com.loohp.hkweatherwarnings.utils.timeZone
+import com.loohp.hkweatherwarnings.utils.toCardinalDirectionString
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
 import com.loohp.hkweatherwarnings.weather.LunarDate
 import com.loohp.hkweatherwarnings.weather.UVIndexType
@@ -424,40 +425,67 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
             ) {
                 val today = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
                 if (Registry.getInstance(instance).language == "en") {
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold,
-                        text = today.format(
-                            DateTimeFormatter.ofPattern(
-                                "dd MMM yyyy (EEEE)",
-                                Locale.ENGLISH
-                            )
-                        )
-                    )
-                } else {
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold,
-                        text = today.format(
-                            DateTimeFormatter.ofPattern(
-                                "yyyy年 MM月 dd日 (EEEE)",
-                                Locale.TRADITIONAL_CHINESE
-                            )
-                        )
-                    )
-                    if (lunarDate != null) {
-                        Spacer(modifier = Modifier.size(2.dp))
-                        Text(
+                    Box (
+                        modifier = Modifier.fillMaxWidth(0.9F),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AutoResizeText(
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(13F, TextUnitType.Sp),
+                            fontSizeRange = FontSizeRange(
+                                min = TextUnit(1F, TextUnitType.Sp),
+                                max = TextUnit(13F, TextUnitType.Sp),
+                            ),
+                            maxLines = 1,
                             fontWeight = FontWeight.Bold,
-                            text = lunarDate.toString()
+                            text = today.format(
+                                DateTimeFormatter.ofPattern(
+                                    "dd MMM yyyy (EEEE)",
+                                    Locale.ENGLISH
+                                )
+                            )
                         )
+                    }
+                } else {
+                    Box (
+                        modifier = Modifier.fillMaxWidth(0.9F),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AutoResizeText(
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colors.primary,
+                            fontSizeRange = FontSizeRange(
+                                min = TextUnit(1F, TextUnitType.Sp),
+                                max = TextUnit(13F, TextUnitType.Sp),
+                            ),
+                            maxLines = 1,
+                            fontWeight = FontWeight.Bold,
+                            text = today.format(
+                                DateTimeFormatter.ofPattern(
+                                    "yyyy年 MM月 dd日 (EEEE)",
+                                    Locale.TRADITIONAL_CHINESE
+                                )
+                            )
+                        )
+                    }
+                    if (lunarDate != null) {
+                        Spacer(modifier = Modifier.size(2.dp))
+                        Box (
+                            modifier = Modifier.fillMaxWidth(0.9F),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AutoResizeText(
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colors.primary,
+                                fontSizeRange = FontSizeRange(
+                                    min = TextUnit(1F, TextUnitType.Sp),
+                                    max = TextUnit(13F, TextUnitType.Sp),
+                                ),
+                                maxLines = 1,
+                                fontWeight = FontWeight.Bold,
+                                text = lunarDate.toString()
+                            )
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.size(2.dp))
@@ -641,6 +669,49 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                     fontWeight = FontWeight.Bold,
                     text = String.format("%.0f", weatherInfo.currentHumidity).plus("%")
                 )
+                Spacer(modifier = Modifier.size(10.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        modifier = Modifier
+                            .padding(3.dp, 3.dp)
+                            .size(StringUtils.scaledSize(14, instance).dp),
+                        painter = painterResource(R.mipmap.wind),
+                        contentDescription = if (Registry.getInstance(instance).language == "en") "Wind" else "風向風速"
+                    )
+                    Text(
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colors.primary,
+                        fontSize = TextUnit(13F, TextUnitType.Sp),
+                        text = if (Registry.getInstance(instance).language == "en") "Wind" else "風向風速"
+                    )
+                }
+                val gustText = if (weatherInfo.windSpeed < 0F) {
+                    "-"
+                } else {
+                    weatherInfo.windDirection.toCardinalDirectionString(Registry.getInstance(instance).language).plus(" ")
+                        .plus(String.format("%.0f", weatherInfo.windSpeed)).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
+                }
+                Box (
+                    modifier = Modifier.fillMaxWidth(0.9F),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AutoResizeText(
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFFFFFFFF),
+                        fontSizeRange = FontSizeRange(
+                            min = TextUnit(1F, TextUnitType.Sp),
+                            max = TextUnit(25F, TextUnitType.Sp)
+                        ),
+                        maxLines = 1,
+                        fontWeight = FontWeight.Bold,
+                        text = gustText
+                    )
+                }
                 Spacer(modifier = Modifier.size(10.dp))
                 Row(
                     modifier = Modifier
