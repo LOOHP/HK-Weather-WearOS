@@ -26,4 +26,7 @@ This app contains information that is copied or extracted from data made availab
 ## Flaticon Attribution
 <a href="https://www.flaticon.com/free-icons/sunset" title="sunset icons">Sunset icons created by Icon Hubs - Flaticon</a><br>
 <a href="https://www.flaticon.com/free-icons/uv-index" title="uv index icons">Uv index icons created by justicon - Flaticon</a><br>
-<a href="https://www.flaticon.com/free-icons/humidity" title="humidity icons">Humidity icons created by Pixel perfect - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/humidity" title="humidity icons">Humidity icons created by Pixel perfect - Flaticon</a></br>
+<a href="https://www.flaticon.com/free-icons/wind" title="wind icons">Wind icons created by Freepik - Flaticon</a><br>
+<a href="https://www.flaticon.com/free-icons/moon" title="moon icons">Moon icons created by Pixel perfect - Flaticon</a><br>
+<a href="https://www.flaticon.com/free-icons/moonrise" title="moonrise icons">Moonrise icons created by pancaza - Flaticon</a>
