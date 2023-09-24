@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -57,6 +58,7 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
+import coil.compose.AsyncImage
 import com.loohp.hkweatherwarnings.compose.AutoResizeText
 import com.loohp.hkweatherwarnings.compose.FontSizeRange
 import com.loohp.hkweatherwarnings.compose.verticalScrollWithScrollbar
@@ -68,9 +70,9 @@ import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.clamp
+import com.loohp.hkweatherwarnings.utils.dp
 import com.loohp.hkweatherwarnings.utils.sp
 import com.loohp.hkweatherwarnings.utils.timeZone
-import com.loohp.hkweatherwarnings.utils.toCardinalDirectionString
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
 import com.loohp.hkweatherwarnings.weather.LunarDate
 import com.loohp.hkweatherwarnings.weather.UVIndexType
@@ -690,11 +692,54 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                         text = if (Registry.getInstance(instance).language == "en") "Wind" else "風向風速"
                     )
                 }
+                val windText = if (weatherInfo.windSpeed < 0F) {
+                    "-"
+                } else {
+                    weatherInfo.windDirection.plus(" ")
+                        .plus(String.format("%.0f", weatherInfo.windSpeed)).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
+                }
+                Box (
+                    modifier = Modifier.fillMaxWidth(0.9F),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AutoResizeText(
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFFFFFFFF),
+                        fontSizeRange = FontSizeRange(
+                            min = TextUnit(1F, TextUnitType.Sp),
+                            max = TextUnit(25F, TextUnitType.Sp)
+                        ),
+                        maxLines = 1,
+                        fontWeight = FontWeight.Bold,
+                        text = windText
+                    )
+                }
+                Spacer(modifier = Modifier.size(10.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        modifier = Modifier
+                            .padding(3.dp, 3.dp)
+                            .size(StringUtils.scaledSize(14, instance).dp),
+                        painter = painterResource(R.mipmap.wind),
+                        contentDescription = if (Registry.getInstance(instance).language == "en") "Gust" else "陣風",
+                        colorFilter = ColorFilter.tint(Color(0xFF26D4FF))
+                    )
+                    Text(
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colors.primary,
+                        fontSize = TextUnit(13F, TextUnitType.Sp),
+                        text = if (Registry.getInstance(instance).language == "en") "Gust" else "陣風"
+                    )
+                }
                 val gustText = if (weatherInfo.windSpeed < 0F) {
                     "-"
                 } else {
-                    weatherInfo.windDirection.toCardinalDirectionString(Registry.getInstance(instance).language).plus(" ")
-                        .plus(String.format("%.0f", weatherInfo.windSpeed)).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
+                    String.format("%.0f", weatherInfo.gust).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
                 }
                 Box (
                     modifier = Modifier.fillMaxWidth(0.9F),
@@ -768,6 +813,100 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                     fontWeight = FontWeight.Bold,
                     text = weatherInfo.sunsetTime.format(timeFormat)
                 )
+                Spacer(modifier = Modifier.size(10.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        modifier = Modifier
+                            .padding(3.dp, 3.dp)
+                            .size(StringUtils.scaledSize(14, instance).dp),
+                        painter = painterResource(R.mipmap.moon),
+                        contentDescription = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
+                    )
+                    Text(
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colors.primary,
+                        fontSize = TextUnit(13F, TextUnitType.Sp),
+                        text = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
+                    )
+                }
+                AsyncImage(
+                    modifier = Modifier.padding(8.sp.dp).size(25.sp.dp),
+                    model = "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime()),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
+                )
+                Spacer(modifier = Modifier.size(10.dp))
+                val moonrise = @Composable {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            modifier = Modifier
+                                .padding(3.dp, 3.dp)
+                                .size(StringUtils.scaledSize(14, instance).dp),
+                            painter = painterResource(R.mipmap.moonrise),
+                            contentDescription = if (Registry.getInstance(instance).language == "en") "Moonrise" else "月出"
+                        )
+                        Text(
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colors.primary,
+                            fontSize = TextUnit(13F, TextUnitType.Sp),
+                            text = if (Registry.getInstance(instance).language == "en") "Moonrise" else "月出"
+                        )
+                    }
+                    Text(
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFFDFDFDF),
+                        fontSize = TextUnit(25F, TextUnitType.Sp),
+                        fontWeight = FontWeight.Bold,
+                        text = if (weatherInfo.moonriseTime == null) "-" else weatherInfo.moonriseTime.format(timeFormat)
+                    )
+                }
+                val moonset = @Composable {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            modifier = Modifier
+                                .padding(3.dp, 3.dp)
+                                .size(StringUtils.scaledSize(14, instance).dp),
+                            painter = painterResource(R.mipmap.moonset),
+                            contentDescription = if (Registry.getInstance(instance).language == "en") "Moonset" else "月落"
+                        )
+                        Text(
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colors.primary,
+                            fontSize = TextUnit(13F, TextUnitType.Sp),
+                            text = if (Registry.getInstance(instance).language == "en") "Moonset" else "月落"
+                        )
+                    }
+                    Text(
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFFBEBEBE),
+                        fontSize = TextUnit(25F, TextUnitType.Sp),
+                        fontWeight = FontWeight.Bold,
+                        text = if (weatherInfo.moonsetTime == null) "-" else weatherInfo.moonsetTime.format(timeFormat)
+                    )
+                }
+                if (weatherInfo.moonriseTime == null || weatherInfo.moonsetTime == null || weatherInfo.moonriseTime.isBefore(weatherInfo.moonsetTime)) {
+                    moonrise()
+                    Spacer(modifier = Modifier.size(10.dp))
+                    moonset()
+                } else {
+                    moonset()
+                    Spacer(modifier = Modifier.size(10.dp))
+                    moonrise()
+                }
                 Spacer(modifier = Modifier.size(10.dp))
                 Button(
                     onClick = {

@@ -236,7 +236,7 @@ fun MainElements(instance: ChangeLocationActivity) {
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
                             fontSize = TextUnit(16F, TextUnitType.Sp).clamp(max = 16.dp),
-                            text = if (Registry.getInstance(instance).language == "en") "Reset" else "重置"
+                            text = if (Registry.getInstance(instance).language == "en") "Hong Kong" else "本港"
                         )
                     }
                 )
@@ -277,12 +277,12 @@ fun MainElements(instance: ChangeLocationActivity) {
                         }
                     }
                 )
-                val stations = Registry.getInstance(instance).weatherStations.sortedBy { it.optJSONObject("geometry")!!.optJSONArray("coordinates")!!.optDouble(1) }
+                val stations = Registry.getInstance(instance).weatherStations.sortedBy { -it.optJSONObject("geometry")!!.optJSONArray("coordinates")!!.optDouble(1) }
                 for (station in stations) {
                     val properties = station.optJSONObject("properties")!!
-                    val name = properties.optString("weather_station_".plus(if (Registry.getInstance(instance).language == "en") "en" else "tc"))
+                    val name = properties.optString("AutomaticWeatherStation_".plus(if (Registry.getInstance(instance).language == "en") "en" else "uc"))
                     val coordinates = station.optJSONObject("geometry")!!.optJSONArray("coordinates")!!
-                    val location = LocationResult.fromLatLng(coordinates.optDouble(0), coordinates.optDouble(1)).location
+                    val location = LocationResult.fromLatLng(coordinates.optDouble(1), coordinates.optDouble(0)).location
                     Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
                     Button(
                         onClick = {

@@ -68,6 +68,8 @@ public class Registry {
     private static JSONObject PREFERENCES = null;
 
     private static List<JSONObject> WEATHER_STATIONS = null;
+    private static List<JSONObject> HUMIDITY_STATIONS = null;
+    private static List<JSONObject> WIND_STATIONS = null;
     private static JSONObject FORECAST_STATIONS = null;
 
     private Registry(Context context) {
@@ -225,8 +227,20 @@ public class Registry {
             return;
         }
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(context.getResources().openRawResource(R.raw.current_weather_report_weather_station), StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(context.getResources().openRawResource(R.raw.latest_1min_temperature), StandardCharsets.UTF_8))) {
             WEATHER_STATIONS = JsonUtils.toList(new JSONObject(reader.lines().collect(Collectors.joining())).optJSONArray("features"), JSONObject.class);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(context.getResources().openRawResource(R.raw.latest_1min_humidity), StandardCharsets.UTF_8))) {
+            HUMIDITY_STATIONS = JsonUtils.toList(new JSONObject(reader.lines().collect(Collectors.joining())).optJSONArray("features"), JSONObject.class);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(context.getResources().openRawResource(R.raw.latest_10min_wind), StandardCharsets.UTF_8))) {
+            WIND_STATIONS = JsonUtils.toList(new JSONObject(reader.lines().collect(Collectors.joining())).optJSONArray("features"), JSONObject.class);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
@@ -297,13 +311,14 @@ public class Registry {
                 DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
                 DateTimeFormatter dateHourFormatter = DateTimeFormatter.ofPattern("yyyyMMddHH");
                 String lang = getLanguage().equals("en") ? "en" : "tc";
+                String lang2 = getLanguage().equals("en") ? "en" : "uc";
                 Location location;
-                String weatherStationName = null;
+                String tempWeatherStationName = null;
                 if (locationResult != null && locationResult.isSuccess()) {
                     location = locationResult.getLocation();
                 } else {
                     location = Shared.Companion.getDEFAULT_LOCATION().getLocation();
-                    weatherStationName = getLanguage().equals("en") ? "Hong Kong" : "香港";
+                    tempWeatherStationName = getLanguage().equals("en") ? "Hong Kong" : "香港";
                 }
 
                 AtomicDouble minDistance = new AtomicDouble(Double.MAX_VALUE);
@@ -316,18 +331,57 @@ public class Registry {
                     return distance;
                 })).orElseThrow(RuntimeException::new).optJSONObject("properties");
 
+                String actualWeatherStationName;
                 if (minDistance.get() > 100) {
-                    weatherStationName = getLanguage().equals("en") ? "Hong Kong" : "香港";
-                } else if (weatherStationName == null) {
-                    weatherStationName = weatherStation.optString("weather_station_" + lang);
+                    tempWeatherStationName = getLanguage().equals("en") ? "Hong Kong" : "香港";
+                    actualWeatherStationName = "";
+                } else if (tempWeatherStationName == null) {
+                    tempWeatherStationName = weatherStation.optString("AutomaticWeatherStation_" + lang2);
+                    actualWeatherStationName = tempWeatherStationName;
+                } else {
+                    actualWeatherStationName = weatherStation.optString("AutomaticWeatherStation_" + lang2);
                 }
+                String weatherStationName = tempWeatherStationName;
 
-                JSONObject weatherStationData = HTTPRequestUtils.getJSONResponse(weatherStation.optString("url"));
-                float currentTemperature = (float) weatherStationData.optJSONObject("Temperature").optDouble("Value");
+                String temperatureLang = lang.equals("en") ? "" : "_uc";
+                List<JSONObject> temperatureData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/hko_data/regional-weather/latest_1min_temperature" + temperatureLang + ".csv");
+                if (temperatureData == null) {
+                    future.complete(null);
+                    return;
+                }
+                String temperatureStationField = lang.equals("en") ? "Automatic Weather Station" : "自動氣象站";
+                String defaultTemperatureStation = lang.equals("en") ? "Hong Kong Observatory" : "天文台";
+                JSONObject temperatureHere = temperatureData.stream().filter(e -> e.optString(temperatureStationField).equals(actualWeatherStationName)).findFirst()
+                        .orElseGet(() -> temperatureData.stream().filter(e -> e.optString(temperatureStationField).equals(defaultTemperatureStation)).findFirst().orElse(null));
+                if (temperatureHere == null) {
+                    future.complete(null);
+                    return;
+                }
+                float currentTemperature = (float) temperatureHere.optDouble(lang.equals("en") ? "Air Temperature(degree Celsius)" : "氣溫（攝氏）");
+
+                String humidityStation = HUMIDITY_STATIONS.stream().min(Comparator.comparing(s -> {
+                    JSONArray pos = s.optJSONObject("geometry").optJSONArray("coordinates");
+                    return findDistance(location.getLatitude(), location.getLongitude(), pos.optDouble(1), pos.optDouble(0));
+                })).map(e -> e.optJSONObject("properties").optString("AutomaticWeatherStation_" + lang2)).orElse("");
+
+                String humidityLang = lang.equals("en") ? "" : "_uc";
+                List<JSONObject> humidityData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/hko_data/regional-weather/latest_1min_humidity" + humidityLang + ".csv");
+                if (humidityData == null) {
+                    future.complete(null);
+                    return;
+                }
+                String humidityStationField = lang.equals("en") ? "Automatic Weather Station" : "自動氣象站";
+                String defaultHumidityStation = lang.equals("en") ? "Hong Kong Observatory" : "天文台";
+                JSONObject humidityHere = humidityData.stream().filter(e -> e.optString(humidityStationField).equals(humidityStation)).findFirst()
+                        .orElseGet(() -> humidityData.stream().filter(e -> e.optString(humidityStationField).equals(defaultHumidityStation)).findFirst().orElse(null));
+                if (humidityHere == null) {
+                    future.complete(null);
+                    return;
+                }
+                float currentHumidity = (float) humidityHere.optDouble(lang.equals("en") ? "Relative Humidity(percent)" : "相對濕度（百分比）");
 
                 JSONObject currentWeatherData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=" + lang);
                 float uvIndex = currentWeatherData.opt("uvindex") instanceof JSONObject ? (float) currentWeatherData.optJSONObject("uvindex").optJSONArray("data").optJSONObject(0).optDouble("value") : -1F;
-                float currentHumidity = (float) currentWeatherData.optJSONObject("humidity").optJSONArray("data").optJSONObject(0).optDouble("value");
                 WeatherStatusIcon weatherIcon = WeatherStatusIcon.getByCode(currentWeatherData.optJSONArray("icon").optInt(0));
 
                 String forecastStation = StreamSupport.stream(Spliterators.spliteratorUnknownSize(FORECAST_STATIONS.keys(), Spliterator.ORDERED), false).min(Comparator.comparing(k -> {
@@ -341,16 +395,67 @@ public class Registry {
                 String chanceOfRainStr = dailyForecastArray.get(0).optString("ForecastChanceOfRain");
                 float chanceOfRain = Float.parseFloat(chanceOfRainStr.substring(0, chanceOfRainStr.length() - 1));
 
+                String windLang = lang.equals("en") ? "" : "_uc";
+                List<JSONObject> windData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/hko_data/regional-weather/latest_10min_wind" + windLang + ".csv");
+                if (windData == null) {
+                    future.complete(null);
+                    return;
+                }
+
+                String windStationField = lang.equals("en") ? "Automatic Weather Station" : "自動氣象站";
+                String defaultWindStation = lang.equals("en") ? "Star Ferry" : "天星碼頭";
+                JSONObject windHere = WIND_STATIONS.stream().min(Comparator.comparing(s -> {
+                    JSONArray pos = s.optJSONObject("geometry").optJSONArray("coordinates");
+                    return findDistance(location.getLatitude(), location.getLongitude(), pos.optDouble(1), pos.optDouble(0));
+                })).map(e -> {
+                    String stationName = e.optJSONObject("properties").optString("AutomaticWeatherStation_" + lang2);
+                    return windData.stream().filter(s -> s.optString(windStationField).equals(stationName)).findFirst().orElse(null);
+                }).filter(e -> {
+                    return !e.optString(lang.equals("en") ? "10-Minute Mean Wind Direction(Compass points)" : "十分鐘平均風向（方位點）").equals("N/A");
+                }).orElseGet(() -> {
+                    return windData.stream().filter(e -> e.optString(windStationField).equals(defaultWindStation)).findFirst().orElse(null);
+                });
+                String windDirection;
+                float windSpeed;
+                float gust;
+                if (windHere == null) {
+                    windDirection = null;
+                    windSpeed = -1F;
+                    gust = -1F;
+                } else {
+                    String tempWindDirection = windHere.optString(lang.equals("en") ? "10-Minute Mean Wind Direction(Compass points)" : "十分鐘平均風向（方位點）");
+                    if (tempWindDirection.equals("N/A")) {
+                        windDirection = null;
+                        windSpeed = -1F;
+                        gust = -1F;
+                    } else {
+                        windDirection = tempWindDirection;
+                        windSpeed = (float) windHere.optDouble(lang.equals("en") ? "10-Minute Mean Speed(km/hour)" : "十分鐘平均風速（公里/小時）");
+                        gust = (float) windHere.optDouble(lang.equals("en") ? "10-Minute Maximum Gust(km/hour)" : "十分鐘最高陣風風速（公里/小時）");
+                    }
+                }
+
+                String todayDateStr = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
                 List<JSONObject> sunData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=SRS&year=" + today.getYear() + "&rformat=csv", s -> s.replaceAll("[^a-zA-Z.0-9:\\-,]", ""));
                 if (sunData == null) {
                     future.complete(null);
                     return;
                 }
-                String todayDateStr = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                 JSONObject todaySun = sunData.stream().filter(e -> e.optString("YYYY-MM-DD").equals(todayDateStr)).findFirst().orElse(null);
                 LocalTime sunriseTime = LocalTime.parse(todaySun.optString("RISE"), timeFormatter);
                 LocalTime sunTransitTime = LocalTime.parse(todaySun.optString("TRAN."), timeFormatter);
                 LocalTime sunsetTime = LocalTime.parse(todaySun.optString("SET"), timeFormatter);
+
+                List<JSONObject> moonData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=MRS&year=" + today.getYear() + "&rformat=csv", s -> s.replaceAll("[^a-zA-Z.0-9:\\-,]", ""));
+                if (moonData == null) {
+                    future.complete(null);
+                    return;
+                }
+                JSONObject todayMoon = moonData.stream().filter(e -> e.optString("YYYY-MM-DD").equals(todayDateStr)).findFirst().orElse(null);
+                LocalTime moonriseTime = todayMoon.optString("RISE").isEmpty() ? null : LocalTime.parse(todayMoon.optString("RISE"), timeFormatter);
+                LocalTime moonTransitTime = todayMoon.optString("TRAN.").isEmpty() ? null : LocalTime.parse(todayMoon.optString("TRAN."), timeFormatter);
+                LocalTime moonsetTime = todayMoon.optString("SET").isEmpty() ? null : LocalTime.parse(todayMoon.optString("SET"), timeFormatter);
 
                 JSONObject forecastData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=" + lang);
                 if (forecastData == null) {
@@ -417,7 +522,7 @@ public class Registry {
                     hourlyWeatherInfo.add(new HourlyWeatherInfo(hour, hourTemperature, hourHumidity, hourWindDirection, hourWindSpeed, hourIcon));
                 }
 
-                future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, currentTemperature, currentHumidity, uvIndex, sunriseTime, sunTransitTime, sunsetTime, forecastInfo, hourlyWeatherInfo));
+                future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, forecastInfo, hourlyWeatherInfo));
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);
