@@ -1,6 +1,7 @@
 package com.loohp.hkweatherwarnings.tiles
 
 import android.text.format.DateFormat
+import android.util.Pair
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.wear.protolayout.ActionBuilders
@@ -25,6 +26,8 @@ import com.loohp.hkweatherwarnings.R
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.FRESHNESS_TIME
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentTips
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWarnings
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWeatherInfo
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
@@ -32,6 +35,7 @@ import com.loohp.hkweatherwarnings.utils.clampSp
 import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
 import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon
+import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Date
@@ -54,9 +58,16 @@ class WeatherOverviewTile : TileService() {
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
         return Futures.submit(Callable {
             val isReload = requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicBuilders.DynamicString>("reload"))
-            val weatherInfo = currentWeatherInfo.getLatestValue(this, ForkJoinPool.commonPool(), isReload).get()
+            val data = Triple(
+                currentWeatherInfo.getLatestValue(this, ForkJoinPool.commonPool(), isReload),
+                currentWarnings.getLatestValue(this, ForkJoinPool.commonPool(), isReload),
+                currentTips.getLatestValue(this, ForkJoinPool.commonPool(), isReload)
+            )
+            val weatherInfo = data.first.get()
+            val warnings = data.second.get()
+            val tips = data.third.get()
             val updateSuccess = currentWeatherInfo.isLastUpdateSuccess()
-            val updateTime = Shared.currentWarnings.getLastSuccessfulUpdateTime()
+            val updateTime = currentWeatherInfo.getLastSuccessfulUpdateTime()
             tileUpdatedTime = System.currentTimeMillis()
 
             var element: LayoutElementBuilders.LayoutElement =
@@ -83,7 +94,7 @@ class WeatherOverviewTile : TileService() {
                             .build()
                     )
                     .addContent(
-                        buildContent(updateTime, updateSuccess, weatherInfo)
+                        buildContent(updateTime, updateSuccess, weatherInfo, warnings, tips)
                     )
                     .build()
 
@@ -328,7 +339,7 @@ class WeatherOverviewTile : TileService() {
             .build()
     }
 
-    private fun buildContent(updateTime: Long, updateSuccess: Boolean, weatherInfo: CurrentWeatherInfo?): LayoutElementBuilders.LayoutElement {
+    private fun buildContent(updateTime: Long, updateSuccess: Boolean, weatherInfo: CurrentWeatherInfo?, warnings: Map<WeatherWarningsType, String?>, tips: List<Pair<String, Long>>): LayoutElementBuilders.LayoutElement {
         return if (weatherInfo == null) {
             LayoutElementBuilders.Column.Builder()
                 .setWidth(DimensionBuilders.expand())
@@ -822,7 +833,7 @@ class WeatherOverviewTile : TileService() {
                                 .build()
                         ).build()
                 )
-            for ((i, value) in Shared.currentWarnings.getCachedValue().keys.withIndex()) {
+            for ((i, value) in warnings.keys.withIndex()) {
                 layout.addContent(
                     LayoutElementBuilders.Arc.Builder()
                         .setAnchorAngle(
@@ -843,7 +854,7 @@ class WeatherOverviewTile : TileService() {
                         ).build()
                 )
             }
-            for (i in Shared.currentTips.getCachedValue().indices) {
+            for (i in tips.indices) {
                 layout.addContent(
                     LayoutElementBuilders.Arc.Builder()
                         .setAnchorAngle(
