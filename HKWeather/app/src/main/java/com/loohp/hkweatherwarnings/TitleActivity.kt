@@ -113,7 +113,7 @@ class TitleActivity : ComponentActivity() {
 @Composable
 fun MainElements(today: LocalDate, instance: TitleActivity) {
     val weatherInfo: CurrentWeatherInfo? by remember { Shared.currentWeatherInfo.getState(instance, ForkJoinPool.commonPool()) }
-    val weatherWarnings: Set<WeatherWarningsType> by remember { Shared.currentWarnings.getState(instance, ForkJoinPool.commonPool()) }
+    val weatherWarnings: Map<WeatherWarningsType, String?> by remember { Shared.currentWarnings.getState(instance, ForkJoinPool.commonPool()) }
     val weatherTips: List<Pair<String, Long>> by remember { Shared.currentTips.getState(instance, ForkJoinPool.commonPool()) }
     val lunarDate: LunarDate? by remember { Shared.convertedLunarDates.getValueState(today, instance, ForkJoinPool.commonPool()) }
 
@@ -228,7 +228,105 @@ fun UpdatingElements(instance: TitleActivity) {
 }
 
 @Composable
-fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<WeatherWarningsType>, weatherTips: List<Pair<String, Long>>, lunarDate: LunarDate?, instance: TitleActivity) {
+fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
+    val today = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
+    if (Registry.getInstance(instance).language == "en") {
+        Box (
+            modifier = Modifier.fillMaxWidth(0.9F),
+            contentAlignment = Alignment.Center
+        ) {
+            AutoResizeText(
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.primary,
+                fontSizeRange = FontSizeRange(
+                    min = TextUnit(1F, TextUnitType.Sp),
+                    max = TextUnit(13F, TextUnitType.Sp),
+                ),
+                maxLines = 1,
+                fontWeight = FontWeight.Bold,
+                text = today.format(
+                    DateTimeFormatter.ofPattern(
+                        "dd MMM yyyy (EEEE)",
+                        Locale.ENGLISH
+                    )
+                )
+            )
+        }
+    } else {
+        Box (
+            modifier = Modifier.fillMaxWidth(0.9F),
+            contentAlignment = Alignment.Center
+        ) {
+            AutoResizeText(
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.primary,
+                fontSizeRange = FontSizeRange(
+                    min = TextUnit(1F, TextUnitType.Sp),
+                    max = TextUnit(13F, TextUnitType.Sp),
+                ),
+                maxLines = 1,
+                fontWeight = FontWeight.Bold,
+                text = today.format(
+                    DateTimeFormatter.ofPattern(
+                        "yyyy年 MM月 dd日 (EEEE)",
+                        Locale.TRADITIONAL_CHINESE
+                    )
+                )
+            )
+        }
+        if (lunarDate != null) {
+            Spacer(modifier = Modifier.size(2.dp))
+            Box (
+                modifier = Modifier.fillMaxWidth(0.9F),
+                contentAlignment = Alignment.Center
+            ) {
+                AutoResizeText(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSizeRange = FontSizeRange(
+                        min = TextUnit(1F, TextUnitType.Sp),
+                        max = TextUnit(13F, TextUnitType.Sp),
+                    ),
+                    maxLines = 1,
+                    fontWeight = FontWeight.Bold,
+                    text = lunarDate.toString()
+                )
+            }
+        }
+    }
+    Spacer(modifier = Modifier.size(2.dp))
+    val formatter = DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE)
+    var timeText by remember { mutableStateOf(formatter.format(Date())) }
+    LaunchedEffect (Unit) {
+        while (true) {
+            timeText = formatter.format(Date())
+            delay(500)
+        }
+    }
+    Box {
+        Text(
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colors.primary,
+            fontSize = TextUnit(13F, TextUnitType.Sp),
+            fontWeight = FontWeight.Bold,
+            text = timeText
+        )
+    }
+    if (Registry.getInstance(instance).language != "en" && lunarDate != null && lunarDate.hasClimatology()) {
+        Spacer(modifier = Modifier.size(2.dp))
+        Text(
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colors.primary,
+            fontSize = TextUnit(13F, TextUnitType.Sp),
+            fontWeight = FontWeight.Bold,
+            text = "節氣: ".plus(lunarDate.climatology)
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Map<WeatherWarningsType, String?>, weatherTips: List<Pair<String, Long>>, lunarDate: LunarDate?, instance: TitleActivity) {
     if (weatherInfo == null) {
         UpdatingElements(instance)
     } else {
@@ -274,6 +372,12 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                         horizontalArrangement = Arrangement.Center
                     ) {
                         AutoResizeText(
+                            modifier = Modifier
+                                .combinedClickable(
+                                    onClick = {
+                                        instance.startActivity(Intent(instance, ChangeLocationActivity::class.java))
+                                    }
+                                ),
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
                             fontWeight = FontWeight.Bold,
@@ -288,7 +392,17 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                             Image(
                                 modifier = Modifier
                                     .padding(0.dp, 0.dp, 4.dp, 0.dp)
-                                    .size(StringUtils.scaledSize(16F, instance).dp),
+                                    .size(StringUtils.scaledSize(16F, instance).dp)
+                                    .combinedClickable(
+                                        onClick = {
+                                            instance.startActivity(
+                                                Intent(
+                                                    instance,
+                                                    ChangeLocationActivity::class.java
+                                                )
+                                            )
+                                        }
+                                    ),
                                 painter = painterResource(R.mipmap.gps),
                                 contentDescription = if (Registry.getInstance(instance).language == "en") "GPS Location" else "你的位置"
                             )
@@ -347,11 +461,30 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                     Image(
                         modifier = Modifier
                             .padding(5.dp, 5.dp)
-                            .size(StringUtils.scaledSize(55, instance).dp),
+                            .size(StringUtils.scaledSize(55, instance).dp)
+                            .combinedClickable(
+                                onClick = {
+                                    instance.runOnUiThread {
+                                        Toast
+                                            .makeText(
+                                                instance,
+                                                if (Registry.getInstance(instance).language == "en") weatherInfo.weatherIcon.descriptionEn else weatherInfo.weatherIcon.descriptionZh,
+                                                Toast.LENGTH_LONG
+                                            )
+                                            .show()
+                                    }
+                                }
+                            ),
                         painter = painterResource(weatherInfo.weatherIcon.iconId),
-                        contentDescription = weatherInfo.weatherIcon.iconName
+                        contentDescription = if (Registry.getInstance(instance).language == "en") weatherInfo.weatherIcon.descriptionEn else weatherInfo.weatherIcon.descriptionZh
                     )
                     Text(
+                        modifier = Modifier
+                            .combinedClickable(
+                                onClick = {
+                                    openHKOApp(instance)
+                                }
+                            ),
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colors.primary,
                         fontWeight = FontWeight.Bold,
@@ -425,99 +558,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val today = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
-                if (Registry.getInstance(instance).language == "en") {
-                    Box (
-                        modifier = Modifier.fillMaxWidth(0.9F),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AutoResizeText(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSizeRange = FontSizeRange(
-                                min = TextUnit(1F, TextUnitType.Sp),
-                                max = TextUnit(13F, TextUnitType.Sp),
-                            ),
-                            maxLines = 1,
-                            fontWeight = FontWeight.Bold,
-                            text = today.format(
-                                DateTimeFormatter.ofPattern(
-                                    "dd MMM yyyy (EEEE)",
-                                    Locale.ENGLISH
-                                )
-                            )
-                        )
-                    }
-                } else {
-                    Box (
-                        modifier = Modifier.fillMaxWidth(0.9F),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AutoResizeText(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSizeRange = FontSizeRange(
-                                min = TextUnit(1F, TextUnitType.Sp),
-                                max = TextUnit(13F, TextUnitType.Sp),
-                            ),
-                            maxLines = 1,
-                            fontWeight = FontWeight.Bold,
-                            text = today.format(
-                                DateTimeFormatter.ofPattern(
-                                    "yyyy年 MM月 dd日 (EEEE)",
-                                    Locale.TRADITIONAL_CHINESE
-                                )
-                            )
-                        )
-                    }
-                    if (lunarDate != null) {
-                        Spacer(modifier = Modifier.size(2.dp))
-                        Box (
-                            modifier = Modifier.fillMaxWidth(0.9F),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            AutoResizeText(
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colors.primary,
-                                fontSizeRange = FontSizeRange(
-                                    min = TextUnit(1F, TextUnitType.Sp),
-                                    max = TextUnit(13F, TextUnitType.Sp),
-                                ),
-                                maxLines = 1,
-                                fontWeight = FontWeight.Bold,
-                                text = lunarDate.toString()
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.size(2.dp))
-                val formatter = DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE)
-                var timeText by remember { mutableStateOf(formatter.format(Date())) }
-                LaunchedEffect (Unit) {
-                    while (true) {
-                        timeText = formatter.format(Date())
-                        delay(500)
-                    }
-                }
-                Box {
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold,
-                        text = timeText
-                    )
-                }
-                if (Registry.getInstance(instance).language != "en" && lunarDate != null && lunarDate.hasClimatology()) {
-                    Spacer(modifier = Modifier.size(2.dp))
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold,
-                        text = "節氣: ".plus(lunarDate.climatology)
-                    )
-                }
+                DateTimeElements(lunarDate, instance)
                 Spacer(modifier = Modifier.size(25.dp))
                 Text(
                     textAlign = TextAlign.Center,
@@ -545,13 +586,46 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                             horizontalArrangement = Arrangement.Center
                         ) {
                             for (u in i until (i + 3).coerceAtMost(list.size)) {
-                                val warning = list[u]
+                                val (warning, details) = list[u]
                                 Image(
                                     modifier = Modifier
-                                        .padding(3.dp, 3.dp)
-                                        .size(StringUtils.scaledSize(40, instance).dp),
+                                        .padding(4.dp)
+                                        .size(StringUtils.scaledSize(40, instance).dp)
+                                        .combinedClickable(
+                                            onClick = {
+                                                if (details == null) {
+                                                    instance.runOnUiThread {
+                                                        Toast
+                                                            .makeText(
+                                                                instance,
+                                                                if (Registry.getInstance(instance).language == "en") warning.nameEn else warning.nameZh,
+                                                                Toast.LENGTH_LONG
+                                                            )
+                                                            .show()
+                                                    }
+                                                } else {
+                                                    val intent = Intent(instance, DisplayInfoTextActivity::class.java)
+                                                    intent.putExtra("imageDrawable", warning.iconId)
+                                                    intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
+                                                    intent.putExtra("imageDescription", if (Registry.getInstance(instance).language == "en") warning.nameEn else warning.nameZh)
+                                                    intent.putExtra("text", details)
+                                                    instance.startActivity(intent)
+                                                }
+                                            },
+                                            onLongClick = {
+                                                instance.runOnUiThread {
+                                                    Toast
+                                                        .makeText(
+                                                            instance,
+                                                            if (Registry.getInstance(instance).language == "en") warning.nameEn else warning.nameZh,
+                                                            Toast.LENGTH_LONG
+                                                        )
+                                                        .show()
+                                                }
+                                            }
+                                        ),
                                     painter = painterResource(warning.iconId),
-                                    contentDescription = warning.iconName
+                                    contentDescription = if (Registry.getInstance(instance).language == "en") warning.nameEn else warning.nameZh
                                 )
                             }
                         }
@@ -835,7 +909,9 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
                     )
                 }
                 AsyncImage(
-                    modifier = Modifier.padding(8.sp.dp).size(25.sp.dp),
+                    modifier = Modifier
+                        .padding(8.sp.dp)
+                        .size(25.sp.dp),
                     model = "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime()),
                     contentDescription = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
                 )
@@ -966,6 +1042,7 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Set<W
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HourlyElements(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFormatter, instance: TitleActivity) {
     Column(
@@ -1018,9 +1095,22 @@ fun HourlyElements(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFormatte
                 Image(
                     modifier = Modifier
                         .padding(1.dp, 1.dp)
-                        .size(20.dp),
+                        .size(20.dp)
+                        .combinedClickable(
+                            onClick = {
+                                instance.runOnUiThread {
+                                    Toast
+                                        .makeText(
+                                            instance,
+                                            if (Registry.getInstance(instance).language == "en") hourInfo.weatherIcon.descriptionEn else hourInfo.weatherIcon.descriptionZh,
+                                            Toast.LENGTH_LONG
+                                        )
+                                        .show()
+                                }
+                            }
+                        ),
                     painter = painterResource(hourInfo.weatherIcon.iconId),
-                    contentDescription = hourInfo.weatherIcon.iconName
+                    contentDescription = if (Registry.getInstance(instance).language == "en") hourInfo.weatherIcon.descriptionEn else hourInfo.weatherIcon.descriptionZh
                 )
                 Text(
                     textAlign = TextAlign.Center,
@@ -1035,6 +1125,7 @@ fun HourlyElements(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFormatte
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ForecastElements(weatherInfo: CurrentWeatherInfo, instance: TitleActivity) {
     Column(
@@ -1095,9 +1186,22 @@ fun ForecastElements(weatherInfo: CurrentWeatherInfo, instance: TitleActivity) {
                 Image(
                     modifier = Modifier
                         .padding(1.dp, 1.dp)
-                        .size(20.dp),
+                        .size(20.dp)
+                        .combinedClickable(
+                            onClick = {
+                                instance.runOnUiThread {
+                                    Toast
+                                        .makeText(
+                                            instance,
+                                            if (Registry.getInstance(instance).language == "en") dayInfo.weatherIcon.descriptionEn else dayInfo.weatherIcon.descriptionZh,
+                                            Toast.LENGTH_LONG
+                                        )
+                                        .show()
+                                }
+                            }
+                        ),
                     painter = painterResource(dayInfo.weatherIcon.iconId),
-                    contentDescription = dayInfo.weatherIcon.iconName
+                    contentDescription = if (Registry.getInstance(instance).language == "en") dayInfo.weatherIcon.descriptionEn else dayInfo.weatherIcon.descriptionZh
                 )
                 Text(
                     textAlign = TextAlign.Center,
@@ -1114,39 +1218,29 @@ fun ForecastElements(weatherInfo: CurrentWeatherInfo, instance: TitleActivity) {
     }
 }
 
-@Composable
-fun OpenHKOAppButton(instance: TitleActivity) {
-    Button(
-        onClick = {
-            val intent = Intent(Intent.ACTION_VIEW)
+fun openHKOApp(instance: TitleActivity) {
+    val intent = Intent(Intent.ACTION_VIEW)
+        .addCategory(Intent.CATEGORY_BROWSABLE)
+        .setData(Uri.parse("myobservatory:"))
+    RemoteActivityUtils.intentToPhone(
+        instance = instance,
+        intent = intent,
+        noPhone = {
+            instance.runOnUiThread {
+                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Unable to connect to phone" else "無法連接到手機", Toast.LENGTH_SHORT).show()
+            }
+        },
+        failed = {
+            val playIntent = Intent(Intent.ACTION_VIEW)
                 .addCategory(Intent.CATEGORY_BROWSABLE)
-                .setData(Uri.parse("myobservatory:"))
+                .setData(Uri.parse("https://play.google.com/store/apps/details?id=hko.MyObservatory_v1_0"))
             RemoteActivityUtils.intentToPhone(
                 instance = instance,
-                intent = intent,
-                noPhone = {
-                    instance.runOnUiThread {
-                        Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Unable to connect to phone" else "無法連接到手機", Toast.LENGTH_SHORT).show()
-                    }
-                },
+                intent = playIntent,
                 failed = {
-                    val playIntent = Intent(Intent.ACTION_VIEW)
-                        .addCategory(Intent.CATEGORY_BROWSABLE)
-                        .setData(Uri.parse("https://play.google.com/store/apps/details?id=hko.MyObservatory_v1_0"))
-                    RemoteActivityUtils.intentToPhone(
-                        instance = instance,
-                        intent = playIntent,
-                        failed = {
-                            instance.runOnUiThread {
-                                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Failed to connect to phone" else "連接手機失敗", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        success = {
-                            instance.runOnUiThread {
-                                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Please check your phone" else "請在手機上繼續", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    )
+                    instance.runOnUiThread {
+                        Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Failed to connect to phone" else "連接手機失敗", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 success = {
                     instance.runOnUiThread {
@@ -1154,6 +1248,20 @@ fun OpenHKOAppButton(instance: TitleActivity) {
                     }
                 }
             )
+        },
+        success = {
+            instance.runOnUiThread {
+                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Please check your phone" else "請在手機上繼續", Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
+}
+
+@Composable
+fun OpenHKOAppButton(instance: TitleActivity) {
+    Button(
+        onClick = {
+            openHKOApp(instance)
         },
         modifier = Modifier
             .width(StringUtils.scaledSize(220, instance).dp)

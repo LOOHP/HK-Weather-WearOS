@@ -93,7 +93,7 @@ class DataState<T>(
         isLastUpdateSuccessful = false
     }
 
-    fun getRawValue(): T {
+    fun getCachedValue(): T {
         return state.value
     }
 

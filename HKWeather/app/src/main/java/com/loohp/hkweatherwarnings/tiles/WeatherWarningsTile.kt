@@ -242,7 +242,7 @@ class WeatherWarningsTile : TileService() {
             .build()
     }
 
-    private fun buildContent(warnings: Set<WeatherWarningsType>): LayoutElementBuilders.LayoutElement {
+    private fun buildContent(warnings: Map<WeatherWarningsType, String?>): LayoutElementBuilders.LayoutElement {
         return LayoutElementBuilders.Box.Builder()
             .setWidth(DimensionBuilders.wrap())
             .setHeight(DimensionBuilders.expand())
@@ -270,21 +270,42 @@ class WeatherWarningsTile : TileService() {
                         .setMaxLines(Int.MAX_VALUE)
                         .build()
                 } else {
-                    val images = warnings.stream().map {
+                    val images = warnings.entries.stream().map {
+                        val modifiers = ModifiersBuilders.Modifiers.Builder()
+                            .setPadding(
+                                ModifiersBuilders.Padding.Builder()
+                                    .setTop(DimensionBuilders.DpProp.Builder(5F).build())
+                                    .setBottom(DimensionBuilders.DpProp.Builder(5F).build())
+                                    .setStart(DimensionBuilders.DpProp.Builder(5F).build())
+                                    .setEnd(DimensionBuilders.DpProp.Builder(5F).build())
+                                    .build()
+                            )
+                        if (it.value != null) {
+                            modifiers.setClickable(
+                                ModifiersBuilders.Clickable.Builder()
+                                    .setOnClick(
+                                        ActionBuilders.LaunchAction.Builder()
+                                            .setAndroidActivity(
+                                                ActionBuilders.AndroidActivity.Builder()
+                                                    .setClassName(MainActivity::class.java.name)
+                                                    .addKeyToExtraMapping("imageDrawable", ActionBuilders.AndroidIntExtra.Builder().setValue(it.key.iconId).build())
+                                                    .addKeyToExtraMapping("imageWidth", ActionBuilders.AndroidIntExtra.Builder().setValue(StringUtils.scaledSize(60, this)).build())
+                                                    .addKeyToExtraMapping("imageDescription", ActionBuilders.AndroidStringExtra.Builder().setValue(if (Registry.getInstance(this).language == "en") it.key.nameEn else it.key.nameZh).build())
+                                                    .addKeyToExtraMapping("text", ActionBuilders.AndroidStringExtra.Builder().setValue(it.value!!).build())
+                                                    .addKeyToExtraMapping("warningInfo", ActionBuilders.AndroidIntExtra.Builder().setValue(1).build())
+                                                    .setPackageName(packageName)
+                                                    .build()
+                                            )
+                                            .build()
+                                    )
+                                    .setId("warningInfo")
+                                    .build()
+                            )
+                        }
                         LayoutElementBuilders.Image.Builder()
                             .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
-                            .setModifiers(
-                                ModifiersBuilders.Modifiers.Builder()
-                                    .setPadding(
-                                        ModifiersBuilders.Padding.Builder()
-                                            .setTop(DimensionBuilders.DpProp.Builder(5F).build())
-                                            .setBottom(DimensionBuilders.DpProp.Builder(5F).build())
-                                            .setStart(DimensionBuilders.DpProp.Builder(5F).build())
-                                            .setEnd(DimensionBuilders.DpProp.Builder(5F).build())
-                                            .build()
-                                    ).build()
-                            )
-                            .setResourceId(it.iconName)
+                            .setModifiers(modifiers.build())
+                            .setResourceId(it.key.iconName)
                     }.toList()
                     val element = LayoutElementBuilders.Column.Builder()
                         .setWidth(DimensionBuilders.wrap())

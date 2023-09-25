@@ -50,9 +50,9 @@ class Shared {
             }
         }, { context, _ -> TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java) })
 
-        val currentWarnings: DataState<Set<WeatherWarningsType>> = DataState(emptySet(), FRESHNESS_TIME, { context, _ ->
+        val currentWarnings: DataState<Map<WeatherWarningsType, String?>> = DataState(emptyMap(), FRESHNESS_TIME, { context, _ ->
             val result = Registry.getInstance(context).getActiveWarnings(context).get()
-            if (result == null) UpdateResult(false, emptySet()) else UpdateResult(true, result)
+            if (result == null) UpdateResult(false, emptyMap()) else UpdateResult(true, result)
         }, { context, _ -> TileService.getUpdater(context).requestUpdate(WeatherWarningsTile::class.java) })
 
         val currentTips: DataState<List<Pair<String, Long>>> = DataState(emptyList(), FRESHNESS_TIME, { context, _ ->

@@ -381,7 +381,7 @@ class WeatherOverviewTile : TileService() {
             val today = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
             val forecastIndex = if (weatherInfo.forecastInfo[0].date.equals(today)) 1 else 0
 
-            LayoutElementBuilders.Box.Builder()
+            val layout = LayoutElementBuilders.Box.Builder()
                 .setWidth(DimensionBuilders.expand())
                 .setHeight(DimensionBuilders.expand())
                 .setHorizontalAlignment(
@@ -822,7 +822,49 @@ class WeatherOverviewTile : TileService() {
                                 .build()
                         ).build()
                 )
-                .build()
+            for ((i, value) in Shared.currentWarnings.getCachedValue().keys.withIndex()) {
+                layout.addContent(
+                    LayoutElementBuilders.Arc.Builder()
+                        .setAnchorAngle(
+                            DimensionBuilders.DegreesProp.Builder(317F + (i * 6F)).build()
+                        )
+                        .setAnchorType(LayoutElementBuilders.ARC_ANCHOR_START)
+                        .addContent(
+                            LayoutElementBuilders.ArcLine.Builder()
+                                .setLength(
+                                    DimensionBuilders.DegreesProp.Builder(0.1F).build()
+                                )
+                                .setThickness(
+                                    DimensionBuilders.DpProp.Builder(8.5F).build()
+                                )
+                                .setColor(
+                                    ColorBuilders.ColorProp.Builder(Color(value.color).toArgb()).build()
+                                ).build()
+                        ).build()
+                )
+            }
+            for (i in Shared.currentTips.getCachedValue().indices) {
+                layout.addContent(
+                    LayoutElementBuilders.Arc.Builder()
+                        .setAnchorAngle(
+                            DimensionBuilders.DegreesProp.Builder(-317F - (i * 6F)).build()
+                        )
+                        .setAnchorType(LayoutElementBuilders.ARC_ANCHOR_START)
+                        .addContent(
+                            LayoutElementBuilders.ArcLine.Builder()
+                                .setLength(
+                                    DimensionBuilders.DegreesProp.Builder(-0.1F).build()
+                                )
+                                .setThickness(
+                                    DimensionBuilders.DpProp.Builder(8.5F).build()
+                                )
+                                .setColor(
+                                    ColorBuilders.ColorProp.Builder(Color(0xFFFF0000).toArgb()).build()
+                                ).build()
+                        ).build()
+                )
+            }
+            layout.build()
         }
     }
 

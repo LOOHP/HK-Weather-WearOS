@@ -35,16 +35,17 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.Iterator;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
@@ -531,25 +532,49 @@ public class Registry {
         return future;
     }
 
-    public Future<Set<WeatherWarningsType>> getActiveWarnings(Context context) {
+    public Future<Map<WeatherWarningsType, String>> getActiveWarnings(Context context) {
         if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
             return CompletableFuture.completedFuture(null);
         }
-        CompletableFuture<Set<WeatherWarningsType>> future = new CompletableFuture<>();
+        CompletableFuture<Map<WeatherWarningsType, String>> future = new CompletableFuture<>();
         new Thread(() -> {
             try {
-                JSONObject data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc");
+                String lang = getLanguage().equals("en") ? "en" : "tc";
+
+                JSONArray data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warningInfo&lang=" + lang).optJSONArray("details");
                 if (data == null) {
                     future.complete(null);
                     return;
                 }
-                Set<WeatherWarningsType> warnings = EnumSet.noneOf(WeatherWarningsType.class);
-                for (Iterator<String> itr = data.keys(); itr.hasNext(); ) {
-                    String key = itr.next();
+                Map<WeatherWarningsType, String> warnings = new EnumMap<>(WeatherWarningsType.class);
+                for (int i = 0; i < data.length(); i++) {
+                    JSONObject details = data.optJSONObject(i);
                     try {
-                        warnings.add(WeatherWarningsType.valueOf(data.optJSONObject(key).optString("code").toUpperCase()));
-                    } catch (Throwable ignore) {}
+                        WeatherWarningsType warningType = WeatherWarningsType.valueOf(details.optString("warningStatementCode").toUpperCase());
+                        String warningName = getLanguage().equals("en") ? warningType.getNameEn() : warningType.getNameZh();
+                        JSONArray contentsArray = details.optJSONArray("contents");
+                        String contents;
+                        if (contentsArray == null || contentsArray.length() == 0) {
+                            contents = null;
+                        } else {
+                            List<String> lines = JsonUtils.toList(contentsArray, String.class);
+                            if (!lines.get(0).trim().equalsIgnoreCase(warningName)) {
+                                lines.add(0, warningName);
+                            }
+                            contents = String.join("\n", lines);
+                            OffsetDateTime time = OffsetDateTime.parse(details.optString("updateTime"));
+                            if (getLanguage().equals("en")) {
+                                contents += "\nDispatched by the Hong Kong Observatory at " + DateTimeFormatter.ofPattern("HH:mm' HKT on 'dd.MM.yyyy", Locale.ENGLISH);
+                            } else {
+                                contents += "\n以上天氣稿由天文台於" + DateTimeFormatter.ofPattern("yyyy年MM月dd日HH時mm分", Locale.TRADITIONAL_CHINESE).format(time) + "發出";
+                            }
+                        }
+                        warnings.put(warningType, contents);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
                 }
+
                 future.complete(warnings);
             } catch (Throwable e) {
                 future.complete(null);
