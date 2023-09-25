@@ -98,10 +98,10 @@ fun MainElements(instance: ChangeLocationActivity) {
                         max = StringUtils.scaledSize(17F, instance).sp.clamp(max = 18.dp)
                     ),
                     text = if (Registry.getInstance(instance).language == "en") {
-                                "Using GPS Location requires background location permission to locate your current district, no location data are stored or sent.\n\n" +
+                                "Using GPS Location requires background location permission to locate your current district, even when the app is closed or not in use, no location data are stored or sent.\n\n" +
                                 "If prompted, please choose \"While using this app\" and then \"All the time\"."
                     } else {
-                                "使用你的位置功能需要在背景存取定位位置的權限搜尋你目前所在的地區 程式不會儲存或發送位置數據\n\n" +
+                                "使用你的位置功能需要在背景存取定位位置的權限搜尋你目前所在的地區 包括在程式未被打開時 程式不會儲存或發送位置數據\n\n" +
                                 "如出現權限請求 請分別選擇「僅限使用應用程式時」和「一律允許」"
                     }
                 )
