@@ -1,6 +1,0 @@
-<resources>
-    <string name="app_name">HK Weather</string>
-    <string name="weather_overview_tile">Weather Overview</string>
-    <string name="weather_warnings_tile">Weather Warnings</string>
-    <string name="weather_tips_tile">Special Weather Tips</string>
-</resources>
