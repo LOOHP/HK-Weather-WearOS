@@ -1,8 +1,26 @@
 package com.loohp.hkweatherwarnings.weather;
 
-import java.time.LocalDateTime;
+import com.loohp.hkweatherwarnings.cache.JSONSerializable;
 
-public class HourlyWeatherInfo {
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class HourlyWeatherInfo implements JSONSerializable {
+
+    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy.HH:mm");
+
+    public static HourlyWeatherInfo deserialize(JSONObject jsonObject) {
+        LocalDateTime time = LocalDateTime.parse(jsonObject.optString("time"), DATE_TIME_FORMATTER);
+        float temperature = (float) jsonObject.optDouble("temperature");
+        float humidity = (float) jsonObject.optDouble("humidity");
+        float windDirection = (float) jsonObject.optDouble("windDirection");
+        float windSpeed = (float) jsonObject.optDouble("windSpeed");
+        WeatherStatusIcon weatherIcon = WeatherStatusIcon.valueOf(jsonObject.optString("weatherIcon"));
+        return new HourlyWeatherInfo(time, temperature, humidity, windDirection, windSpeed, weatherIcon);
+    }
 
     private final LocalDateTime time;
     private final float temperature;
@@ -42,5 +60,17 @@ public class HourlyWeatherInfo {
 
     public WeatherStatusIcon getWeatherIcon() {
         return weatherIcon;
+    }
+
+    @Override
+    public JSONObject serialize() throws JSONException {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("time", time.format(DATE_TIME_FORMATTER));
+        jsonObject.put("temperature", temperature);
+        jsonObject.put("humidity", humidity);
+        jsonObject.put("windDirection", windDirection);
+        jsonObject.put("windSpeed", windSpeed);
+        jsonObject.put("weatherIcon", weatherIcon.name());
+        return jsonObject;
     }
 }

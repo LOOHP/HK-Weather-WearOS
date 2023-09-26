@@ -8,6 +8,7 @@ import android.util.Pair
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -16,8 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.ScrollableDefaults
-import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +29,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -59,9 +60,11 @@ import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import coil.compose.AsyncImage
+import coil.imageLoader
+import coil.request.ImageRequest
 import com.loohp.hkweatherwarnings.compose.AutoResizeText
 import com.loohp.hkweatherwarnings.compose.FontSizeRange
-import com.loohp.hkweatherwarnings.compose.verticalScrollWithScrollbar
+import com.loohp.hkweatherwarnings.compose.verticalLazyScrollbar
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
@@ -79,6 +82,8 @@ import com.loohp.hkweatherwarnings.weather.UVIndexType
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -118,14 +123,25 @@ fun MainElements(today: LocalDate, instance: TitleActivity) {
     val lunarDate: LunarDate? by remember { Shared.convertedLunarDates.getValueState(today, instance, ForkJoinPool.commonPool()) }
 
     HKWeatherTheme {
+        val moonPhaseUrl by remember { derivedStateOf { "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime()) } }
         val focusRequester = remember { FocusRequester() }
-        val scroll = rememberScrollState()
+        val scroll = rememberLazyListState()
         val scope = rememberCoroutineScope()
         val haptic = LocalHapticFeedback.current
         var scrollCounter by remember { mutableStateOf(0) }
         val scrollInProgress by remember { derivedStateOf { scroll.isScrollInProgress } }
         val scrollReachedEnd by remember { derivedStateOf { scroll.canScrollBackward != scroll.canScrollForward } }
-        var scrollMoved by remember { mutableStateOf(false) }
+        var scrollMoved by remember { mutableStateOf(0) }
+
+        val mutex by remember { mutableStateOf(Mutex()) }
+        val animatedScrollValue = remember { Animatable(0F) }
+        var previousScrollValue by remember { mutableStateOf(0F) }
+        LaunchedEffect (animatedScrollValue.value) {
+            val diff = previousScrollValue - animatedScrollValue.value
+            scroll.scrollBy(diff)
+            previousScrollValue -= diff
+        }
+
         LaunchedEffect (scrollInProgress) {
             if (scrollInProgress) {
                 scrollCounter++
@@ -133,27 +149,34 @@ fun MainElements(today: LocalDate, instance: TitleActivity) {
         }
         LaunchedEffect (scrollCounter, scrollReachedEnd) {
             delay(50)
-            if (scrollReachedEnd && scrollMoved) {
+            if (scrollReachedEnd && scrollMoved > 1) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             }
-            scrollMoved = true
+            if (scrollMoved <= 1) {
+                scrollMoved++
+            }
         }
         LaunchedEffect (Unit) {
             focusRequester.requestFocus()
+            instance.imageLoader.execute(ImageRequest.Builder(instance).data(moonPhaseUrl).build())
         }
 
-        Column (
+        LazyColumn (
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScrollWithScrollbar(
-                    state = scroll,
-                    flingBehavior = ScrollableDefaults.flingBehavior()
+                .verticalLazyScrollbar(
+                    state = scroll
                 )
                 .onRotaryScrollEvent {
                     scope.launch {
-                        scroll.animateScrollBy(
-                            it.verticalScrollPixels * 1.5F,
-                            TweenSpec(durationMillis = 500, easing = FastOutSlowInEasing)
+                        mutex.withLock {
+                            val target = it.verticalScrollPixels + animatedScrollValue.value
+                            animatedScrollValue.snapTo(target)
+                            previousScrollValue = target
+                        }
+                        animatedScrollValue.animateTo(
+                            0F,
+                            TweenSpec(durationMillis = 300, easing = FastOutSlowInEasing)
                         )
                     }
                     true
@@ -161,24 +184,40 @@ fun MainElements(today: LocalDate, instance: TitleActivity) {
                 .focusRequester(
                     focusRequester = focusRequester
                 )
-                .focusable()
+                .focusable(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            state = scroll
         ) {
-            WeatherInfoElements(weatherInfo, weatherWarnings, weatherTips, lunarDate, instance)
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(20.dp, 0.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            for (it in generateWeatherInfoItems(weatherInfo, weatherWarnings, weatherTips, lunarDate, moonPhaseUrl, instance)) {
+                item {
+                    it.invoke()
+                }
+            }
+            item {
                 UsageText(instance)
+            }
+            item {
                 Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
+            }
+            item {
                 OpenHKOAppButton(instance)
+            }
+            item {
                 Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
+            }
+            item {
                 ChangeLocationButton(instance)
+            }
+            item {
                 Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
+            }
+            item {
                 SetRefreshRateButton(instance)
+            }
+            item {
                 Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
+            }
+            item {
                 Row (
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
@@ -187,8 +226,14 @@ fun MainElements(today: LocalDate, instance: TitleActivity) {
                     Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
                     UpdateTilesButton(instance)
                 }
+            }
+            item {
                 Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
+            }
+            item {
                 CreditVersionText(instance)
+            }
+            item {
                 Spacer(modifier = Modifier.size(StringUtils.scaledSize(14, instance).dp))
             }
         }
@@ -325,18 +370,14 @@ fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Map<WeatherWarningsType, String?>, weatherTips: List<Pair<String, Long>>, lunarDate: LunarDate?, instance: TitleActivity) {
+fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Map<WeatherWarningsType, String?>, weatherTips: List<Pair<String, Long>>, lunarDate: LunarDate?, moonPhaseUrl: String, instance: TitleActivity): List<@Composable () -> Unit> {
+    val itemList: MutableList<@Composable () -> Unit> = ArrayList()
     if (weatherInfo == null) {
-        UpdatingElements(instance)
+        itemList.add { UpdatingElements(instance) }
     } else {
         val systemTimeFormat = DateFormat.getTimeFormat(instance)
         val timeFormat = DateTimeFormatter.ofPattern(if (systemTimeFormat is SimpleDateFormat) systemTimeFormat.toPattern() else "HH:mm")
-        Column (
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        itemList.add {
             Box(
                 modifier = Modifier
                     .width(
@@ -427,9 +468,9 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Map<W
                                 .padding(3.dp, 0.dp)
                                 .size(11.dp)
                                 .clickable {
-                                    Shared.currentWeatherInfo.reset()
-                                    Shared.currentWarnings.reset()
-                                    Shared.currentTips.reset()
+                                    Shared.currentWeatherInfo.reset(instance)
+                                    Shared.currentWarnings.reset(instance)
+                                    Shared.currentTips.reset(instance)
                                     Shared.currentWeatherInfo.getLatestValue(
                                         instance,
                                         ForkJoinPool.commonPool(),
@@ -553,66 +594,56 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Map<W
                     }
                 }
             }
-            Column (
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                DateTimeElements(lunarDate, instance)
-                Spacer(modifier = Modifier.size(25.dp))
+        }
+        itemList.add {
+            DateTimeElements(lunarDate, instance)
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(25.dp))
+        }
+        itemList.add {
+            Text(
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.primary,
+                fontSize = TextUnit(13F, TextUnitType.Sp),
+                text = if (Registry.getInstance(instance).language == "en") "Weather Warnings" else "天氣警告"
+            )
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(4.dp))
+        }
+        if (weatherWarnings.isEmpty()) {
+            itemList.add {
                 Text(
+                    modifier = Modifier.padding(20.dp, 0.dp),
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
-                    text = if (Registry.getInstance(instance).language == "en") "Weather Warnings" else "天氣警告"
+                    fontSize = TextUnit(10F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "There are currently no active warning signals." else "目前沒有任何天氣警告信號"
                 )
-                Spacer(modifier = Modifier.size(4.dp))
-                if (weatherWarnings.isEmpty()) {
-                    Text(
-                        modifier = Modifier.padding(20.dp, 0.dp),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(10F, TextUnitType.Sp),
-                        text = if (Registry.getInstance(instance).language == "en") "There are currently no active warning signals." else "目前沒有任何天氣警告信號"
-                    )
-                    Spacer(modifier = Modifier.size(10.dp))
-                } else {
-                    val list = weatherWarnings.toList()
-                    for (i in list.indices step 3) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            for (u in i until (i + 3).coerceAtMost(list.size)) {
-                                val (warning, details) = list[u]
-                                Image(
-                                    modifier = Modifier
-                                        .padding(4.dp)
-                                        .size(StringUtils.scaledSize(40, instance).dp)
-                                        .combinedClickable(
-                                            onClick = {
-                                                if (details == null) {
-                                                    instance.runOnUiThread {
-                                                        Toast
-                                                            .makeText(
-                                                                instance,
-                                                                if (Registry.getInstance(instance).language == "en") warning.nameEn else warning.nameZh,
-                                                                Toast.LENGTH_LONG
-                                                            )
-                                                            .show()
-                                                    }
-                                                } else {
-                                                    val intent = Intent(instance, DisplayInfoTextActivity::class.java)
-                                                    intent.putExtra("imageDrawable", warning.iconId)
-                                                    intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
-                                                    intent.putExtra("imageDescription", if (Registry.getInstance(instance).language == "en") warning.nameEn else warning.nameZh)
-                                                    intent.putExtra("text", details)
-                                                    instance.startActivity(intent)
-                                                }
-                                            },
-                                            onLongClick = {
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
+        } else {
+            val list = weatherWarnings.toList()
+            for (i in list.indices step 3) {
+                itemList.add {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        for (u in i until (i + 3).coerceAtMost(list.size)) {
+                            val (warning, details) = list[u]
+                            Image(
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .size(StringUtils.scaledSize(40, instance).dp)
+                                    .combinedClickable(
+                                        onClick = {
+                                            if (details == null) {
                                                 instance.runOnUiThread {
                                                     Toast
                                                         .makeText(
@@ -622,446 +653,574 @@ fun WeatherInfoElements(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Map<W
                                                         )
                                                         .show()
                                                 }
+                                            } else {
+                                                val intent = Intent(
+                                                    instance,
+                                                    DisplayInfoTextActivity::class.java
+                                                )
+                                                intent.putExtra("imageDrawable", warning.iconId)
+                                                intent.putExtra(
+                                                    "imageWidth",
+                                                    StringUtils.scaledSize(60, instance)
+                                                )
+                                                intent.putExtra(
+                                                    "imageDescription",
+                                                    if (Registry.getInstance(instance).language == "en") warning.nameEn else warning.nameZh
+                                                )
+                                                intent.putExtra("text", details)
+                                                instance.startActivity(intent)
                                             }
-                                        ),
-                                    painter = painterResource(warning.iconId),
-                                    contentDescription = if (Registry.getInstance(instance).language == "en") warning.nameEn else warning.nameZh
-                                )
-                            }
+                                        },
+                                        onLongClick = {
+                                            instance.runOnUiThread {
+                                                Toast
+                                                    .makeText(
+                                                        instance,
+                                                        if (Registry.getInstance(instance).language == "en") warning.nameEn else warning.nameZh,
+                                                        Toast.LENGTH_LONG
+                                                    )
+                                                    .show()
+                                            }
+                                        }
+                                    ),
+                                painter = painterResource(warning.iconId),
+                                contentDescription = if (Registry.getInstance(instance).language == "en") warning.nameEn else warning.nameZh
+                            )
                         }
                     }
                 }
-                Spacer(modifier = Modifier.size(10.dp))
+            }
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
+            Text(
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.primary,
+                fontSize = TextUnit(13F, TextUnitType.Sp),
+                text = if (Registry.getInstance(instance).language == "en") "Special Weather Tips" else "特別天氣提示"
+            )
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(4.dp))
+        }
+        if (weatherTips.isEmpty()) {
+            itemList.add {
                 Text(
+                    modifier = Modifier.padding(20.dp, 0.dp),
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
-                    text = if (Registry.getInstance(instance).language == "en") "Special Weather Tips" else "特別天氣提示"
+                    fontSize = TextUnit(10F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "There are currently no active special weather tips." else "目前沒有任何特別天氣提示"
                 )
-                Spacer(modifier = Modifier.size(4.dp))
-                if (weatherTips.isEmpty()) {
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
+        } else {
+            for (tip in weatherTips) {
+                itemList.add {
                     Text(
                         modifier = Modifier.padding(20.dp, 0.dp),
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(10F, TextUnitType.Sp),
-                        text = if (Registry.getInstance(instance).language == "en") "There are currently no active special weather tips." else "目前沒有任何特別天氣提示"
+                        fontSize = TextUnit(15F, TextUnitType.Sp),
+                        text = tip.first
                     )
-                    Spacer(modifier = Modifier.size(10.dp))
-                } else {
-                    for (tip in weatherTips) {
-                        Text(
-                            modifier = Modifier.padding(20.dp, 0.dp),
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(15F, TextUnitType.Sp),
-                            text = tip.first
-                        )
-                        Spacer(modifier = Modifier.size(4.dp))
-                        val date = Date(tip.second)
-                        val lastUpdateText =
-                            DateFormat.getDateFormat(instance).timeZone(Shared.HK_TIMEZONE)
+                }
+                itemList.add {
+                    Spacer(modifier = Modifier.size(4.dp))
+                }
+                val date = Date(tip.second)
+                val lastUpdateText =
+                    DateFormat.getDateFormat(instance).timeZone(Shared.HK_TIMEZONE)
+                        .format(date)
+                        .plus(" ")
+                        .plus(
+                            DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE)
                                 .format(date)
-                                .plus(" ")
-                                .plus(
-                                    DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE)
-                                        .format(date)
-                                )
-                        Text(
-                            modifier = Modifier.padding(5.dp, 0.dp),
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(10F, TextUnitType.Sp),
-                            text = lastUpdateText
                         )
-                        Spacer(modifier = Modifier.size(10.dp))
-                    }
-                }
-                Spacer(modifier = Modifier.size(10.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .padding(3.dp, 3.dp)
-                            .size(StringUtils.scaledSize(14, instance).dp),
-                        painter = painterResource(R.mipmap.uvindex),
-                        contentDescription = if (Registry.getInstance(instance).language == "en") "UV Index" else "紫外線指數"
-                    )
+                itemList.add {
                     Text(
+                        modifier = Modifier.padding(5.dp, 0.dp),
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        text = if (Registry.getInstance(instance).language == "en") "UV Index" else "紫外線指數"
+                        fontSize = TextUnit(10F, TextUnitType.Sp),
+                        text = lastUpdateText
                     )
                 }
-                if (weatherInfo.uvIndex >= 0) {
-                    val uvIndexType = UVIndexType.getByValue(weatherInfo.uvIndex)
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = Color(uvIndexType.color),
-                        fontSize = TextUnit(25F, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold,
-                        text = String.format("%.0f", weatherInfo.uvIndex).plus(" ")
-                            .plus(if (Registry.getInstance(instance).language == "en") uvIndexType.en else uvIndexType.zh)
-                    )
-                } else {
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = Color(0xFFFF9625),
-                        fontSize = TextUnit(25F, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold,
-                        text = "-"
-                    )
+                itemList.add {
+                    Spacer(modifier = Modifier.size(10.dp))
                 }
-                Spacer(modifier = Modifier.size(10.dp))
-                Row(
+            }
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .padding(3.dp, 3.dp)
-                            .size(StringUtils.scaledSize(14, instance).dp),
-                        painter = painterResource(R.mipmap.humidity),
-                        contentDescription = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
-                    )
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        text = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
-                    )
-                }
+                        .padding(3.dp, 3.dp)
+                        .size(StringUtils.scaledSize(14, instance).dp),
+                    painter = painterResource(R.mipmap.uvindex),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "UV Index" else "紫外線指數"
+                )
                 Text(
                     textAlign = TextAlign.Center,
-                    color = Color(0xFF3CB0FF),
-                    fontSize = TextUnit(25F, TextUnitType.Sp),
-                    fontWeight = FontWeight.Bold,
-                    text = String.format("%.0f", weatherInfo.currentHumidity).plus("%")
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "UV Index" else "紫外線指數"
                 )
-                Spacer(modifier = Modifier.size(10.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .padding(3.dp, 3.dp)
-                            .size(StringUtils.scaledSize(14, instance).dp),
-                        painter = painterResource(R.mipmap.wind),
-                        contentDescription = if (Registry.getInstance(instance).language == "en") "Wind" else "風向風速"
-                    )
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        text = if (Registry.getInstance(instance).language == "en") "Wind" else "風向風速"
-                    )
-                }
-                val windText = if (weatherInfo.windSpeed < 0F) {
-                    "-"
-                } else {
-                    weatherInfo.windDirection.plus(" ")
-                        .plus(String.format("%.0f", weatherInfo.windSpeed)).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
-                }
-                Box (
-                    modifier = Modifier.fillMaxWidth(0.9F),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AutoResizeText(
-                        textAlign = TextAlign.Center,
-                        color = Color(0xFFFFFFFF),
-                        fontSizeRange = FontSizeRange(
-                            min = TextUnit(1F, TextUnitType.Sp),
-                            max = TextUnit(25F, TextUnitType.Sp)
-                        ),
-                        maxLines = 1,
-                        fontWeight = FontWeight.Bold,
-                        text = windText
-                    )
-                }
-                Spacer(modifier = Modifier.size(10.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .padding(3.dp, 3.dp)
-                            .size(StringUtils.scaledSize(14, instance).dp),
-                        painter = painterResource(R.mipmap.wind),
-                        contentDescription = if (Registry.getInstance(instance).language == "en") "Gust" else "陣風",
-                        colorFilter = ColorFilter.tint(Color(0xFF26D4FF))
-                    )
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        text = if (Registry.getInstance(instance).language == "en") "Gust" else "陣風"
-                    )
-                }
-                val gustText = if (weatherInfo.windSpeed < 0F) {
-                    "-"
-                } else {
-                    String.format("%.0f", weatherInfo.gust).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
-                }
-                Box (
-                    modifier = Modifier.fillMaxWidth(0.9F),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AutoResizeText(
-                        textAlign = TextAlign.Center,
-                        color = Color(0xFFFFFFFF),
-                        fontSizeRange = FontSizeRange(
-                            min = TextUnit(1F, TextUnitType.Sp),
-                            max = TextUnit(25F, TextUnitType.Sp)
-                        ),
-                        maxLines = 1,
-                        fontWeight = FontWeight.Bold,
-                        text = gustText
-                    )
-                }
-                Spacer(modifier = Modifier.size(10.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .padding(3.dp, 3.dp)
-                            .size(StringUtils.scaledSize(14, instance).dp),
-                        painter = painterResource(R.mipmap.sunrise),
-                        contentDescription = if (Registry.getInstance(instance).language == "en") "Sunrise" else "日出"
-                    )
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        text = if (Registry.getInstance(instance).language == "en") "Sunrise" else "日出"
-                    )
-                }
+            }
+        }
+        if (weatherInfo.uvIndex >= 0) {
+            val uvIndexType = UVIndexType.getByValue(weatherInfo.uvIndex)
+            itemList.add {
                 Text(
                     textAlign = TextAlign.Center,
-                    color = Color(0xFFFFC32B),
+                    color = Color(uvIndexType.color),
                     fontSize = TextUnit(25F, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
-                    text = weatherInfo.sunriseTime.format(timeFormat)
+                    text = String.format("%.0f", weatherInfo.uvIndex).plus(" ")
+                        .plus(if (Registry.getInstance(instance).language == "en") uvIndexType.en else uvIndexType.zh)
                 )
-                Spacer(modifier = Modifier.size(10.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .padding(3.dp, 3.dp)
-                            .size(StringUtils.scaledSize(14, instance).dp),
-                        painter = painterResource(R.mipmap.sunset),
-                        contentDescription = if (Registry.getInstance(instance).language == "en") "Sunset" else "日落"
-                    )
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        text = if (Registry.getInstance(instance).language == "en") "Sunset" else "日落"
-                    )
-                }
+            }
+        } else {
+            itemList.add {
                 Text(
                     textAlign = TextAlign.Center,
-                    color = Color(0xFFFF802B),
+                    color = Color(0xFFFF9625),
                     fontSize = TextUnit(25F, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
-                    text = weatherInfo.sunsetTime.format(timeFormat)
+                    text = "-"
                 )
-                Spacer(modifier = Modifier.size(10.dp))
-                Row(
+            }
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .padding(3.dp, 3.dp)
-                            .size(StringUtils.scaledSize(14, instance).dp),
-                        painter = painterResource(R.mipmap.moon),
-                        contentDescription = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
-                    )
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(13F, TextUnitType.Sp),
-                        text = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
-                    )
-                }
-                AsyncImage(
+                        .padding(3.dp, 3.dp)
+                        .size(StringUtils.scaledSize(14, instance).dp),
+                    painter = painterResource(R.mipmap.humidity),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
+                )
+            }
+        }
+        itemList.add {
+            Text(
+                textAlign = TextAlign.Center,
+                color = Color(0xFF3CB0FF),
+                fontSize = TextUnit(25F, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                text = String.format("%.0f", weatherInfo.currentHumidity).plus("%")
+            )
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
                     modifier = Modifier
-                        .padding(8.sp.dp)
-                        .size(25.sp.dp),
-                    model = "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime()),
+                        .padding(3.dp, 3.dp)
+                        .size(StringUtils.scaledSize(14, instance).dp),
+                    painter = painterResource(R.mipmap.wind),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Wind" else "風向風速"
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "Wind" else "風向風速"
+                )
+            }
+        }
+        val windText = if (weatherInfo.windSpeed < 0F) {
+            "-"
+        } else {
+            weatherInfo.windDirection.plus(" ")
+                .plus(String.format("%.0f", weatherInfo.windSpeed)).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
+        }
+        itemList.add {
+            Box (
+                modifier = Modifier.fillMaxWidth(0.9F),
+                contentAlignment = Alignment.Center
+            ) {
+                AutoResizeText(
+                    textAlign = TextAlign.Center,
+                    color = Color(0xFFFFFFFF),
+                    fontSizeRange = FontSizeRange(
+                        min = TextUnit(1F, TextUnitType.Sp),
+                        max = TextUnit(25F, TextUnitType.Sp)
+                    ),
+                    maxLines = 1,
+                    fontWeight = FontWeight.Bold,
+                    text = windText
+                )
+            }
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(3.dp, 3.dp)
+                        .size(StringUtils.scaledSize(14, instance).dp),
+                    painter = painterResource(R.mipmap.wind),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Gust" else "陣風",
+                    colorFilter = ColorFilter.tint(Color(0xFF26D4FF))
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "Gust" else "陣風"
+                )
+            }
+        }
+        val gustText = if (weatherInfo.windSpeed < 0F) {
+            "-"
+        } else {
+            String.format("%.0f", weatherInfo.gust).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
+        }
+        itemList.add {
+            Box (
+                modifier = Modifier.fillMaxWidth(0.9F),
+                contentAlignment = Alignment.Center
+            ) {
+                AutoResizeText(
+                    textAlign = TextAlign.Center,
+                    color = Color(0xFFFFFFFF),
+                    fontSizeRange = FontSizeRange(
+                        min = TextUnit(1F, TextUnitType.Sp),
+                        max = TextUnit(25F, TextUnitType.Sp)
+                    ),
+                    maxLines = 1,
+                    fontWeight = FontWeight.Bold,
+                    text = gustText
+                )
+            }
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(3.dp, 3.dp)
+                        .size(StringUtils.scaledSize(14, instance).dp),
+                    painter = painterResource(R.mipmap.sunrise),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Sunrise" else "日出"
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "Sunrise" else "日出"
+                )
+            }
+        }
+        itemList.add {
+            Text(
+                textAlign = TextAlign.Center,
+                color = Color(0xFFFFC32B),
+                fontSize = TextUnit(25F, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                text = weatherInfo.sunriseTime.format(timeFormat)
+            )
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(3.dp, 3.dp)
+                        .size(StringUtils.scaledSize(14, instance).dp),
+                    painter = painterResource(R.mipmap.sunset),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Sunset" else "日落"
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "Sunset" else "日落"
+                )
+            }
+        }
+        itemList.add {
+            Text(
+                textAlign = TextAlign.Center,
+                color = Color(0xFFFF802B),
+                fontSize = TextUnit(25F, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                text = weatherInfo.sunsetTime.format(timeFormat)
+            )
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(3.dp, 3.dp)
+                        .size(StringUtils.scaledSize(14, instance).dp),
+                    painter = painterResource(R.mipmap.moon),
                     contentDescription = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
                 )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
+                )
+            }
+        }
+        itemList.add {
+            AsyncImage(
+                modifier = Modifier
+                    .padding(8.sp.dp)
+                    .size(25.sp.dp),
+                model = moonPhaseUrl,
+                contentDescription = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
+            )
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        val moonrise = @Composable {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(3.dp, 3.dp)
+                        .size(StringUtils.scaledSize(14, instance).dp),
+                    painter = painterResource(R.mipmap.moonrise),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Moonrise" else "月出"
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "Moonrise" else "月出"
+                )
+            }
+            Text(
+                textAlign = TextAlign.Center,
+                color = Color(0xFFDFDFDF),
+                fontSize = TextUnit(25F, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                text = if (weatherInfo.moonriseTime == null) "-" else weatherInfo.moonriseTime.format(timeFormat)
+            )
+        }
+        val moonset = @Composable {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(3.dp, 3.dp)
+                        .size(StringUtils.scaledSize(14, instance).dp),
+                    painter = painterResource(R.mipmap.moonset),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Moonset" else "月落"
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "Moonset" else "月落"
+                )
+            }
+            Text(
+                textAlign = TextAlign.Center,
+                color = Color(0xFFBEBEBE),
+                fontSize = TextUnit(25F, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                text = if (weatherInfo.moonsetTime == null) "-" else weatherInfo.moonsetTime.format(timeFormat)
+            )
+        }
+        if (weatherInfo.moonriseTime == null || weatherInfo.moonsetTime == null || weatherInfo.moonriseTime.isBefore(weatherInfo.moonsetTime)) {
+            itemList.add {
+                moonrise()
+            }
+            itemList.add {
                 Spacer(modifier = Modifier.size(10.dp))
-                val moonrise = @Composable {
-                    Row(
+            }
+            itemList.add {
+                moonset()
+            }
+        } else {
+            itemList.add {
+                moonset()
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
+            itemList.add {
+                moonrise()
+            }
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
+            Button(
+                onClick = {
+                    instance.startActivity(Intent(instance, RadarActivity::class.java))
+                },
+                modifier = Modifier
+                    .width(StringUtils.scaledSize(180, instance).dp)
+                    .height(StringUtils.scaledSize(45, instance).dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = MaterialTheme.colors.secondary,
+                    contentColor = MaterialTheme.colors.primary
+                ),
+                content = {
+                    AutoResizeText(
                         modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Image(
-                            modifier = Modifier
-                                .padding(3.dp, 3.dp)
-                                .size(StringUtils.scaledSize(14, instance).dp),
-                            painter = painterResource(R.mipmap.moonrise),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") "Moonrise" else "月出"
-                        )
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(13F, TextUnitType.Sp),
-                            text = if (Registry.getInstance(instance).language == "en") "Moonrise" else "月出"
-                        )
-                    }
-                    Text(
+                            .fillMaxWidth(0.9F)
+                            .align(Alignment.Center),
                         textAlign = TextAlign.Center,
-                        color = Color(0xFFDFDFDF),
-                        fontSize = TextUnit(25F, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold,
-                        text = if (weatherInfo.moonriseTime == null) "-" else weatherInfo.moonriseTime.format(timeFormat)
+                        color = MaterialTheme.colors.primary,
+                        fontSizeRange = FontSizeRange(
+                            min = TextUnit(1F, TextUnitType.Sp),
+                            max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
+                        ),
+                        text = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64 公里)"
                     )
                 }
-                val moonset = @Composable {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Image(
-                            modifier = Modifier
-                                .padding(3.dp, 3.dp)
-                                .size(StringUtils.scaledSize(14, instance).dp),
-                            painter = painterResource(R.mipmap.moonset),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") "Moonset" else "月落"
-                        )
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(13F, TextUnitType.Sp),
-                            text = if (Registry.getInstance(instance).language == "en") "Moonset" else "月落"
-                        )
-                    }
-                    Text(
-                        textAlign = TextAlign.Center,
-                        color = Color(0xFFBEBEBE),
-                        fontSize = TextUnit(25F, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold,
-                        text = if (weatherInfo.moonsetTime == null) "-" else weatherInfo.moonsetTime.format(timeFormat)
-                    )
-                }
-                if (weatherInfo.moonriseTime == null || weatherInfo.moonsetTime == null || weatherInfo.moonriseTime.isBefore(weatherInfo.moonsetTime)) {
-                    moonrise()
-                    Spacer(modifier = Modifier.size(10.dp))
-                    moonset()
-                } else {
-                    moonset()
-                    Spacer(modifier = Modifier.size(10.dp))
-                    moonrise()
-                }
-                Spacer(modifier = Modifier.size(10.dp))
-                Button(
-                    onClick = {
-                        instance.startActivity(Intent(instance, RadarActivity::class.java))
-                    },
-                    modifier = Modifier
-                        .width(StringUtils.scaledSize(180, instance).dp)
-                        .height(StringUtils.scaledSize(45, instance).dp),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = MaterialTheme.colors.secondary,
-                        contentColor = MaterialTheme.colors.primary
-                    ),
-                    content = {
-                        AutoResizeText(
-                            modifier = Modifier
-                                .fillMaxWidth(0.9F)
-                                .align(Alignment.Center),
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSizeRange = FontSizeRange(
-                                min = TextUnit(1F, TextUnitType.Sp),
-                                max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
-                            ),
-                            text = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64 公里)"
-                        )
-                    }
-                )
-                Spacer(modifier = Modifier.size(20.dp))
-                Spacer(
-                    modifier = Modifier
-                        .padding(20.dp, 0.dp)
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Color(0xFF333333))
-                )
-                Spacer(modifier = Modifier.size(20.dp))
-                HourlyElements(weatherInfo, timeFormat, instance)
-                Spacer(modifier = Modifier.size(20.dp))
-                Spacer(
-                    modifier = Modifier
-                        .padding(20.dp, 0.dp)
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Color(0xFF333333))
-                )
-                Spacer(modifier = Modifier.size(20.dp))
-                ForecastElements(weatherInfo, instance)
-                Spacer(modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier
+            )
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(20.dp))
+        }
+        itemList.add {
+            Spacer(
+                modifier = Modifier
                     .padding(20.dp, 0.dp)
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color(0xFF333333)))
-                Spacer(modifier = Modifier.size(20.dp))
-            }
+                    .background(Color(0xFF333333))
+            )
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(20.dp))
+        }
+        itemList.addAll(
+            generateHourlyItems(weatherInfo, timeFormat, instance)
+        )
+        itemList.add {
+            Spacer(modifier = Modifier.size(20.dp))
+        }
+        itemList.add {
+            Spacer(
+                modifier = Modifier
+                    .padding(20.dp, 0.dp)
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0xFF333333))
+            )
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(20.dp))
+        }
+        itemList.addAll(
+            generateForecastItems(weatherInfo, instance)
+        )
+        itemList.add {
+            Spacer(modifier = Modifier.size(20.dp))
+        }
+        itemList.add {
+            Spacer(modifier = Modifier
+                .padding(20.dp, 0.dp)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(Color(0xFF333333)))
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(20.dp))
         }
     }
+    return itemList
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun HourlyElements(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFormatter, instance: TitleActivity) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp, 0.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        var count = 0
-        val nowHour = LocalDateTime.now(Shared.HK_TIMEZONE.toZoneId())
-        for (hourInfo in weatherInfo.hourlyWeatherInfo) {
-            if (hourInfo.time.isBefore(nowHour)) {
-                continue
-            }
-            if (++count > 12) {
-                break
-            }
+fun generateHourlyItems(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFormatter, instance: TitleActivity): List<@Composable () -> Unit> {
+    val itemList: MutableList<@Composable () -> Unit> = ArrayList()
+    var count = 0
+    val nowHour = LocalDateTime.now(Shared.HK_TIMEZONE.toZoneId())
+    for (hourInfo in weatherInfo.hourlyWeatherInfo) {
+        if (hourInfo.time.isBefore(nowHour)) {
+            continue
+        }
+        if (++count > 12) {
+            break
+        }
+        itemList.add {
             Spacer(modifier = Modifier.size(5.dp))
+        }
+        itemList.add {
             Row(
+                modifier = Modifier.padding(20.dp, 0.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -1120,23 +1279,25 @@ fun HourlyElements(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFormatte
                     text = String.format("%.1f", hourInfo.temperature).plus("°")
                 )
             }
+        }
+        itemList.add {
             Spacer(modifier = Modifier.size(5.dp))
         }
     }
+    return itemList
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun ForecastElements(weatherInfo: CurrentWeatherInfo, instance: TitleActivity) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp, 0.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        for (dayInfo in weatherInfo.forecastInfo) {
+fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivity): List<@Composable () -> Unit> {
+    val itemList: MutableList<@Composable () -> Unit> = ArrayList()
+    for (dayInfo in weatherInfo.forecastInfo) {
+        itemList.add {
             Spacer(modifier = Modifier.size(5.dp))
+        }
+        itemList.add {
             Row(
+                modifier = Modifier
+                    .padding(20.dp, 0.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -1213,9 +1374,12 @@ fun ForecastElements(weatherInfo: CurrentWeatherInfo, instance: TitleActivity) {
                         .plus("°")
                 )
             }
+        }
+        itemList.add {
             Spacer(modifier = Modifier.size(5.dp))
         }
     }
+    return itemList
 }
 
 fun openHKOApp(instance: TitleActivity) {
@@ -1264,6 +1428,7 @@ fun OpenHKOAppButton(instance: TitleActivity) {
             openHKOApp(instance)
         },
         modifier = Modifier
+            .padding(20.dp, 0.dp)
             .width(StringUtils.scaledSize(220, instance).dp)
             .height(StringUtils.scaledSize(45, instance).dp),
         colors = ButtonDefaults.buttonColors(
@@ -1289,6 +1454,7 @@ fun ChangeLocationButton(instance: TitleActivity) {
             instance.startActivity(Intent(instance, ChangeLocationActivity::class.java))
         },
         modifier = Modifier
+            .padding(20.dp, 0.dp)
             .width(StringUtils.scaledSize(220, instance).dp)
             .height(StringUtils.scaledSize(45, instance).dp),
         colors = ButtonDefaults.buttonColors(
@@ -1325,6 +1491,7 @@ fun SetRefreshRateButton(instance: TitleActivity) {
             Shared.startBackgroundService(instance)
         },
         modifier = Modifier
+            .padding(20.dp, 0.dp)
             .width(StringUtils.scaledSize(220, instance).dp)
             .height(StringUtils.scaledSize(45, instance).dp),
         colors = ButtonDefaults.buttonColors(
@@ -1353,9 +1520,9 @@ fun LanguageButton(instance: TitleActivity) {
     Button(
         onClick = {
             Registry.getInstance(instance).setLanguage(if (Registry.getInstance(instance).language == "en") "zh" else "en", instance)
-            Shared.currentWeatherInfo.reset()
-            Shared.currentWarnings.reset()
-            Shared.currentTips.reset()
+            Shared.currentWeatherInfo.reset(instance)
+            Shared.currentWarnings.reset(instance)
+            Shared.currentTips.reset(instance)
             instance.startActivity(Intent(instance, TitleActivity::class.java))
             instance.finishAffinity()
         },
@@ -1382,9 +1549,9 @@ fun LanguageButton(instance: TitleActivity) {
 fun UpdateTilesButton(instance: TitleActivity) {
     Button(
         onClick = {
-            Shared.currentWeatherInfo.reset()
-            Shared.currentWarnings.reset()
-            Shared.currentTips.reset()
+            Shared.currentWeatherInfo.reset(instance)
+            Shared.currentWarnings.reset(instance)
+            Shared.currentTips.reset(instance)
             Registry.getInstance(instance).updateTileServices(instance)
             instance.runOnUiThread {
                 Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Refreshing all tiles" else "正在更新所有資訊方塊", Toast.LENGTH_SHORT).show()

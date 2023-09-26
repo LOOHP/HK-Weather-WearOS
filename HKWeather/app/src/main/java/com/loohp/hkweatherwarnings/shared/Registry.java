@@ -468,10 +468,10 @@ public class Registry {
                 List<WeatherInfo> forecastInfo = new ArrayList<>(dayArray.length() - 1);
 
                 JSONObject dayObj = dayArray.optJSONObject(0);
-                float highestTemperature = (float) dayObj.optJSONObject("forecastMaxtemp").optDouble("value");
-                float lowestTemperature = (float) dayObj.optJSONObject("forecastMintemp").optDouble("value");
-                float maxRelativeHumidity = (float) dayObj.optJSONObject("forecastMaxrh").optDouble("value");
-                float minRelativeHumidity = (float) dayObj.optJSONObject("forecastMinrh").optDouble("value");
+                float highestTemperature = (float) dayObj.optJSONObject("forecastMaxtemp").optDouble("value", -Float.MAX_VALUE);
+                float lowestTemperature = (float) dayObj.optJSONObject("forecastMintemp").optDouble("value", -Float.MAX_VALUE);
+                float maxRelativeHumidity = (float) dayObj.optJSONObject("forecastMaxrh").optDouble("value", -Float.MAX_VALUE);
+                float minRelativeHumidity = (float) dayObj.optJSONObject("forecastMinrh").optDouble("value", -Float.MAX_VALUE);
 
                 for (int i = 0; i < dayArray.length(); i++) {
                     JSONObject forecastDayObj = dayArray.optJSONObject(i);
@@ -480,10 +480,10 @@ public class Registry {
                     JSONObject forecastStationDayObj = dailyForecastArray.stream().filter(e -> e.optString("ForecastDate").equals(forecastDateStr)).findFirst().orElse(null);
 
                     LocalDate forecastDate = LocalDate.parse(forecastDateStr, dateFormatter);
-                    float forecastHighestTemperature = (float) forecastDayObj.optJSONObject("forecastMaxtemp").optDouble("value");
-                    float forecastLowestTemperature = (float) forecastDayObj.optJSONObject("forecastMintemp").optDouble("value");
-                    float forecastMaxRelativeHumidity = (float) forecastDayObj.optJSONObject("forecastMaxrh").optDouble("value");
-                    float forecastMinRelativeHumidity = (float) forecastDayObj.optJSONObject("forecastMinrh").optDouble("value");
+                    float forecastHighestTemperature = (float) forecastDayObj.optJSONObject("forecastMaxtemp").optDouble("value", -Float.MAX_VALUE);
+                    float forecastLowestTemperature = (float) forecastDayObj.optJSONObject("forecastMintemp").optDouble("value", -Float.MAX_VALUE);
+                    float forecastMaxRelativeHumidity = (float) forecastDayObj.optJSONObject("forecastMaxrh").optDouble("value", -Float.MAX_VALUE);
+                    float forecastMinRelativeHumidity = (float) forecastDayObj.optJSONObject("forecastMinrh").optDouble("value", -Float.MAX_VALUE);
                     WeatherStatusIcon forecastWeatherIcon = WeatherStatusIcon.getByCode(forecastDayObj.optInt("ForecastIcon"));
 
                     float forecastChanceOfRain;
@@ -504,10 +504,10 @@ public class Registry {
                     JSONObject hourObj = hourArray.optJSONObject(i);
 
                     LocalDateTime hour = LocalDateTime.parse(hourObj.optString("ForecastHour"), dateHourFormatter);
-                    float hourTemperature = (float) hourObj.optDouble("ForecastTemperature");
-                    float hourHumidity = (float) hourObj.optDouble("ForecastRelativeHumidity");
-                    float hourWindDirection = (float) hourObj.optDouble("ForecastWindDirection");
-                    float hourWindSpeed = (float) hourObj.optDouble("ForecastWindSpeed");
+                    float hourTemperature = (float) hourObj.optDouble("ForecastTemperature", -Float.MAX_VALUE);
+                    float hourHumidity = (float) hourObj.optDouble("ForecastRelativeHumidity", -Float.MAX_VALUE);
+                    float hourWindDirection = (float) hourObj.optDouble("ForecastWindDirection", -Float.MAX_VALUE);
+                    float hourWindSpeed = (float) hourObj.optDouble("ForecastWindSpeed", -Float.MAX_VALUE);
                     WeatherStatusIcon hourIcon;
                     if (hourObj.has("ForecastWeather")) {
                         hourIcon = WeatherStatusIcon.getByCode(hourObj.optInt("ForecastWeather"));

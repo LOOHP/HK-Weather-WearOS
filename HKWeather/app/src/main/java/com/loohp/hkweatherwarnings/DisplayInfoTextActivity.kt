@@ -3,18 +3,18 @@ package com.loohp.hkweatherwarnings
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.ScrollableDefaults
-import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -47,6 +47,8 @@ import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 
 class DisplayInfoTextActivity : ComponentActivity() {
@@ -79,6 +81,16 @@ fun DisplayInfo(imageDrawable: Int, imageUrl: String?, imageWidth: Int, imageHei
         val scrollInProgress by remember { derivedStateOf { scroll.isScrollInProgress } }
         val scrollReachedEnd by remember { derivedStateOf { scroll.canScrollBackward != scroll.canScrollForward } }
         var scrollMoved by remember { mutableStateOf(false) }
+
+        val mutex by remember { mutableStateOf(Mutex()) }
+        val animatedScrollValue = remember { Animatable(0F) }
+        var previousScrollValue by remember { mutableStateOf(0F) }
+        LaunchedEffect (animatedScrollValue.value) {
+            val diff = previousScrollValue - animatedScrollValue.value
+            scroll.scrollBy(diff)
+            previousScrollValue -= diff
+        }
+
         LaunchedEffect (scrollInProgress) {
             if (scrollInProgress) {
                 scrollCounter++
@@ -89,7 +101,9 @@ fun DisplayInfo(imageDrawable: Int, imageUrl: String?, imageWidth: Int, imageHei
             if (scrollReachedEnd && scrollMoved) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             }
-            scrollMoved = true
+            if (!scrollMoved) {
+                scrollMoved = true
+            }
         }
         LaunchedEffect (Unit) {
             focusRequester.requestFocus()
@@ -104,9 +118,14 @@ fun DisplayInfo(imageDrawable: Int, imageUrl: String?, imageWidth: Int, imageHei
                 )
                 .onRotaryScrollEvent {
                     scope.launch {
-                        scroll.animateScrollBy(
-                            it.verticalScrollPixels * 1.5F,
-                            TweenSpec(durationMillis = 500, easing = FastOutSlowInEasing)
+                        mutex.withLock {
+                            val target = it.verticalScrollPixels + animatedScrollValue.value
+                            animatedScrollValue.snapTo(target)
+                            previousScrollValue = target
+                        }
+                        animatedScrollValue.animateTo(
+                            0F,
+                            TweenSpec(durationMillis = 300, easing = FastOutSlowInEasing)
                         )
                     }
                     true

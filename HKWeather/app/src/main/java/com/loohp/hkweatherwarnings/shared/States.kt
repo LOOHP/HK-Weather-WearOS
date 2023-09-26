@@ -52,49 +52,60 @@ class MapValueState<K, V>(
 
 
 class DataState<T>(
-    private val initialValue: T,
+    private val defaultValue: T,
+    private val initializer: (Context) -> Triple<T, Long?, Boolean?>,
     private val freshness: (Context) -> Long,
     private val updateFunction: (Context, DataState<T>) -> UpdateResult<T>,
-    private val updateSuccessCallback: (Context, DataState<T>) -> Unit = { _, _ -> }
+    private val updateSuccessCallback: (Context, DataState<T>, T) -> Unit = { _, _, _ -> }
 ) {
 
-    private var state = mutableStateOf(initialValue)
+    private var state: MutableState<T>? = null
     private var lastSuccessfulUpdateTime: Long = 1
     private var isLastUpdateSuccessful: Boolean = false
 
-    fun getLatestValue(context: Context, executor: ExecutorService, forceReload: Boolean = false, suppressUpdateSuccessCallback: Boolean = false): Future<T> {
+    fun getLatestValue(context: Context, executor: ExecutorService, forceReload: Boolean = false): Future<T> {
+        initializeStateIfNotAlready(context)
         return if (forceReload || System.currentTimeMillis() - lastSuccessfulUpdateTime > freshness.invoke(context)) {
-            update(context, executor, suppressUpdateSuccessCallback)
+            update(context, executor)
         } else {
-            CompletableFuture.completedFuture(state.value)
+            CompletableFuture.completedFuture(state!!.value)
         }
     }
 
-    private fun update(context: Context, executor: ExecutorService, suppressUpdateSuccessCallback: Boolean): Future<T> {
+    private fun initializeStateIfNotAlready(context: Context) {
+        if (state == null) {
+            val init = initializer.invoke(context)
+            state = mutableStateOf(init.first)
+            init.second?.let { lastSuccessfulUpdateTime = it }
+            init.third?.let { isLastUpdateSuccessful = it }
+        }
+    }
+
+    private fun update(context: Context, executor: ExecutorService): Future<T> {
         return executor.submit(Callable {
             val result = updateFunction.invoke(context, this)
             if (result.isSuccessful) {
-                state.value = result.value
+                state!!.value = result.value
                 lastSuccessfulUpdateTime = System.currentTimeMillis()
                 isLastUpdateSuccessful = true
-                if (!suppressUpdateSuccessCallback) {
-                    updateSuccessCallback.invoke(context, this)
-                }
+                updateSuccessCallback.invoke(context, this, result.value)
             } else {
                 isLastUpdateSuccessful = false
             }
-            return@Callable state.value
+            return@Callable state!!.value
         })
     }
 
-    fun reset() {
-        state.value = initialValue
+    fun reset(context: Context) {
+        initializeStateIfNotAlready(context)
+        state!!.value = defaultValue
         lastSuccessfulUpdateTime = 0
         isLastUpdateSuccessful = false
     }
 
-    fun getCachedValue(): T {
-        return state.value
+    fun getCachedValue(context: Context): T {
+        initializeStateIfNotAlready(context)
+        return state!!.value
     }
 
     fun getLastSuccessfulUpdateTime(): Long {
@@ -107,7 +118,7 @@ class DataState<T>(
 
     fun getState(context: Context, executor: ExecutorService): MutableState<T> {
         getLatestValue(context, executor)
-        return state
+        return state!!
     }
 
 }

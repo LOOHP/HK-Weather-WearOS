@@ -18,12 +18,21 @@ import com.loohp.hkweatherwarnings.utils.LocationUtils.LocationResult
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
 import com.loohp.hkweatherwarnings.weather.LunarDate
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.io.PrintWriter
 import java.lang.Long.min
+import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.EnumMap
 import java.util.TimeZone
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 
 class Shared {
 
@@ -39,7 +48,27 @@ class Shared {
         val REFRESH_INTERVAL: (Context) -> Long = { min(Registry.getInstance(it).refreshRate, NEVER_REFRESH_INTERVAL) }
         val FRESHNESS_TIME: (Context) -> Long = { REFRESH_INTERVAL.invoke(it) + 600000L }
 
-        val currentWeatherInfo: DataState<CurrentWeatherInfo?> = DataState(null, FRESHNESS_TIME, { context, _ ->
+        private const val WEATHER_CACHE_FILE = "weather_cache.json"
+        private const val WARNINGS_CACHE_FILE = "warnings_cache.json"
+        private const val TIPS_CACHE_FILE = "tips_cache.json"
+
+        val currentWeatherInfo: DataState<CurrentWeatherInfo?> = DataState(null, {
+            if (it.applicationContext.fileList().contains(WEATHER_CACHE_FILE)) {
+                try {
+                    BufferedReader(InputStreamReader(it.applicationContext.openFileInput(WEATHER_CACHE_FILE), StandardCharsets.UTF_8)).use { reader ->
+                        val json = JSONObject(reader.lines().collect(Collectors.joining()))
+                        val data = CurrentWeatherInfo.deserialize(json.optJSONObject("weather")!!)
+                        val updateTime = json.optLong("updateTime")
+                        val updateSuccessful = json.optBoolean("updateSuccessful")
+                        return@DataState Triple(data, updateTime, updateSuccessful)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    it.applicationContext.deleteFile(WEATHER_CACHE_FILE)
+                }
+            }
+            Triple(null, null, null)
+        }, FRESHNESS_TIME, { context, _ ->
             val locationType = Registry.getInstance(context).location
             val location = if (locationType.first == "GPS") LocationUtils.getGPSLocation(context).get() else LocationResult.ofNullable(locationType.second)
             val result = Registry.getInstance(context).getCurrentWeatherInfo(context, location).get()
@@ -48,17 +77,125 @@ class Shared {
             } else {
                 UpdateResult(true, result)
             }
-        }, { context, _ -> TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java) })
+        }, { context, self, value ->
+            TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java)
+            if (value != null) {
+                try {
+                    PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(WEATHER_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
+                        val json = JSONObject()
+                        json.put("weather", value.serialize())
+                        json.put("updateTime", self.getLastSuccessfulUpdateTime())
+                        json.put("updateSuccessful", self.isLastUpdateSuccess())
+                        it.write(json.toString())
+                        it.flush()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        })
 
-        val currentWarnings: DataState<Map<WeatherWarningsType, String?>> = DataState(emptyMap(), FRESHNESS_TIME, { context, _ ->
+        val currentWarnings: DataState<Map<WeatherWarningsType, String?>> = DataState(emptyMap(), {
+            if (it.applicationContext.fileList().contains(WARNINGS_CACHE_FILE)) {
+                try {
+                    BufferedReader(InputStreamReader(it.applicationContext.openFileInput(WARNINGS_CACHE_FILE), StandardCharsets.UTF_8)).use { reader ->
+                        val json = JSONObject(reader.lines().collect(Collectors.joining()))
+                        val entries = json.optJSONArray("warnings")!!
+                        val map: MutableMap<WeatherWarningsType, String?> = EnumMap(WeatherWarningsType::class.java)
+                        for (i in 0 until entries.length()) {
+                            val entry = entries.optJSONObject(i)!!
+                            val type = WeatherWarningsType.valueOf(entry.optString("type").uppercase())
+                            val text = entry.optString("text").ifEmpty { null }
+                            map[type] = text
+                        }
+                        val updateTime = json.optLong("updateTime")
+                        val updateSuccessful = json.optBoolean("updateSuccessful")
+                        return@DataState Triple(map, updateTime, updateSuccessful)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    it.applicationContext.deleteFile(WARNINGS_CACHE_FILE)
+                }
+            }
+            Triple(emptyMap(), null, null)
+        }, FRESHNESS_TIME, { context, _ ->
             val result = Registry.getInstance(context).getActiveWarnings(context).get()
             if (result == null) UpdateResult(false, emptyMap()) else UpdateResult(true, result)
-        }, { context, _ -> TileService.getUpdater(context).requestUpdate(WeatherWarningsTile::class.java) })
+        }, { context, self, value ->
+            TileService.getUpdater(context).requestUpdate(WeatherWarningsTile::class.java)
+            if (value.isNotEmpty()) {
+                PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(WARNINGS_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
+                    try {
+                        val array = JSONArray()
+                        for ((type, text) in value.entries) {
+                            val obj = JSONObject()
+                            obj.put("type", type.name)
+                            obj.put("text", text?: "")
+                            array.put(obj)
+                        }
+                        val json = JSONObject()
+                        json.put("warnings", array)
+                        json.put("updateTime", self.getLastSuccessfulUpdateTime())
+                        json.put("updateSuccessful", self.isLastUpdateSuccess())
+                        it.write(json.toString())
+                        it.flush()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        })
 
-        val currentTips: DataState<List<Pair<String, Long>>> = DataState(emptyList(), FRESHNESS_TIME, { context, _ ->
+        val currentTips: DataState<List<Pair<String, Long>>> = DataState(emptyList(), {
+            if (it.applicationContext.fileList().contains(TIPS_CACHE_FILE)) {
+                try {
+                    BufferedReader(InputStreamReader(it.applicationContext.openFileInput(TIPS_CACHE_FILE), StandardCharsets.UTF_8)).use { reader ->
+                        val json = JSONObject(reader.lines().collect(Collectors.joining()))
+                        val entries = json.optJSONArray("tips")!!
+                        val list: MutableList<Pair<String, Long>> = ArrayList()
+                        for (i in 0 until entries.length()) {
+                            val entry = entries.optJSONObject(i)!!
+                            val tip = entry.optString("tip")
+                            val time = entry.optLong("time")
+                            list.add(Pair.create(tip, time))
+                        }
+                        val updateTime = json.optLong("updateTime")
+                        val updateSuccessful = json.optBoolean("updateSuccessful")
+                        return@DataState Triple(list, updateTime, updateSuccessful)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    it.applicationContext.deleteFile(TIPS_CACHE_FILE)
+                }
+            }
+            Triple(emptyList(), null, null)
+        }, FRESHNESS_TIME, { context, _ ->
             val result = Registry.getInstance(context).getWeatherTips(context).get()
             if (result == null) UpdateResult(false, emptyList()) else UpdateResult(true, result)
-        }, { context, _ -> TileService.getUpdater(context).requestUpdate(WeatherTipsTile::class.java) })
+        }, { context, self, value ->
+            TileService.getUpdater(context).requestUpdate(WeatherTipsTile::class.java)
+            if (value.isNotEmpty()) {
+                PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(TIPS_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
+                    try {
+                        val array = JSONArray()
+                        for (pair in value) {
+                            val obj = JSONObject()
+                            obj.put("tip", pair.first)
+                            obj.put("time", pair.second)
+                            array.put(obj)
+                        }
+                        val json = JSONObject()
+                        json.put("tips", array)
+                        json.put("updateTime", self.getLastSuccessfulUpdateTime())
+                        json.put("updateSuccessful", self.isLastUpdateSuccess())
+                        it.write(json.toString())
+                        it.flush()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        })
 
         val convertedLunarDates: MapValueState<LocalDate, LunarDate> = MapValueState(ConcurrentHashMap()) { key, context, _ ->
             Registry.getInstance(context).getLunarDate(context, key).get()
