@@ -17,7 +17,12 @@ class MainActivity : ComponentActivity() {
         Shared.startBackgroundService(this)
         setContent {
             LaunchedEffect (Unit) {
-                startActivity(Intent(this@MainActivity, TitleActivity::class.java))
+                val launchIntent = Intent(this@MainActivity, TitleActivity::class.java)
+                if (intent.extras != null && intent.extras!!.containsKey("launchSection")) {
+                    launchIntent.putExtra("launchSection", intent.extras!!.getString("launchSection"))
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(launchIntent)
                 if (intent.extras != null && intent.extras!!.getInt("warningInfo", 0) > 0) {
                     val infoIndex = Intent(this@MainActivity, DisplayInfoTextActivity::class.java)
                     infoIndex.putExtras(intent.extras!!)

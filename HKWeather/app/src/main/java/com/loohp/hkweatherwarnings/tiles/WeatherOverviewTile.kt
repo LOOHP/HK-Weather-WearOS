@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.loohp.hkweatherwarnings.MainActivity
 import com.loohp.hkweatherwarnings.R
+import com.loohp.hkweatherwarnings.Section
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.FRESHNESS_TIME
@@ -84,6 +85,7 @@ class WeatherOverviewTile : TileService() {
                                             .setAndroidActivity(
                                                 ActionBuilders.AndroidActivity.Builder()
                                                     .setClassName(MainActivity::class.java.name)
+                                                    .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.MAIN.name))
                                                     .setPackageName(packageName)
                                                     .build()
                                             ).build()
@@ -554,6 +556,21 @@ class WeatherOverviewTile : TileService() {
                                 .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
                                 .setModifiers(
                                     ModifiersBuilders.Modifiers.Builder()
+                                        .setClickable(
+                                            ModifiersBuilders.Clickable.Builder()
+                                                .setOnClick(
+                                                    ActionBuilders.LaunchAction.Builder()
+                                                        .setAndroidActivity(
+                                                            ActionBuilders.AndroidActivity.Builder()
+                                                                .setClassName(MainActivity::class.java.name)
+                                                                .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.FORECAST.name))
+                                                                .setPackageName(packageName)
+                                                                .build()
+                                                        ).build()
+                                                )
+                                                .setId("open")
+                                                .build()
+                                        )
                                         .setPadding(
                                             ModifiersBuilders.Padding.Builder()
                                                 .setTop(DimensionBuilders.DpProp.Builder(10F).build())
@@ -770,6 +787,25 @@ class WeatherOverviewTile : TileService() {
                                 .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
                                 .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
                                 .setResourceId("humidity")
+                                .setModifiers(
+                                    ModifiersBuilders.Modifiers.Builder()
+                                        .setClickable(
+                                            ModifiersBuilders.Clickable.Builder()
+                                                .setOnClick(
+                                                    ActionBuilders.LaunchAction.Builder()
+                                                        .setAndroidActivity(
+                                                            ActionBuilders.AndroidActivity.Builder()
+                                                                .setClassName(MainActivity::class.java.name)
+                                                                .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.HUMIDITY.name))
+                                                                .setPackageName(packageName)
+                                                                .build()
+                                                        ).build()
+                                                )
+                                                .setId("open")
+                                                .build()
+                                        )
+                                        .build()
+                                )
                                 .build()
                         ).build()
                 )
@@ -830,8 +866,91 @@ class WeatherOverviewTile : TileService() {
                                 .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
                                 .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
                                 .setResourceId("uvindex")
+                                .setModifiers(
+                                    ModifiersBuilders.Modifiers.Builder()
+                                        .setClickable(
+                                            ModifiersBuilders.Clickable.Builder()
+                                                .setOnClick(
+                                                    ActionBuilders.LaunchAction.Builder()
+                                                        .setAndroidActivity(
+                                                            ActionBuilders.AndroidActivity.Builder()
+                                                                .setClassName(MainActivity::class.java.name)
+                                                                .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.UVINDEX.name))
+                                                                .setPackageName(packageName)
+                                                                .build()
+                                                        ).build()
+                                                )
+                                                .setId("open")
+                                                .build()
+                                        )
+                                        .build()
+                                )
                                 .build()
                         ).build()
+                ).addContent(
+                    LayoutElementBuilders.Box.Builder()
+                        .setWidth(DimensionBuilders.expand())
+                        .setHeight(DimensionBuilders.expand())
+                        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_START)
+                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                        .addContent(
+                            LayoutElementBuilders.Box.Builder()
+                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(35F, this)).build())
+                                .setHeight(DimensionBuilders.expand())
+                                .setModifiers(
+                                    ModifiersBuilders.Modifiers.Builder()
+                                        .setClickable(
+                                            ModifiersBuilders.Clickable.Builder()
+                                                .setOnClick(
+                                                    ActionBuilders.LaunchAction.Builder()
+                                                        .setAndroidActivity(
+                                                            ActionBuilders.AndroidActivity.Builder()
+                                                                .setClassName(MainActivity::class.java.name)
+                                                                .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.HUMIDITY.name))
+                                                                .setPackageName(packageName)
+                                                                .build()
+                                                        ).build()
+                                                )
+                                                .setId("open")
+                                                .build()
+                                        )
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
+                ).addContent(
+                    LayoutElementBuilders.Box.Builder()
+                        .setWidth(DimensionBuilders.expand())
+                        .setHeight(DimensionBuilders.expand())
+                        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_END)
+                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                        .addContent(
+                            LayoutElementBuilders.Box.Builder()
+                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(35F, this)).build())
+                                .setHeight(DimensionBuilders.expand())
+                                .setModifiers(
+                                    ModifiersBuilders.Modifiers.Builder()
+                                        .setClickable(
+                                            ModifiersBuilders.Clickable.Builder()
+                                                .setOnClick(
+                                                    ActionBuilders.LaunchAction.Builder()
+                                                        .setAndroidActivity(
+                                                            ActionBuilders.AndroidActivity.Builder()
+                                                                .setClassName(MainActivity::class.java.name)
+                                                                .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.UVINDEX.name))
+                                                                .setPackageName(packageName)
+                                                                .build()
+                                                        ).build()
+                                                )
+                                                .setId("open")
+                                                .build()
+                                        )
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
                 )
             for ((i, value) in warnings.keys.withIndex()) {
                 layout.addContent(
@@ -852,6 +971,41 @@ class WeatherOverviewTile : TileService() {
                                     ColorBuilders.ColorProp.Builder(Color(value.color).toArgb()).build()
                                 ).build()
                         ).build()
+                    )
+            }
+            if (warnings.isNotEmpty()) {
+                layout.addContent(
+                    LayoutElementBuilders.Box.Builder()
+                        .setWidth(DimensionBuilders.expand())
+                        .setHeight(DimensionBuilders.expand())
+                        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_START)
+                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_TOP)
+                        .addContent(
+                            LayoutElementBuilders.Box.Builder()
+                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(45F, this)).build())
+                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(70F, this)).build())
+                                .setModifiers(
+                                    ModifiersBuilders.Modifiers.Builder()
+                                        .setClickable(
+                                            ModifiersBuilders.Clickable.Builder()
+                                                .setOnClick(
+                                                    ActionBuilders.LaunchAction.Builder()
+                                                        .setAndroidActivity(
+                                                            ActionBuilders.AndroidActivity.Builder()
+                                                                .setClassName(MainActivity::class.java.name)
+                                                                .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.WARNINGS.name))
+                                                                .setPackageName(packageName)
+                                                                .build()
+                                                        ).build()
+                                                )
+                                                .setId("open")
+                                                .build()
+                                        )
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
                 )
             }
             for (i in tips.indices) {
@@ -873,6 +1027,41 @@ class WeatherOverviewTile : TileService() {
                                     ColorBuilders.ColorProp.Builder(Color(0xFFFF0000).toArgb()).build()
                                 ).build()
                         ).build()
+                )
+            }
+            if (tips.isNotEmpty()) {
+                layout.addContent(
+                    LayoutElementBuilders.Box.Builder()
+                        .setWidth(DimensionBuilders.expand())
+                        .setHeight(DimensionBuilders.expand())
+                        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_END)
+                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_TOP)
+                        .addContent(
+                            LayoutElementBuilders.Box.Builder()
+                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(45F, this)).build())
+                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(70F, this)).build())
+                                .setModifiers(
+                                    ModifiersBuilders.Modifiers.Builder()
+                                        .setClickable(
+                                            ModifiersBuilders.Clickable.Builder()
+                                                .setOnClick(
+                                                    ActionBuilders.LaunchAction.Builder()
+                                                        .setAndroidActivity(
+                                                            ActionBuilders.AndroidActivity.Builder()
+                                                                .setClassName(MainActivity::class.java.name)
+                                                                .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.TIPS.name))
+                                                                .setPackageName(packageName)
+                                                                .build()
+                                                        ).build()
+                                                )
+                                                .setId("open")
+                                                .build()
+                                        )
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
                 )
             }
             layout.build()

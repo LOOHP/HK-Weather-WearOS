@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.loohp.hkweatherwarnings.MainActivity
 import com.loohp.hkweatherwarnings.R
+import com.loohp.hkweatherwarnings.Section
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.FRESHNESS_TIME
@@ -73,6 +74,7 @@ class WeatherWarningsTile : TileService() {
                                             .setAndroidActivity(
                                                 ActionBuilders.AndroidActivity.Builder()
                                                     .setClassName(MainActivity::class.java.name)
+                                                    .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.WARNINGS.name))
                                                     .setPackageName(packageName)
                                                     .build()
                                             ).build()

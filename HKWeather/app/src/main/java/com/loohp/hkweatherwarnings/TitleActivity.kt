@@ -97,10 +97,42 @@ import java.util.Locale
 import java.util.concurrent.ForkJoinPool
 
 
+enum class Section {
+    MAIN, WARNINGS, TIPS, HUMIDITY, UVINDEX, FORECAST, HOURLY;
+}
+
+class ItemList : ArrayList<kotlin.Pair<@Composable () -> Unit, Section?>>() {
+
+    fun add(itemProvider: @Composable () -> Unit): Boolean {
+        return add(itemProvider to null)
+    }
+
+    fun add(section: Section, itemProvider: @Composable () -> Unit): Boolean {
+        return add(itemProvider to section)
+    }
+
+    fun addAll(section: Section, itemProviders: Collection<@Composable () -> Unit>): Boolean {
+        return addAll(itemProviders.map { it to section })
+    }
+
+    fun getSectionIndex(section: Section): Int {
+        return indexOfFirst { section == it.second }
+    }
+
+}
+
 class TitleActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        var launchSection: Section? = null
+        if (intent.extras != null && intent.extras!!.containsKey("launchSection")) {
+            try {
+                launchSection = Section.valueOf(intent.extras!!.getString("launchSection")!!.uppercase())
+            } catch (_: Exception) { }
+        }
+
         setContent {
             var today by remember { mutableStateOf(LocalDate.now(Shared.HK_TIMEZONE.toZoneId())) }
             LaunchedEffect (Unit) {
@@ -112,14 +144,14 @@ class TitleActivity : ComponentActivity() {
                     delay(500)
                 }
             }
-            MainElements(today, this)
+            MainElements(today, launchSection, this)
         }
     }
 
 }
 
 @Composable
-fun MainElements(today: LocalDate, instance: TitleActivity) {
+fun MainElements(today: LocalDate, launchSection: Section? = null, instance: TitleActivity) {
     val weatherInfo: CurrentWeatherInfo? by remember { Shared.currentWeatherInfo.getState(instance, ForkJoinPool.commonPool()) }
     val weatherWarnings: Map<WeatherWarningsType, String?> by remember { Shared.currentWarnings.getState(instance, ForkJoinPool.commonPool()) }
     val weatherTips: List<Pair<String, Long>> by remember { Shared.currentTips.getState(instance, ForkJoinPool.commonPool()) }
@@ -127,6 +159,8 @@ fun MainElements(today: LocalDate, instance: TitleActivity) {
 
     HKWeatherTheme {
         val moonPhaseUrl by remember { derivedStateOf { "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime()) } }
+        val elements by remember { derivedStateOf { generateWeatherInfoItems(weatherInfo, weatherWarnings, weatherTips, lunarDate, moonPhaseUrl, instance) } }
+
         val focusRequester = remember { FocusRequester() }
         val scroll = rememberLazyListState()
         val scope = rememberCoroutineScope()
@@ -161,6 +195,12 @@ fun MainElements(today: LocalDate, instance: TitleActivity) {
         }
         LaunchedEffect (Unit) {
             focusRequester.requestFocus()
+            launchSection?.let {
+                val index = elements.getSectionIndex(it)
+                if (index >= 0) {
+                    scroll.animateScrollToItem(index, -ScreenSizeUtils.getScreenHeight(instance) / 5)
+                }
+            }
             instance.imageLoader.execute(ImageRequest.Builder(instance).data(moonPhaseUrl).build())
         }
 
@@ -191,7 +231,7 @@ fun MainElements(today: LocalDate, instance: TitleActivity) {
             horizontalAlignment = Alignment.CenterHorizontally,
             state = scroll
         ) {
-            for (it in generateWeatherInfoItems(weatherInfo, weatherWarnings, weatherTips, lunarDate, moonPhaseUrl, instance)) {
+            for ((it, _) in elements) {
                 item {
                     it.invoke()
                 }
@@ -373,14 +413,14 @@ fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Map<WeatherWarningsType, String?>, weatherTips: List<Pair<String, Long>>, lunarDate: LunarDate?, moonPhaseUrl: String, instance: TitleActivity): List<@Composable () -> Unit> {
-    val itemList: MutableList<@Composable () -> Unit> = ArrayList()
+fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Map<WeatherWarningsType, String?>, weatherTips: List<Pair<String, Long>>, lunarDate: LunarDate?, moonPhaseUrl: String, instance: TitleActivity): ItemList {
+    val itemList = ItemList()
     if (weatherInfo == null) {
         itemList.add { UpdatingElements(instance) }
     } else {
         val systemTimeFormat = DateFormat.getTimeFormat(instance)
         val timeFormat = DateTimeFormatter.ofPattern(if (systemTimeFormat is SimpleDateFormat) systemTimeFormat.toPattern() else "HH:mm")
-        itemList.add {
+        itemList.add(Section.MAIN) {
             Box(
                 modifier = Modifier
                     .width(
@@ -604,7 +644,7 @@ fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: 
         itemList.add {
             Spacer(modifier = Modifier.size(25.dp))
         }
-        itemList.add {
+        itemList.add(Section.WARNINGS) {
             Text(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
@@ -697,7 +737,7 @@ fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: 
         itemList.add {
             Spacer(modifier = Modifier.size(10.dp))
         }
-        itemList.add {
+        itemList.add(Section.TIPS) {
             Text(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
@@ -785,7 +825,7 @@ fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: 
                 Spacer(modifier = Modifier.size(10.dp))
             }
         }
-        itemList.add {
+        itemList.add(Section.UVINDEX) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -833,7 +873,7 @@ fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: 
         itemList.add {
             Spacer(modifier = Modifier.size(10.dp))
         }
-        itemList.add {
+        itemList.add(Section.HUMIDITY) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -1181,7 +1221,7 @@ fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: 
         itemList.add {
             Spacer(modifier = Modifier.size(20.dp))
         }
-        itemList.addAll(
+        itemList.addAll(Section.HOURLY,
             generateHourlyItems(weatherInfo, timeFormat, instance)
         )
         itemList.add {
@@ -1199,7 +1239,7 @@ fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: 
         itemList.add {
             Spacer(modifier = Modifier.size(20.dp))
         }
-        itemList.addAll(
+        itemList.addAll(Section.FORECAST,
             generateForecastItems(weatherInfo, instance)
         )
         itemList.add {
