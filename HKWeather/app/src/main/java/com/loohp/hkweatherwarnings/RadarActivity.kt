@@ -52,6 +52,8 @@ import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.clamp
 import kotlinx.coroutines.delay
+import me.saket.telephoto.zoomable.rememberZoomableState
+import me.saket.telephoto.zoomable.zoomable
 
 class RadarActivity : ComponentActivity() {
 
@@ -112,11 +114,6 @@ fun RadarElement(instance: RadarActivity) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .combinedClickable(
-                    onClick = {
-                        zoom = !zoom
-                    }
-                )
                 .onRotaryScrollEvent {
                     if (it.verticalScrollPixels > 0) {
                         if (currentPosition >= 20) {
@@ -146,15 +143,31 @@ fun RadarElement(instance: RadarActivity) {
                     contentDescription = if (Registry.getInstance(instance).language == "en") "Legend" else "圖例"
                 )
             } else {
+                var modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        if (zoom) 0.dp else UnitUtils.pixelsToDp(
+                            instance,
+                            ScreenSizeUtils.getMinScreenSize(instance) * 0.15F
+                        ).dp
+                    )
+                if (zoom) {
+                    modifier = modifier.zoomable(
+                        state = rememberZoomableState(),
+                        onClick = {
+                            zoom = !zoom
+                        }
+                    )
+                } else {
+                    modifier = modifier.combinedClickable(
+                        onClick = {
+                            zoom = !zoom
+                        }
+                    )
+                }
+
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(
-                            if (zoom) 0.dp else UnitUtils.pixelsToDp(
-                                instance,
-                                ScreenSizeUtils.getMinScreenSize(instance) * 0.15F
-                            ).dp
-                        )
+                    modifier = modifier
                 ) {
                     Image(
                         modifier = Modifier.fillMaxSize(),

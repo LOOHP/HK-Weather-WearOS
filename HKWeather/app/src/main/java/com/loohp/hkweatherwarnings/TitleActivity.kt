@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -45,6 +46,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -59,7 +61,7 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.loohp.hkweatherwarnings.compose.AutoResizeText
@@ -79,6 +81,7 @@ import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
 import com.loohp.hkweatherwarnings.weather.LunarDate
 import com.loohp.hkweatherwarnings.weather.UVIndexType
+import com.loohp.hkweatherwarnings.weather.WeatherWarningsCategory
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -758,6 +761,30 @@ fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: 
         itemList.add {
             Spacer(modifier = Modifier.size(10.dp))
         }
+        var specialButton = false
+        if (weatherWarnings.keys.any { it.category == WeatherWarningsCategory.WRAIN }) {
+            itemList.add {
+                RadarButton(instance, Color(0xFF460000))
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
+            specialButton = true
+        }
+        if (weatherWarnings.keys.any { it.category == WeatherWarningsCategory.WTCSGNL }) {
+            itemList.add {
+                StormTrackButton(instance, Color(0xFF460000))
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
+            specialButton = true
+        }
+        if (specialButton) {
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
+        }
         itemList.add {
             Row(
                 modifier = Modifier
@@ -1029,10 +1056,18 @@ fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: 
             }
         }
         itemList.add {
-            AsyncImage(
+            SubcomposeAsyncImage(
                 modifier = Modifier
                     .padding(8.sp.dp)
                     .size(25.sp.dp),
+                loading = {
+                    CircularProgressIndicator(
+                        color = Color.LightGray,
+                        strokeWidth = 3.dp,
+                        trackColor = Color.DarkGray,
+                        strokeCap = StrokeCap.Round,
+                    )
+                },
                 model = moonPhaseUrl,
                 contentDescription = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
             )
@@ -1123,32 +1158,13 @@ fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: 
             Spacer(modifier = Modifier.size(10.dp))
         }
         itemList.add {
-            Button(
-                onClick = {
-                    instance.startActivity(Intent(instance, RadarActivity::class.java))
-                },
-                modifier = Modifier
-                    .width(StringUtils.scaledSize(180, instance).dp)
-                    .height(StringUtils.scaledSize(45, instance).dp),
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = MaterialTheme.colors.secondary,
-                    contentColor = MaterialTheme.colors.primary
-                ),
-                content = {
-                    AutoResizeText(
-                        modifier = Modifier
-                            .fillMaxWidth(0.9F)
-                            .align(Alignment.Center),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSizeRange = FontSizeRange(
-                            min = TextUnit(1F, TextUnitType.Sp),
-                            max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
-                        ),
-                        text = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64 公里)"
-                    )
-                }
-            )
+            RadarButton(instance)
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
+            StormTrackButton(instance)
         }
         itemList.add {
             Spacer(modifier = Modifier.size(20.dp))
@@ -1416,6 +1432,92 @@ fun openHKOApp(instance: TitleActivity) {
         success = {
             instance.runOnUiThread {
                 Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Please check your phone" else "請在手機上繼續", Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
+}
+
+@Composable
+fun RadarButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
+    Button(
+        onClick = {
+            instance.startActivity(Intent(instance, RadarActivity::class.java))
+        },
+        modifier = Modifier
+            .width(StringUtils.scaledSize(180, instance).dp)
+            .height(StringUtils.scaledSize(45, instance).dp),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = backgroundColor,
+            contentColor = MaterialTheme.colors.primary
+        ),
+        content = {
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth(0.9F)
+                    .align(Alignment.Center),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(0.dp, 0.dp, 2.dp, 0.dp)
+                        .size(15.sp.clamp(max = 15.dp).dp),
+                    painter = painterResource(R.mipmap.radar),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64公里)"
+                )
+                AutoResizeText(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSizeRange = FontSizeRange(
+                        min = TextUnit(1F, TextUnitType.Sp),
+                        max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
+                    ),
+                    maxLines = 1,
+                    text = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64 公里)"
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun StormTrackButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
+    Button(
+        onClick = {
+            instance.startActivity(Intent(instance, TCTrackActivity::class.java))
+        },
+        modifier = Modifier
+            .width(StringUtils.scaledSize(180, instance).dp)
+            .height(StringUtils.scaledSize(45, instance).dp),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = backgroundColor,
+            contentColor = MaterialTheme.colors.primary
+        ),
+        content = {
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth(0.9F)
+                    .align(Alignment.Center),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(0.dp, 0.dp, 2.dp, 0.dp)
+                        .size(15.sp.clamp(max = 15.dp).dp),
+                    painter = painterResource(R.mipmap.cyclone),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Storm Track" else "風暴路徑"
+                )
+                AutoResizeText(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSizeRange = FontSizeRange(
+                        min = TextUnit(1F, TextUnitType.Sp),
+                        max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
+                    ),
+                    maxLines = 1,
+                    text = if (Registry.getInstance(instance).language == "en") "Storm Track" else "風暴路徑"
+                )
             }
         }
     )

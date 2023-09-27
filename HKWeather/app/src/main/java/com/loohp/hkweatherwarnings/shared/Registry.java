@@ -18,6 +18,7 @@ import com.loohp.hkweatherwarnings.utils.LocationUtils;
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.HourlyWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.LunarDate;
+import com.loohp.hkweatherwarnings.weather.TropicalCycloneInfo;
 import com.loohp.hkweatherwarnings.weather.WeatherInfo;
 import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon;
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType;
@@ -46,6 +47,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
@@ -268,6 +270,40 @@ public class Registry {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    public Future<List<TropicalCycloneInfo>> getTropicalCycloneInfo(Context context) {
+        if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        CompletableFuture<List<TropicalCycloneInfo>> future = new CompletableFuture<>();
+        new Thread(() -> {
+            try {
+                JSONObject data = HTTPRequestUtils.getJSONResponse("https://pda.weather.gov.hk/locspc/android_data/TCTrackData/TC/tcFront.json");
+                if (data == null) {
+                    future.complete(null);
+                    return;
+                }
+                String imagesData = HTTPRequestUtils.getTextResponse("https://pda.weather.gov.hk/locspc/android_data/TCTrackImg/png_list.myobs");
+                Set<String> images = imagesData == null ? Collections.emptySet() : Arrays.stream(imagesData.split("\\R")).collect(Collectors.toSet());
+                List<TropicalCycloneInfo> list = new ArrayList<>();
+                JSONArray array = data.optJSONArray("TC");
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject tc = array.optJSONObject(i);
+                    int id = tc.optInt("tcId");
+                    int displayOrder = tc.optInt("displayOrder");
+                    String nameZh = tc.optString("tcName");
+                    String nameEn = tc.optString("enName");
+                    String imgFile = "nwp_" + id + ".png";
+                    String trackStaticImageUrl = images.contains(imgFile) ? "https://pda.weather.gov.hk/locspc/android_data/TCTrackImg/" + imgFile : null;
+                    list.add(new TropicalCycloneInfo(id, displayOrder, nameZh, nameEn, trackStaticImageUrl));
+                }
+                future.complete(list);
+            } catch (Throwable e) {
+                future.complete(null);
+            }
+        }).start();
+        return future;
     }
 
     public Future<LunarDate> getLunarDate(Context context, LocalDate date) {

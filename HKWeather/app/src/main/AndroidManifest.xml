@@ -54,6 +54,12 @@
             android:theme="@android:style/Theme.DeviceDefault">
         </activity>
 
+        <activity
+            android:name=".TCTrackActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault">
+        </activity>
+
         <receiver android:name=".background.WorkManagerStartReceiver"
             android:exported="true">
             <intent-filter>
