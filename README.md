@@ -29,4 +29,6 @@ This app contains information that is copied or extracted from data made availab
 <a href="https://www.flaticon.com/free-icons/humidity" title="humidity icons">Humidity icons created by Pixel perfect - Flaticon</a></br>
 <a href="https://www.flaticon.com/free-icons/wind" title="wind icons">Wind icons created by Freepik - Flaticon</a><br>
 <a href="https://www.flaticon.com/free-icons/moon" title="moon icons">Moon icons created by Pixel perfect - Flaticon</a><br>
-<a href="https://www.flaticon.com/free-icons/moonrise" title="moonrise icons">Moonrise icons created by pancaza - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/moonrise" title="moonrise icons">Moonrise icons created by pancaza - Flaticon</a><br>
+<a href="https://www.flaticon.com/free-icons/hurricane" title="hurricane icons">Hurricane icons created by Mehwish - Flaticon</a><br>
+<a href="https://www.flaticon.com/free-icons/radar" title="radar icons">Radar icons created by Freepik - Flaticon</a>
