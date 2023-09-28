@@ -1,12 +1,19 @@
 package com.loohp.hkweatherwarnings.weather;
 
+import android.content.Context;
+
 import com.loohp.hkweatherwarnings.cache.JSONSerializable;
+import com.loohp.hkweatherwarnings.shared.Registry;
+import com.loohp.hkweatherwarnings.utils.CompassUtilsKtKt;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 public class HourlyWeatherInfo implements JSONSerializable {
 
@@ -36,6 +43,28 @@ public class HourlyWeatherInfo implements JSONSerializable {
         this.windDirection = windDirection;
         this.windSpeed = windSpeed;
         this.weatherIcon = weatherIcon;
+    }
+
+    public String toDisplayText(Context context) {
+        DateFormat dateFormat = android.text.format.DateFormat.getTimeFormat(context);
+        DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern(dateFormat instanceof SimpleDateFormat ? ((SimpleDateFormat) dateFormat).toPattern(): "HH:mm");
+        StringBuilder sb = new StringBuilder();
+        if (Registry.getInstance(context).getLanguage().equals("en")) {
+            sb.append(time.format(DateTimeFormatter.ofPattern("dd MMM"))).append(" ").append(timeFormat.format(time)).append("\n")
+                    .append(getWeatherIcon().getDescriptionEn()).append("\n")
+                    .append("Temperature: ").append(String.format(Locale.ENGLISH, "%.1f", temperature)).append("°C\n")
+                    .append("Relative Humidity: ").append(String.format(Locale.ENGLISH, "%.0f", humidity)).append("%\n")
+                    .append("Wind Direction: ").append(CompassUtilsKtKt.toCardinalDirectionString(windDirection, Registry.getInstance(context).getLanguage())).append("\n")
+                    .append("Wind Speed: ").append(String.format(Locale.ENGLISH, "%.1f", windSpeed)).append(" km/h");
+        } else {
+            sb.append(time.format(DateTimeFormatter.ofPattern("M月dd日"))).append(" ").append(timeFormat.format(time)).append("\n")
+                    .append(getWeatherIcon().getDescriptionZh()).append("\n")
+                    .append("氣溫: ").append(String.format(Locale.TRADITIONAL_CHINESE, "%.1f", temperature)).append("°C\n")
+                    .append("相對濕度: ").append(String.format(Locale.TRADITIONAL_CHINESE, "%.0f", humidity)).append("%\n")
+                    .append("風向: ").append(CompassUtilsKtKt.toCardinalDirectionString(windDirection, Registry.getInstance(context).getLanguage())).append("\n")
+                    .append("風速: ").append(String.format(Locale.TRADITIONAL_CHINESE, "%.1f", windSpeed)).append("公里/小時");
+        }
+        return sb.toString();
     }
 
     public LocalDateTime getTime() {

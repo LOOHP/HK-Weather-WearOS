@@ -36,17 +36,19 @@ public class CurrentWeatherInfo extends WeatherInfo {
         LocalTime moonriseTime = jsonObject.optString("moonriseTime").isEmpty() ? null : LocalTime.parse(jsonObject.optString("moonriseTime"), TIME_FORMATTER);
         LocalTime moonTransitTime = jsonObject.optString("moonTransitTime").isEmpty() ? null : LocalTime.parse(jsonObject.optString("moonTransitTime"), TIME_FORMATTER);
         LocalTime moonsetTime = jsonObject.optString("moonsetTime").isEmpty() ? null : LocalTime.parse(jsonObject.optString("moonsetTime"), TIME_FORMATTER);
+        LocalForecastInfo localForecastInfo = LocalForecastInfo.deserialize(jsonObject.optJSONObject("localForecastInfo"));
+        String forecastGeneralSituation = jsonObject.optString("forecastGeneralSituation");
         JSONArray forecastInfoArray = jsonObject.optJSONArray("forecastInfo");
-        List<WeatherInfo> forecastInfo = new ArrayList<>(forecastInfoArray.length());
+        List<ForecastWeatherInfo> forecastInfo = new ArrayList<>(forecastInfoArray.length());
         for (int i = 0; i < forecastInfoArray.length(); i++) {
-            forecastInfo.add(WeatherInfo.deserialize(forecastInfoArray.optJSONObject(i)));
+            forecastInfo.add(ForecastWeatherInfo.deserialize(forecastInfoArray.optJSONObject(i)));
         }
         JSONArray hourlyWeatherInfoArray = jsonObject.optJSONArray("hourlyWeatherInfo");
         List<HourlyWeatherInfo> hourlyWeatherInfo = new ArrayList<>(hourlyWeatherInfoArray.length());
         for (int i = 0; i < hourlyWeatherInfoArray.length(); i++) {
             hourlyWeatherInfo.add(HourlyWeatherInfo.deserialize(hourlyWeatherInfoArray.optJSONObject(i)));
         }
-        return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStation, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, forecastInfo, hourlyWeatherInfo);
+        return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStation, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo);
     }
 
     private final String weatherStation;
@@ -62,10 +64,12 @@ public class CurrentWeatherInfo extends WeatherInfo {
     private final LocalTime moonriseTime;
     private final LocalTime moonTransitTime;
     private final LocalTime moonsetTime;
-    private final List<WeatherInfo> forecastInfo;
+    private final LocalForecastInfo localForecastInfo;
+    private final String forecastGeneralSituation;
+    private final List<ForecastWeatherInfo> forecastInfo;
     private final List<HourlyWeatherInfo> hourlyWeatherInfo;
 
-    public CurrentWeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, WeatherStatusIcon weatherIcon, String weatherStation, float currentTemperature, float currentHumidity, float uvIndex, String windDirection, float windSpeed, float gust, LocalTime sunriseTime, LocalTime sunTransitTime, LocalTime sunsetTime, LocalTime moonriseTime, LocalTime moonTransitTime, LocalTime moonsetTime, List<WeatherInfo> forecastInfo, List<HourlyWeatherInfo> hourlyWeatherInfo) {
+    public CurrentWeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, WeatherStatusIcon weatherIcon, String weatherStation, float currentTemperature, float currentHumidity, float uvIndex, String windDirection, float windSpeed, float gust, LocalTime sunriseTime, LocalTime sunTransitTime, LocalTime sunsetTime, LocalTime moonriseTime, LocalTime moonTransitTime, LocalTime moonsetTime, LocalForecastInfo localForecastInfo, String forecastGeneralSituation, List<ForecastWeatherInfo> forecastInfo, List<HourlyWeatherInfo> hourlyWeatherInfo) {
         super(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon);
         this.weatherStation = weatherStation;
         this.currentTemperature = currentTemperature;
@@ -80,6 +84,8 @@ public class CurrentWeatherInfo extends WeatherInfo {
         this.moonriseTime = moonriseTime;
         this.moonTransitTime = moonTransitTime;
         this.moonsetTime = moonsetTime;
+        this.localForecastInfo = localForecastInfo;
+        this.forecastGeneralSituation = forecastGeneralSituation;
         this.forecastInfo = Collections.unmodifiableList(forecastInfo);
         this.hourlyWeatherInfo = Collections.unmodifiableList(hourlyWeatherInfo);
     }
@@ -136,7 +142,15 @@ public class CurrentWeatherInfo extends WeatherInfo {
         return gust;
     }
 
-    public List<WeatherInfo> getForecastInfo() {
+    public LocalForecastInfo getLocalForecastInfo() {
+        return localForecastInfo;
+    }
+
+    public String getForecastGeneralSituation() {
+        return forecastGeneralSituation;
+    }
+
+    public List<ForecastWeatherInfo> getForecastInfo() {
         return forecastInfo;
     }
 
@@ -160,6 +174,8 @@ public class CurrentWeatherInfo extends WeatherInfo {
         jsonObject.put("moonriseTime", moonriseTime == null ? "" : moonriseTime.format(TIME_FORMATTER));
         jsonObject.put("moonTransitTime", moonTransitTime == null ? "" : moonTransitTime.format(TIME_FORMATTER));
         jsonObject.put("moonsetTime", moonsetTime == null ? "" : moonsetTime.format(TIME_FORMATTER));
+        jsonObject.put("localForecastInfo", localForecastInfo.serialize());
+        jsonObject.put("forecastGeneralSituation", forecastGeneralSituation);
         JSONArray forecastInfoArray = new JSONArray();
         for (WeatherInfo weatherInfo : forecastInfo) {
             forecastInfoArray.put(weatherInfo.serialize());

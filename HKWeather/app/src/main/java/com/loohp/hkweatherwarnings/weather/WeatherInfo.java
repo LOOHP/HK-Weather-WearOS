@@ -9,20 +9,9 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-public class WeatherInfo implements JSONSerializable {
+public abstract class WeatherInfo implements JSONSerializable {
 
     public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-
-    public static WeatherInfo deserialize(JSONObject jsonObject) {
-        LocalDate date = LocalDate.parse(jsonObject.optString("date"), DATE_FORMATTER);
-        float highestTemperature = (float) jsonObject.optDouble("highestTemperature");
-        float lowestTemperature = (float) jsonObject.optDouble("lowestTemperature");
-        float maxRelativeHumidity = (float) jsonObject.optDouble("maxRelativeHumidity");
-        float minRelativeHumidity = (float) jsonObject.optDouble("minRelativeHumidity");
-        float chanceOfRain = (float) jsonObject.optDouble("chanceOfRain");
-        WeatherStatusIcon weatherIcon = WeatherStatusIcon.valueOf(jsonObject.optString("weatherIcon"));
-        return new WeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon);
-    }
 
     private final LocalDate date;
     private final float highestTemperature;

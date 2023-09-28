@@ -1,7 +1,5 @@
 package com.loohp.hkweatherwarnings.weather;
 
-import androidx.compose.ui.graphics.Color;
-
 import com.loohp.hkweatherwarnings.R;
 
 public enum WeatherWarningsType {

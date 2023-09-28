@@ -62,16 +62,17 @@ class DisplayInfoTextActivity : ComponentActivity() {
         val imageHeight = intent.extras!!.getInt("imageHeight", -1)
         val imageDescription = intent.extras!!.getString("imageDescription", "")
         val text = intent.extras!!.getString("text", "")
+        val footer = intent.extras!!.getString("footer", "")
 
         setContent {
-            DisplayInfo(imageDrawable, imageUrl, imageWidth, imageHeight, imageDescription, text, this)
+            DisplayInfo(imageDrawable, imageUrl, imageWidth, imageHeight, imageDescription, text, footer, this)
         }
     }
 
 }
 
 @Composable
-fun DisplayInfo(imageDrawable: Int, imageUrl: String?, imageWidth: Int, imageHeight: Int, imageDescription: String, text: String, instance: DisplayInfoTextActivity) {
+fun DisplayInfo(imageDrawable: Int, imageUrl: String?, imageWidth: Int, imageHeight: Int, imageDescription: String, text: String, footer: String, instance: DisplayInfoTextActivity) {
     HKWeatherTheme {
         val focusRequester = remember { FocusRequester() }
         val scroll = rememberScrollState()
@@ -159,6 +160,8 @@ fun DisplayInfo(imageDrawable: Int, imageUrl: String?, imageWidth: Int, imageHei
                     )
                     Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
                 }
+            } else {
+                Spacer(modifier = Modifier.size(StringUtils.scaledSize(30, instance).dp))
             }
             for ((i, line) in text.split(Regex("\\R")).withIndex()) {
                 Text(
@@ -169,7 +172,18 @@ fun DisplayInfo(imageDrawable: Int, imageUrl: String?, imageWidth: Int, imageHei
                     fontSize = TextUnit(StringUtils.scaledSize(15F, instance), TextUnitType.Sp),
                     text = line
                 )
-                Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
+                Spacer(modifier = Modifier.size(StringUtils.scaledSize(10, instance).dp))
+            }
+            if (footer.isNotEmpty()) {
+                Text(
+                    modifier = Modifier.fillMaxWidth(0.8F),
+                    textAlign = TextAlign.Left,
+                    color = MaterialTheme.colors.primary,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = TextUnit(StringUtils.scaledSize(10F, instance), TextUnitType.Sp),
+                    text = footer
+                )
+                Spacer(modifier = Modifier.size(StringUtils.scaledSize(10, instance).dp))
             }
             Spacer(modifier = Modifier.size(StringUtils.scaledSize(40, instance).dp))
         }

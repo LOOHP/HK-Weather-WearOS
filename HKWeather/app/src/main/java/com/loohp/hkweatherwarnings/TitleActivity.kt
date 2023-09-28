@@ -80,8 +80,10 @@ import com.loohp.hkweatherwarnings.utils.dp
 import com.loohp.hkweatherwarnings.utils.sp
 import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
+import com.loohp.hkweatherwarnings.weather.LocalForecastInfo
 import com.loohp.hkweatherwarnings.weather.LunarDate
 import com.loohp.hkweatherwarnings.weather.UVIndexType
+import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsCategory
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
 import kotlinx.coroutines.delay
@@ -750,6 +752,14 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         itemList.add {
             Spacer(modifier = Modifier.size(25.dp))
         }
+        if (weatherWarnings.isEmpty() && weatherTips.isEmpty()) {
+            itemList.add {
+                LocalForecastButton(weatherInfo.weatherIcon, weatherInfo.localForecastInfo, instance)
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
+        }
         itemList.add(Section.WARNINGS) {
             Text(
                 textAlign = TextAlign.Center,
@@ -906,6 +916,14 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         }
         itemList.add {
             Spacer(modifier = Modifier.size(10.dp))
+        }
+        if (weatherWarnings.isNotEmpty() || weatherTips.isNotEmpty()) {
+            itemList.add {
+                LocalForecastButton(weatherInfo.weatherIcon, weatherInfo.localForecastInfo, instance)
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
         }
         var specialButton = false
         if (weatherWarnings.keys.any { it.category == WeatherWarningsCategory.WRAIN }) {
@@ -1301,7 +1319,19 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             }
         }
         itemList.add {
-            Spacer(modifier = Modifier.size(10.dp))
+            Spacer(modifier = Modifier.size(20.dp))
+        }
+        itemList.add {
+            Spacer(
+                modifier = Modifier
+                    .padding(20.dp, 0.dp)
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0xFF333333))
+            )
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(20.dp))
         }
         itemList.add {
             RadarButton(instance)
@@ -1345,6 +1375,12 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         itemList.add {
             Spacer(modifier = Modifier.size(20.dp))
         }
+        itemList.add(Section.FORECAST) {
+            ForecastGeneralButton(weatherInfo.forecastGeneralSituation, instance)
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
         itemList.addAll(Section.FORECAST,
             generateForecastItems(weatherInfo, instance)
         )
@@ -1382,7 +1418,20 @@ fun generateHourlyItems(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFor
         }
         itemList.add {
             Row(
-                modifier = Modifier.padding(20.dp, 0.dp),
+                modifier = Modifier
+                    .padding(20.dp, 0.dp)
+                    .combinedClickable(
+                        onClick = {
+                            val weatherIcon = hourInfo.weatherIcon
+                            val weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
+                            val intent = Intent(instance, DisplayInfoTextActivity::class.java)
+                            intent.putExtra("imageDrawable", weatherIcon.iconId)
+                            intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
+                            intent.putExtra("imageDescription", weatherDescription)
+                            intent.putExtra("text", hourInfo.toDisplayText(instance))
+                            instance.startActivity(intent)
+                        }
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -1459,7 +1508,19 @@ fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivi
         itemList.add {
             Row(
                 modifier = Modifier
-                    .padding(20.dp, 0.dp),
+                    .padding(20.dp, 0.dp)
+                    .combinedClickable(
+                        onClick = {
+                            val weatherIcon = dayInfo.weatherIcon
+                            val weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
+                            val intent = Intent(instance, DisplayInfoTextActivity::class.java)
+                            intent.putExtra("imageDrawable", weatherIcon.iconId)
+                            intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
+                            intent.putExtra("imageDescription", weatherDescription)
+                            intent.putExtra("text", dayInfo.toDisplayText(instance))
+                            instance.startActivity(intent)
+                        }
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -1544,40 +1605,97 @@ fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivi
     return itemList
 }
 
-fun openHKOApp(instance: TitleActivity) {
-    val intent = Intent(Intent.ACTION_VIEW)
-        .addCategory(Intent.CATEGORY_BROWSABLE)
-        .setData(Uri.parse("myobservatory:"))
-    RemoteActivityUtils.intentToPhone(
-        instance = instance,
-        intent = intent,
-        noPhone = {
-            instance.runOnUiThread {
-                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Unable to connect to phone" else "無法連接到手機", Toast.LENGTH_SHORT).show()
+@Composable
+fun LocalForecastButton(weatherIcon: WeatherStatusIcon, localForecastInfo: LocalForecastInfo, instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
+    Button(
+        onClick = {
+            val weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
+            val text = (if (Registry.getInstance(instance).language == "en") "Now: " else "現時 ").plus(weatherDescription).plus("\n").plus(localForecastInfo.toDisplayText(instance))
+            val intent = Intent(instance, DisplayInfoTextActivity::class.java)
+            intent.putExtra("imageDrawable", weatherIcon.iconId)
+            intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
+            intent.putExtra("imageDescription", weatherDescription)
+            intent.putExtra("text", text)
+            intent.putExtra("footer", localForecastInfo.toDisplayFooter(instance))
+            instance.startActivity(intent)
+        },
+        modifier = Modifier
+            .width(StringUtils.scaledSize(180, instance).dp)
+            .height(StringUtils.scaledSize(45, instance).dp),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = backgroundColor,
+            contentColor = MaterialTheme.colors.primary
+        ),
+        content = {
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth(0.9F)
+                    .align(Alignment.Center),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(0.dp, 0.dp, 2.dp, 0.dp)
+                        .size(15.sp.clamp(max = 15.dp).dp),
+                    painter = painterResource(R.mipmap.weather),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Local Forecast" else "本港預報"
+                )
+                AutoResizeText(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSizeRange = FontSizeRange(
+                        min = TextUnit(1F, TextUnitType.Sp),
+                        max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
+                    ),
+                    maxLines = 1,
+                    text = if (Registry.getInstance(instance).language == "en") "Local Forecast" else "本港預報"
+                )
             }
+        }
+    )
+}
+
+@Composable
+fun ForecastGeneralButton(forecastGeneralSituation: String, instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
+    Button(
+        onClick = {
+            val intent = Intent(instance, DisplayInfoTextActivity::class.java)
+            intent.putExtra("text", (if (Registry.getInstance(instance).language == "en") "9-Day General Forecast" else "展望未來九天天氣概況").plus("\n").plus(forecastGeneralSituation))
+            instance.startActivity(intent)
         },
-        failed = {
-            val playIntent = Intent(Intent.ACTION_VIEW)
-                .addCategory(Intent.CATEGORY_BROWSABLE)
-                .setData(Uri.parse("https://play.google.com/store/apps/details?id=hko.MyObservatory_v1_0"))
-            RemoteActivityUtils.intentToPhone(
-                instance = instance,
-                intent = playIntent,
-                failed = {
-                    instance.runOnUiThread {
-                        Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Failed to connect to phone" else "連接手機失敗", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                success = {
-                    instance.runOnUiThread {
-                        Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Please check your phone" else "請在手機上繼續", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            )
-        },
-        success = {
-            instance.runOnUiThread {
-                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Please check your phone" else "請在手機上繼續", Toast.LENGTH_SHORT).show()
+        modifier = Modifier
+            .width(StringUtils.scaledSize(180, instance).dp)
+            .height(StringUtils.scaledSize(45, instance).dp),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = backgroundColor,
+            contentColor = MaterialTheme.colors.primary
+        ),
+        content = {
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth(0.9F)
+                    .align(Alignment.Center),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(0.dp, 0.dp, 2.dp, 0.dp)
+                        .size(15.sp.clamp(max = 15.dp).dp),
+                    painter = painterResource(R.mipmap.forecast),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "General Forecast" else "展望天氣概況"
+                )
+                AutoResizeText(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSizeRange = FontSizeRange(
+                        min = TextUnit(1F, TextUnitType.Sp),
+                        max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
+                    ),
+                    maxLines = 1,
+                    text = if (Registry.getInstance(instance).language == "en") "General Forecast" else "展望天氣概況"
+                )
             }
         }
     )
@@ -1664,6 +1782,45 @@ fun StormTrackButton(instance: TitleActivity, backgroundColor: Color = MaterialT
                     maxLines = 1,
                     text = if (Registry.getInstance(instance).language == "en") "Storm Track" else "風暴路徑"
                 )
+            }
+        }
+    )
+}
+
+fun openHKOApp(instance: TitleActivity) {
+    val intent = Intent(Intent.ACTION_VIEW)
+        .addCategory(Intent.CATEGORY_BROWSABLE)
+        .setData(Uri.parse("myobservatory:"))
+    RemoteActivityUtils.intentToPhone(
+        instance = instance,
+        intent = intent,
+        noPhone = {
+            instance.runOnUiThread {
+                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Unable to connect to phone" else "無法連接到手機", Toast.LENGTH_SHORT).show()
+            }
+        },
+        failed = {
+            val playIntent = Intent(Intent.ACTION_VIEW)
+                .addCategory(Intent.CATEGORY_BROWSABLE)
+                .setData(Uri.parse("https://play.google.com/store/apps/details?id=hko.MyObservatory_v1_0"))
+            RemoteActivityUtils.intentToPhone(
+                instance = instance,
+                intent = playIntent,
+                failed = {
+                    instance.runOnUiThread {
+                        Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Failed to connect to phone" else "連接手機失敗", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                success = {
+                    instance.runOnUiThread {
+                        Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Please check your phone" else "請在手機上繼續", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+        },
+        success = {
+            instance.runOnUiThread {
+                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Please check your phone" else "請在手機上繼續", Toast.LENGTH_SHORT).show()
             }
         }
     )

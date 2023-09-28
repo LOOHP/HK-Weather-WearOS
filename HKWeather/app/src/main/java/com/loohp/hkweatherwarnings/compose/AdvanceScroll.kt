@@ -47,51 +47,54 @@ fun Modifier.verticalScrollbar(
         val contentOffset = state.value
         val viewPortLength = size.height
         val contentLength = (viewPortLength + state.maxValue).coerceAtLeast(0.001f)
-        val indicatorLength = viewPortLength / contentLength
-        val indicatorThicknessPx = indicatorThickness.toPx()
-        val halfIndicatorThicknessPx = (indicatorThickness.value / 2F).dp.toPx()
-        scrollOffsetViewPort = contentOffset / contentLength
 
-        if (configuration.screenLayout and Configuration.SCREENLAYOUT_ROUND_MASK == Configuration.SCREENLAYOUT_ROUND_YES) {
-            val topLeft = Offset(halfIndicatorThicknessPx, halfIndicatorThicknessPx)
-            val size = Size(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, configuration.screenHeightDp.dp.toPx() - indicatorThicknessPx)
-            val style = Stroke(width = indicatorThicknessPx, cap = StrokeCap.Round)
-            drawArc(
-                startAngle = -30F,
-                sweepAngle = 60F,
-                useCenter = false,
-                color = Color.DarkGray,
-                topLeft = topLeft,
-                size = size,
-                alpha = alpha,
-                style = style
-            )
-            drawArc(
-                startAngle = -30F + animatedScrollOffsetViewPort * 60F,
-                sweepAngle = indicatorLength * 60F,
-                useCenter = false,
-                color = indicatorColor,
-                topLeft = topLeft,
-                size = size,
-                alpha = alpha,
-                style = style
-            )
-        } else {
-            val cornerRadius = CornerRadius(indicatorThicknessPx / 2F)
-            val topLeft = Offset(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, viewPortLength * 0.125F)
-            val size = Size(indicatorThicknessPx, viewPortLength * 0.75F)
-            drawRoundRect(
-                color = Color.DarkGray,
-                topLeft = topLeft,
-                size = size,
-                cornerRadius = cornerRadius
-            )
-            drawRoundRect(
-                color = indicatorColor,
-                topLeft = Offset(topLeft.x, topLeft.y + animatedScrollOffsetViewPort * size.height),
-                size = Size(size.width, size.height * indicatorLength),
-                cornerRadius = cornerRadius
-            )
+        if (viewPortLength < contentLength) {
+            val indicatorLength = viewPortLength / contentLength
+            val indicatorThicknessPx = indicatorThickness.toPx()
+            val halfIndicatorThicknessPx = (indicatorThickness.value / 2F).dp.toPx()
+            scrollOffsetViewPort = contentOffset / contentLength
+
+            if (configuration.screenLayout and Configuration.SCREENLAYOUT_ROUND_MASK == Configuration.SCREENLAYOUT_ROUND_YES) {
+                val topLeft = Offset(halfIndicatorThicknessPx, halfIndicatorThicknessPx)
+                val size = Size(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, configuration.screenHeightDp.dp.toPx() - indicatorThicknessPx)
+                val style = Stroke(width = indicatorThicknessPx, cap = StrokeCap.Round)
+                drawArc(
+                    startAngle = -30F,
+                    sweepAngle = 60F,
+                    useCenter = false,
+                    color = Color.DarkGray,
+                    topLeft = topLeft,
+                    size = size,
+                    alpha = alpha,
+                    style = style
+                )
+                drawArc(
+                    startAngle = -30F + animatedScrollOffsetViewPort * 60F,
+                    sweepAngle = indicatorLength * 60F,
+                    useCenter = false,
+                    color = indicatorColor,
+                    topLeft = topLeft,
+                    size = size,
+                    alpha = alpha,
+                    style = style
+                )
+            } else {
+                val cornerRadius = CornerRadius(indicatorThicknessPx / 2F)
+                val topLeft = Offset(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, viewPortLength * 0.125F)
+                val size = Size(indicatorThicknessPx, viewPortLength * 0.75F)
+                drawRoundRect(
+                    color = Color.DarkGray,
+                    topLeft = topLeft,
+                    size = size,
+                    cornerRadius = cornerRadius
+                )
+                drawRoundRect(
+                    color = indicatorColor,
+                    topLeft = Offset(topLeft.x, topLeft.y + animatedScrollOffsetViewPort * size.height),
+                    size = Size(size.width, size.height * indicatorLength),
+                    cornerRadius = cornerRadius
+                )
+            }
         }
     }
 }
@@ -134,53 +137,56 @@ fun Modifier.verticalScrollbar(
         val knownAverageItemLength = knownLength / knownAmount
         val contentOffset = (0 until state.firstVisibleItemIndex).sumOf { actualItemLength.getOrDefault(it, knownAverageItemLength) }.toFloat() + state.firstVisibleItemScrollOffset
         val contentLength = knownLength + (state.layoutInfo.totalItemsCount - knownAmount - 1) * (knownLength / knownAmount)
-        indicatorLength = (if (itemsVisible.last().index + 1 >= state.layoutInfo.totalItemsCount) 1F - (contentOffset / contentLength) else visibleItemsLength / contentLength).coerceAtLeast(0.05F)
-        val indicatorThicknessPx = indicatorThickness.toPx()
-        val halfIndicatorThicknessPx = (indicatorThickness.value / 2F).dp.toPx()
-        scrollOffsetViewPort = contentOffset / contentLength
 
-        if (configuration.screenLayout and Configuration.SCREENLAYOUT_ROUND_MASK == Configuration.SCREENLAYOUT_ROUND_YES) {
-            val topLeft = Offset(halfIndicatorThicknessPx, halfIndicatorThicknessPx)
-            val size = Size(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, configuration.screenHeightDp.dp.toPx() - indicatorThicknessPx)
-            val style = Stroke(width = indicatorThicknessPx, cap = StrokeCap.Round)
-            val startAngle = (-30F + animatedScrollOffsetViewPort * 60F).coerceIn(-30F, 30F)
-            drawArc(
-                startAngle = -30F,
-                sweepAngle = 60F,
-                useCenter = false,
-                color = Color.DarkGray,
-                topLeft = topLeft,
-                size = size,
-                alpha = alpha,
-                style = style
-            )
-            drawArc(
-                startAngle = startAngle,
-                sweepAngle = (animatedIndicatorLength * 60F).coerceAtMost(60F - (startAngle + 30F)),
-                useCenter = false,
-                color = indicatorColor,
-                topLeft = topLeft,
-                size = size,
-                alpha = alpha,
-                style = style
-            )
-        } else {
-            val cornerRadius = CornerRadius(indicatorThicknessPx / 2F)
-            val topLeft = Offset(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, viewPortLength * 0.125F)
-            val size = Size(indicatorThicknessPx, viewPortLength * 0.75F)
-            val startHeight = (topLeft.y + animatedScrollOffsetViewPort * size.height).coerceIn(topLeft.y, topLeft.y + size.height)
-            drawRoundRect(
-                color = Color.DarkGray,
-                topLeft = topLeft,
-                size = size,
-                cornerRadius = cornerRadius
-            )
-            drawRoundRect(
-                color = indicatorColor,
-                topLeft = Offset(topLeft.x, startHeight),
-                size = Size(size.width, (size.height * animatedIndicatorLength).coerceAtMost(size.height - (startHeight - topLeft.y))),
-                cornerRadius = cornerRadius
-            )
+        if (viewPortLength < contentLength) {
+            indicatorLength = (if (itemsVisible.last().index + 1 >= state.layoutInfo.totalItemsCount) 1F - (contentOffset / contentLength) else visibleItemsLength / contentLength).coerceAtLeast(0.05F)
+            val indicatorThicknessPx = indicatorThickness.toPx()
+            val halfIndicatorThicknessPx = (indicatorThickness.value / 2F).dp.toPx()
+            scrollOffsetViewPort = contentOffset / contentLength
+
+            if (configuration.screenLayout and Configuration.SCREENLAYOUT_ROUND_MASK == Configuration.SCREENLAYOUT_ROUND_YES) {
+                val topLeft = Offset(halfIndicatorThicknessPx, halfIndicatorThicknessPx)
+                val size = Size(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, configuration.screenHeightDp.dp.toPx() - indicatorThicknessPx)
+                val style = Stroke(width = indicatorThicknessPx, cap = StrokeCap.Round)
+                val startAngle = (-30F + animatedScrollOffsetViewPort * 60F).coerceIn(-30F, 30F)
+                drawArc(
+                    startAngle = -30F,
+                    sweepAngle = 60F,
+                    useCenter = false,
+                    color = Color.DarkGray,
+                    topLeft = topLeft,
+                    size = size,
+                    alpha = alpha,
+                    style = style
+                )
+                drawArc(
+                    startAngle = startAngle,
+                    sweepAngle = (animatedIndicatorLength * 60F).coerceAtMost(60F - (startAngle + 30F)),
+                    useCenter = false,
+                    color = indicatorColor,
+                    topLeft = topLeft,
+                    size = size,
+                    alpha = alpha,
+                    style = style
+                )
+            } else {
+                val cornerRadius = CornerRadius(indicatorThicknessPx / 2F)
+                val topLeft = Offset(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, viewPortLength * 0.125F)
+                val size = Size(indicatorThicknessPx, viewPortLength * 0.75F)
+                val startHeight = (topLeft.y + animatedScrollOffsetViewPort * size.height).coerceIn(topLeft.y, topLeft.y + size.height)
+                drawRoundRect(
+                    color = Color.DarkGray,
+                    topLeft = topLeft,
+                    size = size,
+                    cornerRadius = cornerRadius
+                )
+                drawRoundRect(
+                    color = indicatorColor,
+                    topLeft = Offset(topLeft.x, startHeight),
+                    size = Size(size.width, (size.height * animatedIndicatorLength).coerceAtMost(size.height - (startHeight - topLeft.y))),
+                    cornerRadius = cornerRadius
+                )
+            }
         }
     }
 }

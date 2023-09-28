@@ -16,10 +16,11 @@ import com.loohp.hkweatherwarnings.utils.HTTPRequestUtils;
 import com.loohp.hkweatherwarnings.utils.JsonUtils;
 import com.loohp.hkweatherwarnings.utils.LocationUtils;
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo;
+import com.loohp.hkweatherwarnings.weather.ForecastWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.HourlyWeatherInfo;
+import com.loohp.hkweatherwarnings.weather.LocalForecastInfo;
 import com.loohp.hkweatherwarnings.weather.LunarDate;
 import com.loohp.hkweatherwarnings.weather.TropicalCycloneInfo;
-import com.loohp.hkweatherwarnings.weather.WeatherInfo;
 import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon;
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType;
 
@@ -492,8 +493,10 @@ public class Registry {
                     throw new RuntimeException();
                 }
 
+                String forecastGeneralSituation = forecastData.optString("generalSituation");
+
                 JSONArray dayArray = forecastData.optJSONArray("weatherForecast");
-                List<WeatherInfo> forecastInfo = new ArrayList<>(dayArray.length() - 1);
+                List<ForecastWeatherInfo> forecastInfo = new ArrayList<>(dayArray.length() - 1);
 
                 JSONObject dayObj = dayArray.optJSONObject(0);
                 float highestTemperature = (float) dayObj.optJSONObject("forecastMaxtemp").optDouble("value", -Float.MAX_VALUE);
@@ -513,6 +516,8 @@ public class Registry {
                     float forecastMaxRelativeHumidity = (float) forecastDayObj.optJSONObject("forecastMaxrh").optDouble("value", -Float.MAX_VALUE);
                     float forecastMinRelativeHumidity = (float) forecastDayObj.optJSONObject("forecastMinrh").optDouble("value", -Float.MAX_VALUE);
                     WeatherStatusIcon forecastWeatherIcon = WeatherStatusIcon.getByCode(forecastDayObj.optInt("ForecastIcon"));
+                    String forecastWind = forecastDayObj.optString("forecastWind");
+                    String forecastWeather = forecastDayObj.optString("forecastWeather");
 
                     float forecastChanceOfRain;
                     if (forecastStationDayObj == null) {
@@ -522,7 +527,7 @@ public class Registry {
                         forecastChanceOfRain = Float.parseFloat(forecastChanceOfRainStr.substring(0, forecastChanceOfRainStr.length() - 1));
                     }
 
-                    forecastInfo.add(new WeatherInfo(forecastDate, forecastHighestTemperature, forecastLowestTemperature, forecastMaxRelativeHumidity, forecastMinRelativeHumidity, forecastChanceOfRain, forecastWeatherIcon));
+                    forecastInfo.add(new ForecastWeatherInfo(forecastDate, forecastHighestTemperature, forecastLowestTemperature, forecastMaxRelativeHumidity, forecastMinRelativeHumidity, forecastChanceOfRain, forecastWeatherIcon, forecastWind, forecastWeather));
                 }
 
                 JSONArray hourArray = forecastStationData.optJSONArray("HourlyWeatherForecast");
@@ -551,7 +556,20 @@ public class Registry {
                     hourlyWeatherInfo.add(new HourlyWeatherInfo(hour, hourTemperature, hourHumidity, hourWindDirection, hourWindSpeed, hourIcon));
                 }
 
-                future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, forecastInfo, hourlyWeatherInfo));
+                JSONObject localForecastData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=" + lang);
+                if (localForecastData == null) {
+                    throw new RuntimeException();
+                }
+                String generalSituation = localForecastData.optString("generalSituation");
+                String tcInfo = localForecastData.optString("tcInfo");
+                String fireDangerWarning = localForecastData.optString("fireDangerWarning");
+                String forecastPeriod = localForecastData.optString("forecastPeriod");
+                String forecastDesc = localForecastData.optString("forecastDesc");
+                String outlook = localForecastData.optString("outlook");
+                LocalDateTime updateTime = LocalDateTime.parse(localForecastData.optString("updateTime"), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                LocalForecastInfo localForecastInfo = new LocalForecastInfo(generalSituation, tcInfo, fireDangerWarning, forecastPeriod, forecastDesc, outlook, updateTime);
+
+                future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo));
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);
