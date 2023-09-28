@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -157,7 +158,10 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
     val weatherTips by remember { Shared.currentTips.getState(instance, ForkJoinPool.commonPool()) }
     val lunarDate by remember { Shared.convertedLunarDates.getValueState(today, instance, ForkJoinPool.commonPool()) }
 
-    val updating: Boolean by remember { Shared.currentWeatherInfo.getCurrentlyUpdatingState(instance) }
+    val weatherInfoUpdating by remember { Shared.currentWeatherInfo.getCurrentlyUpdatingState(instance) }
+    val weatherWarningsUpdating by remember { Shared.currentWarnings.getCurrentlyUpdatingState(instance) }
+    val weatherTipsUpdating by remember { Shared.currentTips.getCurrentlyUpdatingState(instance) }
+    val combinedUpdating by remember { derivedStateOf { weatherInfoUpdating || weatherWarningsUpdating || weatherTipsUpdating } }
 
     val weatherInfoUpdateSuccessful by remember { Shared.currentWeatherInfo.getLastUpdateSuccessState(instance) }
     val weatherWarningsUpdateSuccessful by remember { Shared.currentWarnings.getLastUpdateSuccessState(instance) }
@@ -166,7 +170,7 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
 
     HKWeatherTheme {
         val moonPhaseUrl by remember { derivedStateOf { "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime(instance)) } }
-        val elements by remember { derivedStateOf { generateWeatherInfoItems(updating, updateSuccessful, weatherInfo, weatherWarnings, weatherTips, lunarDate, moonPhaseUrl, instance) } }
+        val elements by remember { derivedStateOf { generateWeatherInfoItems(weatherInfoUpdating, updateSuccessful, weatherInfo, weatherWarnings, weatherTips, lunarDate, moonPhaseUrl, instance) } }
 
         val focusRequester = remember { FocusRequester() }
         val scroll = rememberLazyListState()
@@ -258,7 +262,7 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
                 Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
             }
             item {
-                ChangeLocationButton(instance)
+                ChangeLocationButton(instance, !combinedUpdating)
             }
             item {
                 Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
@@ -274,7 +278,7 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    LanguageButton(instance)
+                    LanguageButton(instance, !combinedUpdating)
                     Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
                     UpdateTilesButton(instance)
                 }
@@ -542,23 +546,35 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        AutoResizeText(
+                        Box(
                             modifier = Modifier
-                                .combinedClickable(
-                                    onClick = {
-                                        instance.startActivity(Intent(instance, ChangeLocationActivity::class.java))
-                                    }
+                                .requiredHeight(StringUtils.scaledSize(30F, instance).dp),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            AutoResizeText(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.65F)
+                                    .combinedClickable(
+                                        onClick = {
+                                            instance.startActivity(
+                                                Intent(
+                                                    instance,
+                                                    ChangeLocationActivity::class.java
+                                                )
+                                            )
+                                        }
+                                    ),
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colors.primary,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                fontSizeRange = FontSizeRange(
+                                    min = TextUnit(1F, TextUnitType.Sp),
+                                    max = StringUtils.scaledSize(17F, instance).sp.clamp(max = 18.dp)
                                 ),
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            fontSizeRange = FontSizeRange(
-                                min = TextUnit(1F, TextUnitType.Sp),
-                                max = StringUtils.scaledSize(17F, instance).sp.clamp(max = 18.dp)
-                            ),
-                            text = weatherInfo.weatherStation
-                        )
+                                text = weatherInfo.weatherStation
+                            )
+                        }
                         if (Registry.getInstance(instance).location.first == "GPS") {
                             Image(
                                 modifier = Modifier
@@ -1680,11 +1696,12 @@ fun OpenHKOAppButton(instance: TitleActivity) {
 }
 
 @Composable
-fun ChangeLocationButton(instance: TitleActivity) {
+fun ChangeLocationButton(instance: TitleActivity, enabled: Boolean) {
     Button(
         onClick = {
             instance.startActivity(Intent(instance, ChangeLocationActivity::class.java))
         },
+        enabled = enabled,
         modifier = Modifier
             .padding(20.dp, 0.dp)
             .width(StringUtils.scaledSize(220, instance).dp)
@@ -1748,7 +1765,7 @@ fun SetRefreshRateButton(instance: TitleActivity) {
 }
 
 @Composable
-fun LanguageButton(instance: TitleActivity) {
+fun LanguageButton(instance: TitleActivity, enabled: Boolean) {
     Button(
         onClick = {
             Registry.getInstance(instance).setLanguage(if (Registry.getInstance(instance).language == "en") "zh" else "en", instance)
@@ -1758,6 +1775,7 @@ fun LanguageButton(instance: TitleActivity) {
             instance.startActivity(Intent(instance, TitleActivity::class.java))
             instance.finishAffinity()
         },
+        enabled = enabled,
         modifier = Modifier
             .width(StringUtils.scaledSize(90, instance).dp)
             .height(StringUtils.scaledSize(35, instance).dp),

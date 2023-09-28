@@ -88,6 +88,7 @@ data class DataStateInitializeResult<T> (
 class DataState<T>(
     private val defaultValue: T,
     private val initializer: (Context) -> DataStateInitializeResult<T>,
+    private val resetCallback: (Context) -> Unit,
     private val freshness: (Context) -> Long,
     private val updateFunction: (Context, DataState<T>) -> UpdateResult<T>,
     private val updateSuccessCallback: (Context, DataState<T>, T) -> Unit = { _, _, _ -> }
@@ -151,6 +152,7 @@ class DataState<T>(
         lastSuccessfulUpdateTime!!.value = 0
         isLastUpdateSuccessful!!.value = false
         isCurrentlyUpdating!!.value = true
+        resetCallback.invoke(context)
     }
 
     fun getCachedValue(context: Context): T {

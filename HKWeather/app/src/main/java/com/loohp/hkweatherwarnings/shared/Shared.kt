@@ -61,7 +61,7 @@ class Shared {
                         val data = if (json.has("weather")) CurrentWeatherInfo.deserialize(json.optJSONObject("weather")!!) else null
                         val updateTime = json.optLong("updateTime")
                         val updateSuccessful = json.optBoolean("updateSuccessful")
-                        return@DataState DataStateInitializeResult(data, updateTime, updateSuccessful, true)
+                        return@DataState DataStateInitializeResult(data, updateTime, updateSuccessful, false)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -69,6 +69,8 @@ class Shared {
                 }
             }
             DataStateInitializeResult.defaultEmpty(null)
+        }, {
+            it.applicationContext.deleteFile(WEATHER_CACHE_FILE)
         }, FRESHNESS_TIME, { context, _ ->
             val locationType = Registry.getInstance(context).location
             val location = if (locationType.first == "GPS") LocationUtils.getGPSLocation(context).get() else LocationResult.ofNullable(locationType.second)
@@ -105,7 +107,7 @@ class Shared {
                         }
                         val updateTime = json.optLong("updateTime")
                         val updateSuccessful = json.optBoolean("updateSuccessful")
-                        return@DataState DataStateInitializeResult(map, updateTime, updateSuccessful, true)
+                        return@DataState DataStateInitializeResult(map, updateTime, updateSuccessful, false)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -113,6 +115,8 @@ class Shared {
                 }
             }
             DataStateInitializeResult.defaultEmpty(emptyMap())
+        }, {
+            it.applicationContext.deleteFile(WARNINGS_CACHE_FILE)
         }, FRESHNESS_TIME, { context, _ ->
             val result = Registry.getInstance(context).getActiveWarnings(context).orElse(60, TimeUnit.SECONDS, null)
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)
@@ -154,7 +158,7 @@ class Shared {
                         }
                         val updateTime = json.optLong("updateTime")
                         val updateSuccessful = json.optBoolean("updateSuccessful")
-                        return@DataState DataStateInitializeResult(list, updateTime, updateSuccessful, true)
+                        return@DataState DataStateInitializeResult(list, updateTime, updateSuccessful, false)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -162,6 +166,8 @@ class Shared {
                 }
             }
             DataStateInitializeResult.defaultEmpty(emptyList())
+        }, {
+            it.applicationContext.deleteFile(TIPS_CACHE_FILE)
         }, FRESHNESS_TIME, { context, _ ->
             val result = Registry.getInstance(context).getWeatherTips(context).orElse(60, TimeUnit.SECONDS, null)
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)

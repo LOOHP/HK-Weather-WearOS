@@ -386,8 +386,8 @@ public class Registry {
                     throw new RuntimeException();
                 }
                 String temperatureStationField = lang.equals("en") ? "Automatic Weather Station" : "自動氣象站";
-                String defaultTemperatureStation = lang.equals("en") ? "Hong Kong Observatory" : "天文台";
-                JSONObject temperatureHere = temperatureData.stream().filter(e -> e.optString(temperatureStationField).equals(actualWeatherStationName)).findFirst()
+                String defaultTemperatureStation = lang.equals("en") ? "HK Observatory" : "天文台";
+                JSONObject temperatureHere = temperatureData.stream().filter(e -> e.optString(temperatureStationField).equals(actualWeatherStationName) && !Double.isNaN(e.optDouble(lang.equals("en") ? "Air Temperature(degree Celsius)" : "氣溫（攝氏）"))).findFirst()
                         .orElseGet(() -> temperatureData.stream().filter(e -> e.optString(temperatureStationField).equals(defaultTemperatureStation)).findFirst().orElse(null));
                 if (temperatureHere == null) {
                     throw new RuntimeException();
@@ -405,8 +405,8 @@ public class Registry {
                     throw new RuntimeException();
                 }
                 String humidityStationField = lang.equals("en") ? "Automatic Weather Station" : "自動氣象站";
-                String defaultHumidityStation = lang.equals("en") ? "Hong Kong Observatory" : "天文台";
-                JSONObject humidityHere = humidityData.stream().filter(e -> e.optString(humidityStationField).equals(humidityStation)).findFirst()
+                String defaultHumidityStation = lang.equals("en") ? "HK Observatory" : "天文台";
+                JSONObject humidityHere = humidityData.stream().filter(e -> e.optString(humidityStationField).equals(humidityStation) && !Double.isNaN(e.optDouble(lang.equals("en") ? "Relative Humidity(percent)" : "相對濕度（百分比）"))).findFirst()
                         .orElseGet(() -> humidityData.stream().filter(e -> e.optString(humidityStationField).equals(defaultHumidityStation)).findFirst().orElse(null));
                 if (humidityHere == null) {
                     throw new RuntimeException();
@@ -443,7 +443,7 @@ public class Registry {
                     String stationName = e.optJSONObject("properties").optString("AutomaticWeatherStation_" + lang2);
                     return windData.stream().filter(s -> s.optString(windStationField).equals(stationName)).findFirst().orElse(null);
                 }).filter(e -> {
-                    return !e.optString(lang.equals("en") ? "10-Minute Mean Wind Direction(Compass points)" : "十分鐘平均風向（方位點）").equals("N/A");
+                    return !Double.isNaN(e.optDouble(lang.equals("en") ? "10-Minute Mean Wind Direction(Compass points)" : "十分鐘平均風向（方位點）"));
                 }).orElseGet(() -> {
                     return windData.stream().filter(e -> e.optString(windStationField).equals(defaultWindStation)).findFirst().orElse(null);
                 });

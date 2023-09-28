@@ -205,16 +205,24 @@ class WeatherOverviewTile : TileService() {
                 .setHeight(DimensionBuilders.wrap())
                 .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
                 .addContent(
-                    LayoutElementBuilders.Text.Builder()
-                        .setText(text)
-                        .setFontStyle(
-                            LayoutElementBuilders.FontStyle.Builder()
-                                .setSize(
-                                    DimensionBuilders.SpProp.Builder().setValue(clampSp(this, StringUtils.findOptimalSp(this, text, StringUtils.scaledSize(230, this), 1, 1F, 17F), dpMax = 18F)).build()
-                                )
-                                .setWeight(
-                                    LayoutElementBuilders.FontWeightProp.Builder()
-                                        .setValue(LayoutElementBuilders.FONT_WEIGHT_BOLD).build()
+                    LayoutElementBuilders.Box.Builder()
+                        .setWidth(DimensionBuilders.wrap())
+                        .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(30F, this)).build())
+                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_BOTTOM)
+                        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+                        .addContent(
+                            LayoutElementBuilders.Text.Builder()
+                                .setText(text)
+                                .setFontStyle(
+                                    LayoutElementBuilders.FontStyle.Builder()
+                                        .setSize(
+                                            DimensionBuilders.SpProp.Builder().setValue(clampSp(this, StringUtils.findOptimalSp(this, text, StringUtils.scaledSize(230, this), 1, 1F, 17F), dpMax = 18F)).build()
+                                        )
+                                        .setWeight(
+                                            LayoutElementBuilders.FontWeightProp.Builder()
+                                                .setValue(LayoutElementBuilders.FONT_WEIGHT_BOLD).build()
+                                        )
+                                        .build()
                                 )
                                 .build()
                         )
@@ -241,16 +249,24 @@ class WeatherOverviewTile : TileService() {
                 )
                 .build()
         } else {
-            LayoutElementBuilders.Text.Builder()
-                .setText(text)
-                .setFontStyle(
-                    LayoutElementBuilders.FontStyle.Builder()
-                        .setSize(
-                            DimensionBuilders.SpProp.Builder().setValue(clampSp(this, StringUtils.findOptimalSp(this, text, StringUtils.scaledSize(250, this), 1, 1F, 17F), dpMax = 18F)).build()
-                        )
-                        .setWeight(
-                            LayoutElementBuilders.FontWeightProp.Builder()
-                                .setValue(LayoutElementBuilders.FONT_WEIGHT_BOLD).build()
+            LayoutElementBuilders.Box.Builder()
+                .setWidth(DimensionBuilders.wrap())
+                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(23F, this)).build())
+                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_BOTTOM)
+                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+                .addContent(
+                    LayoutElementBuilders.Text.Builder()
+                        .setText(text)
+                        .setFontStyle(
+                            LayoutElementBuilders.FontStyle.Builder()
+                                .setSize(
+                                    DimensionBuilders.SpProp.Builder().setValue(clampSp(this, StringUtils.findOptimalSp(this, text, StringUtils.scaledSize(250, this), 1, 1F, 17F), dpMax = 18F)).build()
+                                )
+                                .setWeight(
+                                    LayoutElementBuilders.FontWeightProp.Builder()
+                                        .setValue(LayoutElementBuilders.FONT_WEIGHT_BOLD).build()
+                                )
+                                .build()
                         )
                         .build()
                 )
@@ -920,7 +936,9 @@ class WeatherOverviewTile : TileService() {
                                 .build()
                         )
                         .build()
-                ).addContent(
+                )
+            if (updateSuccess) {
+                layout.addContent(
                     LayoutElementBuilders.Box.Builder()
                         .setWidth(DimensionBuilders.expand())
                         .setHeight(DimensionBuilders.expand())
@@ -953,6 +971,7 @@ class WeatherOverviewTile : TileService() {
                         )
                         .build()
                 )
+            }
             for ((i, value) in warnings.keys.withIndex()) {
                 layout.addContent(
                     LayoutElementBuilders.Arc.Builder()
