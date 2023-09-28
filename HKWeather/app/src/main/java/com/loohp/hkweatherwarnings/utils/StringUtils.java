@@ -51,6 +51,18 @@ public class StringUtils {
         return size * scale;
     }
 
+    public static float scaledHeight(float size, Context context) {
+        int dimension = ScreenSizeUtils.getScreenHeight(context);
+        float scale = dimension / 454F;
+        return size * scale;
+    }
+
+    public static float scaledWidth(float size, Context context) {
+        int dimension = ScreenSizeUtils.getScreenWidth(context);
+        float scale = dimension / 454F;
+        return size * scale;
+    }
+
     public static float findOptimalSp(Context context, String text, int targetWidth, int maxLines, float minSp, float maxSp) {
         TextPaint paint = new TextPaint();
         paint.density = context.getResources().getDisplayMetrics().density;

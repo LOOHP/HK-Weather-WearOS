@@ -152,14 +152,21 @@ class TitleActivity : ComponentActivity() {
 
 @Composable
 fun MainElements(today: LocalDate, launchSection: Section? = null, instance: TitleActivity) {
-    val weatherInfo: CurrentWeatherInfo? by remember { Shared.currentWeatherInfo.getState(instance, ForkJoinPool.commonPool()) }
-    val weatherWarnings: Map<WeatherWarningsType, String?> by remember { Shared.currentWarnings.getState(instance, ForkJoinPool.commonPool()) }
-    val weatherTips: List<Pair<String, Long>> by remember { Shared.currentTips.getState(instance, ForkJoinPool.commonPool()) }
-    val lunarDate: LunarDate? by remember { Shared.convertedLunarDates.getValueState(today, instance, ForkJoinPool.commonPool()) }
+    val weatherInfo by remember { Shared.currentWeatherInfo.getState(instance, ForkJoinPool.commonPool()) }
+    val weatherWarnings by remember { Shared.currentWarnings.getState(instance, ForkJoinPool.commonPool()) }
+    val weatherTips by remember { Shared.currentTips.getState(instance, ForkJoinPool.commonPool()) }
+    val lunarDate by remember { Shared.convertedLunarDates.getValueState(today, instance, ForkJoinPool.commonPool()) }
+
+    val updating: Boolean by remember { Shared.currentWeatherInfo.getCurrentlyUpdatingState(instance) }
+
+    val weatherInfoUpdateSuccessful by remember { Shared.currentWeatherInfo.getLastUpdateSuccessState(instance) }
+    val weatherWarningsUpdateSuccessful by remember { Shared.currentWarnings.getLastUpdateSuccessState(instance) }
+    val weatherTipsUpdateSuccessful by remember { Shared.currentTips.getLastUpdateSuccessState(instance) }
+    val updateSuccessful by remember { derivedStateOf { weatherInfoUpdateSuccessful && weatherWarningsUpdateSuccessful && weatherTipsUpdateSuccessful } }
 
     HKWeatherTheme {
-        val moonPhaseUrl by remember { derivedStateOf { "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime()) } }
-        val elements by remember { derivedStateOf { generateWeatherInfoItems(weatherInfo, weatherWarnings, weatherTips, lunarDate, moonPhaseUrl, instance) } }
+        val moonPhaseUrl by remember { derivedStateOf { "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime(instance)) } }
+        val elements by remember { derivedStateOf { generateWeatherInfoItems(updating, updateSuccessful, weatherInfo, weatherWarnings, weatherTips, lunarDate, moonPhaseUrl, instance) } }
 
         val focusRequester = remember { FocusRequester() }
         val scroll = rememberLazyListState()
@@ -193,6 +200,9 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
                 scrollMoved++
             }
         }
+        LaunchedEffect (moonPhaseUrl) {
+            instance.imageLoader.execute(ImageRequest.Builder(instance).data(moonPhaseUrl).build())
+        }
         LaunchedEffect (Unit) {
             focusRequester.requestFocus()
             launchSection?.let {
@@ -201,7 +211,6 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
                     scroll.animateScrollToItem(index, -ScreenSizeUtils.getScreenHeight(instance) / 5)
                 }
             }
-            instance.imageLoader.execute(ImageRequest.Builder(instance).data(moonPhaseUrl).build())
         }
 
         LazyColumn (
@@ -316,6 +325,80 @@ fun UpdatingElements(instance: TitleActivity) {
 }
 
 @Composable
+fun UpdateFailedElements(instance: TitleActivity) {
+    Column(
+        modifier = Modifier
+            .width(
+                UnitUtils.pixelsToDp(
+                    instance,
+                    ScreenSizeUtils
+                        .getScreenWidth(instance)
+                        .toFloat()
+                ).dp
+            )
+            .height(
+                UnitUtils.pixelsToDp(
+                    instance,
+                    ScreenSizeUtils
+                        .getScreenHeight(instance)
+                        .toFloat()
+                ).dp
+            ),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            modifier = Modifier.fillMaxWidth(0.8F),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colors.primary,
+            fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp),
+            text = if (Registry.getInstance(instance).language == "en") "Unable to update weather information" else "無法更新天氣資訊"
+        )
+        Spacer(modifier = Modifier.size(StringUtils.scaledSize(10, instance).dp))
+        Button(
+            onClick = {
+                Shared.currentWeatherInfo.reset(instance)
+                Shared.currentWarnings.reset(instance)
+                Shared.currentTips.reset(instance)
+                Shared.currentWeatherInfo.getLatestValue(
+                    instance,
+                    ForkJoinPool.commonPool(),
+                    true
+                )
+                Shared.currentWarnings.getLatestValue(
+                    instance,
+                    ForkJoinPool.commonPool(),
+                    true
+                )
+                Shared.currentTips.getLatestValue(
+                    instance,
+                    ForkJoinPool.commonPool(),
+                    true
+                )
+            },
+            modifier = Modifier
+                .width(StringUtils.scaledSize(90, instance).dp)
+                .height(StringUtils.scaledSize(40, instance).dp),
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color(0xFFD3A225),
+                contentColor = MaterialTheme.colors.primary
+            ),
+            content = {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9F)
+                        .align(Alignment.Center),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp).clamp(max = 14.dp),
+                    text = if (Registry.getInstance(instance).language == "en") "Retry" else "重試"
+                )
+            }
+        )
+    }
+}
+
+@Composable
 fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
     val today = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
     if (Registry.getInstance(instance).language == "en") {
@@ -413,10 +496,14 @@ fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: Map<WeatherWarningsType, String?>, weatherTips: List<Pair<String, Long>>, lunarDate: LunarDate?, moonPhaseUrl: String, instance: TitleActivity): ItemList {
+fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, weatherInfo: CurrentWeatherInfo?, weatherWarnings: Map<WeatherWarningsType, String?>, weatherTips: List<Pair<String, Long>>, lunarDate: LunarDate?, moonPhaseUrl: String, instance: TitleActivity): ItemList {
     val itemList = ItemList()
     if (weatherInfo == null) {
-        itemList.add { UpdatingElements(instance) }
+        if (updating) {
+            itemList.add { UpdatingElements(instance) }
+        } else {
+            itemList.add { UpdateFailedElements(instance) }
+        }
     } else {
         val systemTimeFormat = DateFormat.getTimeFormat(instance)
         val timeFormat = DateTimeFormatter.ofPattern(if (systemTimeFormat is SimpleDateFormat) systemTimeFormat.toPattern() else "HH:mm")
@@ -498,8 +585,11 @@ fun generateWeatherInfoItems(weatherInfo: CurrentWeatherInfo?, weatherWarnings: 
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        val lastUpdateText = (if (Registry.getInstance(instance).language == "en") "Updated: " else "更新時間: ").plus(
-                            DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE).format(Date(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime())))
+                        var lastUpdateText = (if (Registry.getInstance(instance).language == "en") "Updated: " else "更新時間: ").plus(
+                            DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE).format(Date(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime(instance))))
+                        if (!lastUpdateSuccessful) {
+                            lastUpdateText = lastUpdateText.plus(if (Registry.getInstance(instance).language == "en") " (Update Failed)" else " (無法更新)")
+                        }
                         Text(
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,

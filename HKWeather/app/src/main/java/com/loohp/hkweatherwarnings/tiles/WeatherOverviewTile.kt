@@ -51,12 +51,13 @@ private var state = false
 class WeatherOverviewTile : TileService() {
 
     override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
-        if (tileUpdatedTime < currentWeatherInfo.getLastSuccessfulUpdateTime()) {
+        if (tileUpdatedTime < currentWeatherInfo.getLastSuccessfulUpdateTime(this)) {
             getUpdater(this).requestUpdate(javaClass)
         }
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
+        @Suppress("UnstableApiUsage")
         return Futures.submit(Callable {
             val isReload = requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicBuilders.DynamicString>("reload"))
             val data = Triple(
@@ -67,8 +68,8 @@ class WeatherOverviewTile : TileService() {
             val weatherInfo = data.first.get()
             val warnings = data.second.get()
             val tips = data.third.get()
-            val updateSuccess = currentWeatherInfo.isLastUpdateSuccess()
-            val updateTime = currentWeatherInfo.getLastSuccessfulUpdateTime()
+            val updateSuccess = currentWeatherInfo.isLastUpdateSuccess(this)
+            val updateTime = currentWeatherInfo.getLastSuccessfulUpdateTime(this)
             tileUpdatedTime = System.currentTimeMillis()
 
             var element: LayoutElementBuilders.LayoutElement =
@@ -982,8 +983,8 @@ class WeatherOverviewTile : TileService() {
                         .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_TOP)
                         .addContent(
                             LayoutElementBuilders.Box.Builder()
-                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(45F, this)).build())
-                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(70F, this)).build())
+                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledWidth(80F, this)).build())
+                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledHeight(50F, this)).build())
                                 .setModifiers(
                                     ModifiersBuilders.Modifiers.Builder()
                                         .setClickable(
@@ -1038,8 +1039,8 @@ class WeatherOverviewTile : TileService() {
                         .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_TOP)
                         .addContent(
                             LayoutElementBuilders.Box.Builder()
-                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(45F, this)).build())
-                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(70F, this)).build())
+                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledWidth(80F, this)).build())
+                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledHeight(50F, this)).build())
                                 .setModifiers(
                                     ModifiersBuilders.Modifiers.Builder()
                                         .setClickable(

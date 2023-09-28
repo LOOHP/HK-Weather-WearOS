@@ -281,8 +281,7 @@ public class Registry {
             try {
                 JSONObject data = HTTPRequestUtils.getJSONResponse("https://pda.weather.gov.hk/locspc/android_data/TCTrackData/TC/tcFront.json");
                 if (data == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
                 String imagesData = HTTPRequestUtils.getTextResponse("https://pda.weather.gov.hk/locspc/android_data/TCTrackImg/png_list.myobs");
                 Set<String> images = imagesData == null ? Collections.emptySet() : Arrays.stream(imagesData.split("\\R")).collect(Collectors.toSet());
@@ -300,6 +299,7 @@ public class Registry {
                 }
                 future.complete(list);
             } catch (Throwable e) {
+                e.printStackTrace();
                 future.complete(null);
             }
         }).start();
@@ -324,12 +324,12 @@ public class Registry {
                 String dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                 JSONObject data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/lunardate.php?date=" + dateStr);
                 if (data == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
                 String[] s = data.optString("LunarYear").split("，");
                 future.complete(new LunarDate(s[0].replace("年", ""), s[1], data.optString("LunarDate"), climatology));
             } catch (Throwable e) {
+                e.printStackTrace();
                 future.complete(null);
             }
         }).start();
@@ -383,16 +383,14 @@ public class Registry {
                 String temperatureLang = lang.equals("en") ? "" : "_uc";
                 List<JSONObject> temperatureData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/hko_data/regional-weather/latest_1min_temperature" + temperatureLang + ".csv");
                 if (temperatureData == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
                 String temperatureStationField = lang.equals("en") ? "Automatic Weather Station" : "自動氣象站";
                 String defaultTemperatureStation = lang.equals("en") ? "Hong Kong Observatory" : "天文台";
                 JSONObject temperatureHere = temperatureData.stream().filter(e -> e.optString(temperatureStationField).equals(actualWeatherStationName)).findFirst()
                         .orElseGet(() -> temperatureData.stream().filter(e -> e.optString(temperatureStationField).equals(defaultTemperatureStation)).findFirst().orElse(null));
                 if (temperatureHere == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
                 float currentTemperature = (float) temperatureHere.optDouble(lang.equals("en") ? "Air Temperature(degree Celsius)" : "氣溫（攝氏）");
 
@@ -404,16 +402,14 @@ public class Registry {
                 String humidityLang = lang.equals("en") ? "" : "_uc";
                 List<JSONObject> humidityData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/hko_data/regional-weather/latest_1min_humidity" + humidityLang + ".csv");
                 if (humidityData == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
                 String humidityStationField = lang.equals("en") ? "Automatic Weather Station" : "自動氣象站";
                 String defaultHumidityStation = lang.equals("en") ? "Hong Kong Observatory" : "天文台";
                 JSONObject humidityHere = humidityData.stream().filter(e -> e.optString(humidityStationField).equals(humidityStation)).findFirst()
                         .orElseGet(() -> humidityData.stream().filter(e -> e.optString(humidityStationField).equals(defaultHumidityStation)).findFirst().orElse(null));
                 if (humidityHere == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
                 float currentHumidity = (float) humidityHere.optDouble(lang.equals("en") ? "Relative Humidity(percent)" : "相對濕度（百分比）");
 
@@ -435,8 +431,7 @@ public class Registry {
                 String windLang = lang.equals("en") ? "" : "_uc";
                 List<JSONObject> windData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/hko_data/regional-weather/latest_10min_wind" + windLang + ".csv");
                 if (windData == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
 
                 String windStationField = lang.equals("en") ? "Automatic Weather Station" : "自動氣象站";
@@ -476,8 +471,7 @@ public class Registry {
 
                 List<JSONObject> sunData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=SRS&year=" + today.getYear() + "&rformat=csv", s -> s.replaceAll("[^a-zA-Z.0-9:\\-,]", ""));
                 if (sunData == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
                 JSONObject todaySun = sunData.stream().filter(e -> e.optString("YYYY-MM-DD").equals(todayDateStr)).findFirst().orElse(null);
                 LocalTime sunriseTime = LocalTime.parse(todaySun.optString("RISE"), timeFormatter);
@@ -486,8 +480,7 @@ public class Registry {
 
                 List<JSONObject> moonData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=MRS&year=" + today.getYear() + "&rformat=csv", s -> s.replaceAll("[^a-zA-Z.0-9:\\-,]", ""));
                 if (moonData == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
                 JSONObject todayMoon = moonData.stream().filter(e -> e.optString("YYYY-MM-DD").equals(todayDateStr)).findFirst().orElse(null);
                 LocalTime moonriseTime = todayMoon.optString("RISE").isEmpty() ? null : LocalTime.parse(todayMoon.optString("RISE"), timeFormatter);
@@ -496,8 +489,7 @@ public class Registry {
 
                 JSONObject forecastData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=" + lang);
                 if (forecastData == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
 
                 JSONArray dayArray = forecastData.optJSONArray("weatherForecast");
@@ -577,42 +569,45 @@ public class Registry {
             try {
                 String lang = getLanguage().equals("en") ? "en" : "tc";
 
-                JSONArray data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warningInfo&lang=" + lang).optJSONArray("details");
+                JSONObject data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warningInfo&lang=" + lang);
                 if (data == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
                 Map<WeatherWarningsType, String> warnings = new EnumMap<>(WeatherWarningsType.class);
-                for (int i = 0; i < data.length(); i++) {
-                    JSONObject details = data.optJSONObject(i);
-                    try {
-                        WeatherWarningsType warningType = WeatherWarningsType.valueOf(details.optString("warningStatementCode").toUpperCase());
-                        String warningName = getLanguage().equals("en") ? warningType.getNameEn() : warningType.getNameZh();
-                        JSONArray contentsArray = details.optJSONArray("contents");
-                        String contents;
-                        if (contentsArray == null || contentsArray.length() == 0) {
-                            contents = null;
-                        } else {
-                            List<String> lines = JsonUtils.toList(contentsArray, String.class);
-                            if (!lines.get(0).trim().equalsIgnoreCase(warningName)) {
-                                lines.add(0, warningName);
-                            }
-                            contents = String.join("\n", lines);
-                            OffsetDateTime time = OffsetDateTime.parse(details.optString("updateTime"));
-                            if (getLanguage().equals("en")) {
-                                contents += "\nDispatched by the Hong Kong Observatory at " + DateTimeFormatter.ofPattern("HH:mm' HKT on 'dd.MM.yyyy", Locale.ENGLISH);
+                JSONArray array = data.optJSONArray("details");
+                if (array != null) {
+                    for (int i = 0; i < array.length(); i++) {
+                        JSONObject details = array.optJSONObject(i);
+                        try {
+                            WeatherWarningsType warningType = WeatherWarningsType.valueOf(details.optString("warningStatementCode").toUpperCase());
+                            String warningName = getLanguage().equals("en") ? warningType.getNameEn() : warningType.getNameZh();
+                            JSONArray contentsArray = details.optJSONArray("contents");
+                            String contents;
+                            if (contentsArray == null || contentsArray.length() == 0) {
+                                contents = null;
                             } else {
-                                contents += "\n以上天氣稿由天文台於" + DateTimeFormatter.ofPattern("yyyy年MM月dd日HH時mm分", Locale.TRADITIONAL_CHINESE).format(time) + "發出";
+                                List<String> lines = JsonUtils.toList(contentsArray, String.class);
+                                if (!lines.get(0).trim().equalsIgnoreCase(warningName)) {
+                                    lines.add(0, warningName);
+                                }
+                                contents = String.join("\n", lines);
+                                OffsetDateTime time = OffsetDateTime.parse(details.optString("updateTime"));
+                                if (getLanguage().equals("en")) {
+                                    contents += "\nDispatched by the Hong Kong Observatory at " + DateTimeFormatter.ofPattern("HH:mm' HKT on 'dd.MM.yyyy", Locale.ENGLISH);
+                                } else {
+                                    contents += "\n以上天氣稿由天文台於" + DateTimeFormatter.ofPattern("yyyy年MM月dd日HH時mm分", Locale.TRADITIONAL_CHINESE).format(time) + "發出";
+                                }
                             }
+                            warnings.put(warningType, contents);
+                        } catch (Throwable e) {
+                            e.printStackTrace();
                         }
-                        warnings.put(warningType, contents);
-                    } catch (Throwable e) {
-                        e.printStackTrace();
                     }
                 }
 
                 future.complete(warnings);
             } catch (Throwable e) {
+                e.printStackTrace();
                 future.complete(null);
             }
         }).start();
@@ -629,8 +624,7 @@ public class Registry {
                 String lang = getLanguage().equals("en") ? "en" : "tc";
                 JSONObject data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=swt&lang=" + lang);
                 if (data == null) {
-                    future.complete(null);
-                    return;
+                    throw new RuntimeException();
                 }
                 if (!data.has("swt")) {
                     future.complete(Collections.emptyList());
@@ -645,6 +639,7 @@ public class Registry {
                 }
                 future.complete(tips);
             } catch (Throwable e) {
+                e.printStackTrace();
                 future.complete(null);
             }
         }).start();

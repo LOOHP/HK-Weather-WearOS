@@ -104,6 +104,7 @@ fun Modifier.verticalScrollbar(
 ): Modifier = composed {
     val configuration = LocalConfiguration.current
     val actualItemLength: MutableMap<Int, Int> = remember { mutableMapOf() }
+    var totalItemCount by remember { mutableStateOf(0) }
     var indicatorLength by remember { mutableStateOf(0F) }
     var scrollOffsetViewPort by remember { mutableStateOf(0F) }
     val animatedIndicatorLength by animateFloatAsState(
@@ -120,7 +121,12 @@ fun Modifier.verticalScrollbar(
     drawWithContent {
         drawContent()
 
+        val viewPortLength = size.height
         val itemsVisible = state.layoutInfo.visibleItemsInfo
+        if (totalItemCount != state.layoutInfo.totalItemsCount) {
+            actualItemLength.clear()
+            totalItemCount = state.layoutInfo.totalItemsCount
+        }
         itemsVisible.forEach { actualItemLength[it.index] = it.size }
         val visibleItemsLength = itemsVisible.sumOf { it.size }.toFloat() - state.firstVisibleItemScrollOffset
         val knownLength = actualItemLength.entries.sumOf { it.value }
@@ -128,7 +134,7 @@ fun Modifier.verticalScrollbar(
         val knownAverageItemLength = knownLength / knownAmount
         val contentOffset = (0 until state.firstVisibleItemIndex).sumOf { actualItemLength.getOrDefault(it, knownAverageItemLength) }.toFloat() + state.firstVisibleItemScrollOffset
         val contentLength = knownLength + (state.layoutInfo.totalItemsCount - knownAmount - 1) * (knownLength / knownAmount)
-        indicatorLength = if (itemsVisible.last().index + 1 >= state.layoutInfo.totalItemsCount) 1F - (contentOffset / contentLength) else visibleItemsLength / contentLength
+        indicatorLength = (if (itemsVisible.last().index + 1 >= state.layoutInfo.totalItemsCount) 1F - (contentOffset / contentLength) else visibleItemsLength / contentLength).coerceAtLeast(0.05F)
         val indicatorThicknessPx = indicatorThickness.toPx()
         val halfIndicatorThicknessPx = (indicatorThickness.value / 2F).dp.toPx()
         scrollOffsetViewPort = contentOffset / contentLength
@@ -137,6 +143,7 @@ fun Modifier.verticalScrollbar(
             val topLeft = Offset(halfIndicatorThicknessPx, halfIndicatorThicknessPx)
             val size = Size(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, configuration.screenHeightDp.dp.toPx() - indicatorThicknessPx)
             val style = Stroke(width = indicatorThicknessPx, cap = StrokeCap.Round)
+            val startAngle = (-30F + animatedScrollOffsetViewPort * 60F).coerceIn(-30F, 30F)
             drawArc(
                 startAngle = -30F,
                 sweepAngle = 60F,
@@ -148,8 +155,8 @@ fun Modifier.verticalScrollbar(
                 style = style
             )
             drawArc(
-                startAngle = -30F + animatedScrollOffsetViewPort * 60F,
-                sweepAngle = animatedIndicatorLength * 60F,
+                startAngle = startAngle,
+                sweepAngle = (animatedIndicatorLength * 60F).coerceAtMost(60F - (startAngle + 30F)),
                 useCenter = false,
                 color = indicatorColor,
                 topLeft = topLeft,
@@ -159,8 +166,9 @@ fun Modifier.verticalScrollbar(
             )
         } else {
             val cornerRadius = CornerRadius(indicatorThicknessPx / 2F)
-            val topLeft = Offset(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, visibleItemsLength * 0.125F)
-            val size = Size(indicatorThicknessPx, visibleItemsLength * 0.75F)
+            val topLeft = Offset(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, viewPortLength * 0.125F)
+            val size = Size(indicatorThicknessPx, viewPortLength * 0.75F)
+            val startHeight = (topLeft.y + animatedScrollOffsetViewPort * size.height).coerceIn(topLeft.y, topLeft.y + size.height)
             drawRoundRect(
                 color = Color.DarkGray,
                 topLeft = topLeft,
@@ -169,8 +177,8 @@ fun Modifier.verticalScrollbar(
             )
             drawRoundRect(
                 color = indicatorColor,
-                topLeft = Offset(topLeft.x, topLeft.y + animatedScrollOffsetViewPort * size.height),
-                size = Size(size.width, size.height * animatedIndicatorLength),
+                topLeft = Offset(topLeft.x, startHeight),
+                size = Size(size.width, (size.height * animatedIndicatorLength).coerceAtMost(size.height - (startHeight - topLeft.y))),
                 cornerRadius = cornerRadius
             )
         }

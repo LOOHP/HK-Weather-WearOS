@@ -15,6 +15,7 @@ import com.loohp.hkweatherwarnings.tiles.WeatherTipsTile
 import com.loohp.hkweatherwarnings.tiles.WeatherWarningsTile
 import com.loohp.hkweatherwarnings.utils.LocationUtils
 import com.loohp.hkweatherwarnings.utils.LocationUtils.LocationResult
+import com.loohp.hkweatherwarnings.utils.orElse
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
 import com.loohp.hkweatherwarnings.weather.LunarDate
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
@@ -57,41 +58,35 @@ class Shared {
                 try {
                     BufferedReader(InputStreamReader(it.applicationContext.openFileInput(WEATHER_CACHE_FILE), StandardCharsets.UTF_8)).use { reader ->
                         val json = JSONObject(reader.lines().collect(Collectors.joining()))
-                        val data = CurrentWeatherInfo.deserialize(json.optJSONObject("weather")!!)
+                        val data = if (json.has("weather")) CurrentWeatherInfo.deserialize(json.optJSONObject("weather")!!) else null
                         val updateTime = json.optLong("updateTime")
                         val updateSuccessful = json.optBoolean("updateSuccessful")
-                        return@DataState Triple(data, updateTime, updateSuccessful)
+                        return@DataState DataStateInitializeResult(data, updateTime, updateSuccessful, true)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                     it.applicationContext.deleteFile(WEATHER_CACHE_FILE)
                 }
             }
-            Triple(null, null, null)
+            DataStateInitializeResult.defaultEmpty(null)
         }, FRESHNESS_TIME, { context, _ ->
             val locationType = Registry.getInstance(context).location
             val location = if (locationType.first == "GPS") LocationUtils.getGPSLocation(context).get() else LocationResult.ofNullable(locationType.second)
-            val result = Registry.getInstance(context).getCurrentWeatherInfo(context, location).get()
-            if (result == null) {
-                UpdateResult(false, null)
-            } else {
-                UpdateResult(true, result)
-            }
+            val result = Registry.getInstance(context).getCurrentWeatherInfo(context, location).orElse(60, TimeUnit.SECONDS, null)
+            if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->
             TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java)
-            if (value != null) {
-                try {
-                    PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(WEATHER_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
-                        val json = JSONObject()
-                        json.put("weather", value.serialize())
-                        json.put("updateTime", self.getLastSuccessfulUpdateTime())
-                        json.put("updateSuccessful", self.isLastUpdateSuccess())
-                        it.write(json.toString())
-                        it.flush()
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+            try {
+                PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(WEATHER_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
+                    val json = JSONObject()
+                    value?.let { v -> json.put("weather", v.serialize()) }
+                    json.put("updateTime", self.getLastSuccessfulUpdateTime(context))
+                    json.put("updateSuccessful", self.isLastUpdateSuccess(context))
+                    it.write(json.toString())
+                    it.flush()
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         })
 
@@ -110,38 +105,36 @@ class Shared {
                         }
                         val updateTime = json.optLong("updateTime")
                         val updateSuccessful = json.optBoolean("updateSuccessful")
-                        return@DataState Triple(map, updateTime, updateSuccessful)
+                        return@DataState DataStateInitializeResult(map, updateTime, updateSuccessful, true)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                     it.applicationContext.deleteFile(WARNINGS_CACHE_FILE)
                 }
             }
-            Triple(emptyMap(), null, null)
+            DataStateInitializeResult.defaultEmpty(emptyMap())
         }, FRESHNESS_TIME, { context, _ ->
-            val result = Registry.getInstance(context).getActiveWarnings(context).get()
-            if (result == null) UpdateResult(false, emptyMap()) else UpdateResult(true, result)
+            val result = Registry.getInstance(context).getActiveWarnings(context).orElse(60, TimeUnit.SECONDS, null)
+            if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->
             TileService.getUpdater(context).requestUpdate(WeatherWarningsTile::class.java)
-            if (value.isNotEmpty()) {
-                PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(WARNINGS_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
-                    try {
-                        val array = JSONArray()
-                        for ((type, text) in value.entries) {
-                            val obj = JSONObject()
-                            obj.put("type", type.name)
-                            obj.put("text", text?: "")
-                            array.put(obj)
-                        }
-                        val json = JSONObject()
-                        json.put("warnings", array)
-                        json.put("updateTime", self.getLastSuccessfulUpdateTime())
-                        json.put("updateSuccessful", self.isLastUpdateSuccess())
-                        it.write(json.toString())
-                        it.flush()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+            PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(WARNINGS_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
+                try {
+                    val array = JSONArray()
+                    for ((type, text) in value.entries) {
+                        val obj = JSONObject()
+                        obj.put("type", type.name)
+                        obj.put("text", text?: "")
+                        array.put(obj)
                     }
+                    val json = JSONObject()
+                    json.put("warnings", array)
+                    json.put("updateTime", self.getLastSuccessfulUpdateTime(context))
+                    json.put("updateSuccessful", self.isLastUpdateSuccess(context))
+                    it.write(json.toString())
+                    it.flush()
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         })
@@ -161,44 +154,43 @@ class Shared {
                         }
                         val updateTime = json.optLong("updateTime")
                         val updateSuccessful = json.optBoolean("updateSuccessful")
-                        return@DataState Triple(list, updateTime, updateSuccessful)
+                        return@DataState DataStateInitializeResult(list, updateTime, updateSuccessful, true)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                     it.applicationContext.deleteFile(TIPS_CACHE_FILE)
                 }
             }
-            Triple(emptyList(), null, null)
+            DataStateInitializeResult.defaultEmpty(emptyList())
         }, FRESHNESS_TIME, { context, _ ->
-            val result = Registry.getInstance(context).getWeatherTips(context).get()
-            if (result == null) UpdateResult(false, emptyList()) else UpdateResult(true, result)
+            val result = Registry.getInstance(context).getWeatherTips(context).orElse(60, TimeUnit.SECONDS, null)
+            if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->
             TileService.getUpdater(context).requestUpdate(WeatherTipsTile::class.java)
-            if (value.isNotEmpty()) {
-                PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(TIPS_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
-                    try {
-                        val array = JSONArray()
-                        for (pair in value) {
-                            val obj = JSONObject()
-                            obj.put("tip", pair.first)
-                            obj.put("time", pair.second)
-                            array.put(obj)
-                        }
-                        val json = JSONObject()
-                        json.put("tips", array)
-                        json.put("updateTime", self.getLastSuccessfulUpdateTime())
-                        json.put("updateSuccessful", self.isLastUpdateSuccess())
-                        it.write(json.toString())
-                        it.flush()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+            PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(TIPS_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
+                try {
+                    val array = JSONArray()
+                    for (pair in value) {
+                        val obj = JSONObject()
+                        obj.put("tip", pair.first)
+                        obj.put("time", pair.second)
+                        array.put(obj)
                     }
+                    val json = JSONObject()
+                    json.put("tips", array)
+                    json.put("updateTime", self.getLastSuccessfulUpdateTime(context))
+                    json.put("updateSuccessful", self.isLastUpdateSuccess(context))
+                    it.write(json.toString())
+                    it.flush()
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         })
 
         val convertedLunarDates: MapValueState<LocalDate, LunarDate> = MapValueState(ConcurrentHashMap()) { key, context, _ ->
-            Registry.getInstance(context).getLunarDate(context, key).get()
+            val result = Registry.getInstance(context).getLunarDate(context, key).orElse(60, TimeUnit.SECONDS, null)
+            if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }
 
         fun startBackgroundService(context: Context) {

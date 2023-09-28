@@ -43,20 +43,21 @@ private var state = false
 class WeatherTipsTile : TileService() {
 
     override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
-        if (tileUpdatedTime < currentTips.getLastSuccessfulUpdateTime()) {
+        if (tileUpdatedTime < currentTips.getLastSuccessfulUpdateTime(this)) {
             getUpdater(this).requestUpdate(javaClass)
         }
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
+        @Suppress("UnstableApiUsage")
         return Futures.submit(Callable {
             if (requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicString>("next"))) {
                 currentIndex++
             }
             val isReload = requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicString>("reload"))
             val tips = currentTips.getLatestValue(this, ForkJoinPool.commonPool(), isReload).get()
-            val updateSuccess = currentTips.isLastUpdateSuccess()
-            val updateTime = currentTips.getLastSuccessfulUpdateTime()
+            val updateSuccess = currentTips.isLastUpdateSuccess(this)
+            val updateTime = currentTips.getLastSuccessfulUpdateTime(this)
             tileUpdatedTime = System.currentTimeMillis()
 
             val content = buildContent(tips)
