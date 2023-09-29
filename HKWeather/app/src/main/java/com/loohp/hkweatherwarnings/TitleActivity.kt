@@ -155,10 +155,10 @@ class TitleActivity : ComponentActivity() {
 
 @Composable
 fun MainElements(today: LocalDate, launchSection: Section? = null, instance: TitleActivity) {
-    val weatherInfo by remember { Shared.currentWeatherInfo.getState(instance, ForkJoinPool.commonPool()) }
-    val weatherWarnings by remember { Shared.currentWarnings.getState(instance, ForkJoinPool.commonPool()) }
-    val weatherTips by remember { Shared.currentTips.getState(instance, ForkJoinPool.commonPool()) }
-    val lunarDate by remember { Shared.convertedLunarDates.getValueState(today, instance, ForkJoinPool.commonPool()) }
+    val weatherInfo by remember { Shared.currentWeatherInfo.getState(instance) }
+    val weatherWarnings by remember { Shared.currentWarnings.getState(instance) }
+    val weatherTips by remember { Shared.currentTips.getState(instance) }
+    val lunarDate by remember { Shared.convertedLunarDates.getValueState(today) }
 
     val weatherInfoUpdating by remember { Shared.currentWeatherInfo.getCurrentlyUpdatingState(instance) }
     val weatherWarningsUpdating by remember { Shared.currentWarnings.getCurrentlyUpdatingState(instance) }
@@ -169,6 +169,13 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
     val weatherWarningsUpdateSuccessful by remember { Shared.currentWarnings.getLastUpdateSuccessState(instance) }
     val weatherTipsUpdateSuccessful by remember { Shared.currentTips.getLastUpdateSuccessState(instance) }
     val updateSuccessful by remember { derivedStateOf { weatherInfoUpdateSuccessful && weatherWarningsUpdateSuccessful && weatherTipsUpdateSuccessful } }
+
+    LaunchedEffect (Unit) {
+        Shared.currentWeatherInfo.getLatestValue(instance, ForkJoinPool.commonPool())
+        Shared.currentWarnings.getLatestValue(instance, ForkJoinPool.commonPool())
+        Shared.currentTips.getLatestValue(instance, ForkJoinPool.commonPool())
+        Shared.convertedLunarDates.getValue(today, instance, ForkJoinPool.commonPool())
+    }
 
     HKWeatherTheme {
         val moonPhaseUrl by remember { derivedStateOf { "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime(instance)) } }
@@ -933,6 +940,12 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             itemList.add {
                 Spacer(modifier = Modifier.size(10.dp))
             }
+            itemList.add {
+                RainfallMapButton(instance, Color(0xFF460000))
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
             specialButton = true
         }
         if (weatherWarnings.keys.any { it.category == WeatherWarningsCategory.WTCSGNL }) {
@@ -1340,6 +1353,12 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             Spacer(modifier = Modifier.size(10.dp))
         }
         itemList.add {
+            RainfallMapButton(instance)
+        }
+        itemList.add {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+        itemList.add {
             StormTrackButton(instance)
         }
         itemList.add {
@@ -1423,7 +1442,8 @@ fun generateHourlyItems(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFor
                     .combinedClickable(
                         onClick = {
                             val weatherIcon = hourInfo.weatherIcon
-                            val weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
+                            val weatherDescription =
+                                if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
                             val intent = Intent(instance, DisplayInfoTextActivity::class.java)
                             intent.putExtra("imageDrawable", weatherIcon.iconId)
                             intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
@@ -1512,7 +1532,8 @@ fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivi
                     .combinedClickable(
                         onClick = {
                             val weatherIcon = dayInfo.weatherIcon
-                            val weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
+                            val weatherDescription =
+                                if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
                             val intent = Intent(instance, DisplayInfoTextActivity::class.java)
                             intent.putExtra("imageDrawable", weatherIcon.iconId)
                             intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
@@ -1738,6 +1759,49 @@ fun RadarButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.
                     ),
                     maxLines = 1,
                     text = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64 公里)"
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun RainfallMapButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
+    Button(
+        onClick = {
+            instance.startActivity(Intent(instance, RainfallMapActivity::class.java))
+        },
+        modifier = Modifier
+            .width(StringUtils.scaledSize(180, instance).dp)
+            .height(StringUtils.scaledSize(45, instance).dp),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = backgroundColor,
+            contentColor = MaterialTheme.colors.primary
+        ),
+        content = {
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth(0.9F)
+                    .align(Alignment.Center),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(0.dp, 0.dp, 2.dp, 0.dp)
+                        .size(15.sp.clamp(max = 15.dp).dp),
+                    painter = painterResource(R.mipmap.rainfall),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Rainfall Dist. Maps" else "雨量分佈圖"
+                )
+                AutoResizeText(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSizeRange = FontSizeRange(
+                        min = TextUnit(1F, TextUnitType.Sp),
+                        max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
+                    ),
+                    maxLines = 1,
+                    text = if (Registry.getInstance(instance).language == "en") "Rainfall Dist. Maps" else "雨量分佈圖"
                 )
             }
         }

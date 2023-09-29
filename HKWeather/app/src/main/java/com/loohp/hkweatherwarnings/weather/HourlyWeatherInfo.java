@@ -2,6 +2,8 @@ package com.loohp.hkweatherwarnings.weather;
 
 import android.content.Context;
 
+import androidx.compose.runtime.Immutable;
+
 import com.loohp.hkweatherwarnings.cache.JSONSerializable;
 import com.loohp.hkweatherwarnings.shared.Registry;
 import com.loohp.hkweatherwarnings.utils.CompassUtilsKtKt;
@@ -14,7 +16,9 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Objects;
 
+@Immutable
 public class HourlyWeatherInfo implements JSONSerializable {
 
     public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy.HH:mm");
@@ -101,5 +105,18 @@ public class HourlyWeatherInfo implements JSONSerializable {
         jsonObject.put("windSpeed", windSpeed);
         jsonObject.put("weatherIcon", weatherIcon.name());
         return jsonObject;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HourlyWeatherInfo that = (HourlyWeatherInfo) o;
+        return Float.compare(that.temperature, temperature) == 0 && Float.compare(that.humidity, humidity) == 0 && Float.compare(that.windDirection, windDirection) == 0 && Float.compare(that.windSpeed, windSpeed) == 0 && time.equals(that.time) && weatherIcon == that.weatherIcon;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(time, temperature, humidity, windDirection, windSpeed, weatherIcon);
     }
 }

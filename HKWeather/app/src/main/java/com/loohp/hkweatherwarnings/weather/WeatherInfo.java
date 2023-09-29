@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 public abstract class WeatherInfo implements JSONSerializable {
 
@@ -74,5 +75,18 @@ public abstract class WeatherInfo implements JSONSerializable {
         jsonObject.put("chanceOfRain", chanceOfRain);
         jsonObject.put("weatherIcon", weatherIcon.name());
         return jsonObject;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        WeatherInfo that = (WeatherInfo) o;
+        return Float.compare(that.highestTemperature, highestTemperature) == 0 && Float.compare(that.lowestTemperature, lowestTemperature) == 0 && Float.compare(that.maxRelativeHumidity, maxRelativeHumidity) == 0 && Float.compare(that.minRelativeHumidity, minRelativeHumidity) == 0 && Float.compare(that.chanceOfRain, chanceOfRain) == 0 && Objects.equals(date, that.date) && weatherIcon == that.weatherIcon;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon);
     }
 }

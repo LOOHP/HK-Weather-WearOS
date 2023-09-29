@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.Locale;
+import java.util.Objects;
 
 public class ForecastWeatherInfo extends WeatherInfo {
 
@@ -80,4 +81,17 @@ public class ForecastWeatherInfo extends WeatherInfo {
         return jsonObject;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ForecastWeatherInfo that = (ForecastWeatherInfo) o;
+        return Objects.equals(forecastWind, that.forecastWind) && Objects.equals(forecastWeather, that.forecastWeather);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), forecastWind, forecastWeather);
+    }
 }

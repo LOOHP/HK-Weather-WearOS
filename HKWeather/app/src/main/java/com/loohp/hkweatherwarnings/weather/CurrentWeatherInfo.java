@@ -1,5 +1,7 @@
 package com.loohp.hkweatherwarnings.weather;
 
+import androidx.compose.runtime.Immutable;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,7 +12,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+@Immutable
 public class CurrentWeatherInfo extends WeatherInfo {
 
     public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
@@ -189,4 +193,17 @@ public class CurrentWeatherInfo extends WeatherInfo {
         return jsonObject;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CurrentWeatherInfo that = (CurrentWeatherInfo) o;
+        return Float.compare(that.currentTemperature, currentTemperature) == 0 && Float.compare(that.currentHumidity, currentHumidity) == 0 && Float.compare(that.uvIndex, uvIndex) == 0 && Float.compare(that.windSpeed, windSpeed) == 0 && Float.compare(that.gust, gust) == 0 && Objects.equals(weatherStation, that.weatherStation) && Objects.equals(windDirection, that.windDirection) && Objects.equals(sunriseTime, that.sunriseTime) && Objects.equals(sunTransitTime, that.sunTransitTime) && Objects.equals(sunsetTime, that.sunsetTime) && Objects.equals(moonriseTime, that.moonriseTime) && Objects.equals(moonTransitTime, that.moonTransitTime) && Objects.equals(moonsetTime, that.moonsetTime) && Objects.equals(localForecastInfo, that.localForecastInfo) && Objects.equals(forecastGeneralSituation, that.forecastGeneralSituation) && Objects.equals(forecastInfo, that.forecastInfo) && Objects.equals(hourlyWeatherInfo, that.hourlyWeatherInfo);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), weatherStation, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo);
+    }
 }

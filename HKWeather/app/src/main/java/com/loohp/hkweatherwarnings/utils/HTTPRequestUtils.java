@@ -22,6 +22,21 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class HTTPRequestUtils {
 
+    public static boolean isResponseOk(String link) {
+        try {
+            URL url = new URL(link);
+            HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+            connection.setUseCaches(false);
+            connection.setDefaultUseCaches(false);
+            connection.addRequestProperty("User-Agent", "Mozilla/5.0");
+            connection.addRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
+            connection.addRequestProperty("Pragma", "no-cache");
+            return connection.getResponseCode() == HttpsURLConnection.HTTP_OK;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public static String getTextResponse(String link) {
         try {
             URL url = new URL(link);

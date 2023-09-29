@@ -2,6 +2,8 @@ package com.loohp.hkweatherwarnings.weather;
 
 import android.content.Context;
 
+import androidx.compose.runtime.Immutable;
+
 import com.loohp.hkweatherwarnings.cache.JSONSerializable;
 import com.loohp.hkweatherwarnings.shared.Registry;
 
@@ -11,7 +13,9 @@ import org.json.JSONObject;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Objects;
 
+@Immutable
 public class LocalForecastInfo implements JSONSerializable {
 
     public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy.HH:mm");
@@ -126,5 +130,18 @@ public class LocalForecastInfo implements JSONSerializable {
         jsonObject.put("outlook", outlook);
         jsonObject.put("updateTime", updateTime.format(DATE_TIME_FORMATTER));
         return jsonObject;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LocalForecastInfo that = (LocalForecastInfo) o;
+        return Objects.equals(generalSituation, that.generalSituation) && Objects.equals(tcInfo, that.tcInfo) && Objects.equals(fireDangerWarning, that.fireDangerWarning) && Objects.equals(forecastPeriod, that.forecastPeriod) && Objects.equals(forecastDesc, that.forecastDesc) && Objects.equals(outlook, that.outlook) && Objects.equals(updateTime, that.updateTime);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(generalSituation, tcInfo, fireDangerWarning, forecastPeriod, forecastDesc, outlook, updateTime);
     }
 }

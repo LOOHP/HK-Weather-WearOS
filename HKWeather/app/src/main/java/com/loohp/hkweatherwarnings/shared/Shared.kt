@@ -194,7 +194,7 @@ class Shared {
             }
         })
 
-        val convertedLunarDates: MapValueState<LocalDate, LunarDate> = MapValueState(ConcurrentHashMap()) { key, context, _ ->
+        val convertedLunarDates: MapValueState<LocalDate, LunarDate> = MapValueState(ConcurrentHashMap(), ConcurrentHashMap()) { key, context, _ ->
             val result = Registry.getInstance(context).getLunarDate(context, key).orElse(60, TimeUnit.SECONDS, null)
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }

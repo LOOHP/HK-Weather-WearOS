@@ -1,5 +1,10 @@
 package com.loohp.hkweatherwarnings.weather;
 
+import androidx.compose.runtime.Immutable;
+
+import java.util.Objects;
+
+@Immutable
 public class TropicalCycloneInfo {
 
     private final int id;
@@ -34,5 +39,18 @@ public class TropicalCycloneInfo {
 
     public String getTrackStaticImageUrl() {
         return trackStaticImageUrl;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TropicalCycloneInfo that = (TropicalCycloneInfo) o;
+        return id == that.id && displayOrder == that.displayOrder && Objects.equals(nameZh, that.nameZh) && Objects.equals(nameEn, that.nameEn) && Objects.equals(trackStaticImageUrl, that.trackStaticImageUrl);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, displayOrder, nameZh, nameEn, trackStaticImageUrl);
     }
 }

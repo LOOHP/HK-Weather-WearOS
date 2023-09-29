@@ -30,10 +30,37 @@ class UpdateResult<T> private constructor(
 
 class MapValueState<K, V>(
     private val map: MutableMap<K, V>,
+    private val stateMap: MutableMap<K, MutableState<V?>>,
     private val fetchFunction: (K, Context, MapValueState<K, V>) -> UpdateResult<V>
 ) {
 
-    fun getValue(key: K, context: Context, executor: ExecutorService, callable: (V?) -> Unit = {}): Future<V> {
+    constructor(map: MutableMap<K, V>, stateMap: MutableMap<K, MutableState<V?>>, fetchFunction: (K, Context, MapValueState<K, V>, Nothing?) -> UpdateResult<Map<K, V>>): this(map, stateMap, { key, context, state ->
+        val result = fetchFunction.invoke(key, context, state, null)
+        if (result.isSuccessful) {
+            for ((k, v) in result.value!!) {
+                state.map[k] = v
+                stateMap.compute(k) { _, s ->
+                    if (s == null) {
+                        mutableStateOf(v)
+                    } else {
+                        s.value = v
+                        s
+                    }
+                }
+            }
+            val value = state.map[key]
+            if (value == null) {
+                UpdateResult.failed()
+            } else {
+                UpdateResult.success(value)
+            }
+        } else {
+            UpdateResult.failed()
+        }
+    })
+
+    fun getValue(key: K, context: Context, executor: ExecutorService): Future<V> {
+        val state = stateMap.computeIfAbsent(key) { mutableStateOf(map[key]) }
         val value = map[key]
         return if (value == null) {
             executor.submit(Callable {
@@ -44,21 +71,20 @@ class MapValueState<K, V>(
                     e.printStackTrace()
                     null
                 }
-                callable.invoke(newValue)
+                if (newValue != null) {
+                    map[key] = newValue
+                    state.value = newValue
+                }
                 return@Callable newValue
             })
         } else {
+            state.value = value
             CompletableFuture.completedFuture(value)
         }
     }
 
-    fun getValueState(key: K, context: Context, executor: ExecutorService): State<V?> {
-        val value = map[key]
-        val state = mutableStateOf(value)
-        if (value == null) {
-            getValue(key, context, executor) { state.value = it }
-        }
-        return state
+    fun getValueState(key: K): State<V?> {
+        return stateMap.computeIfAbsent(key) { mutableStateOf(map[key]) }
     }
 
 }
@@ -113,7 +139,7 @@ class DataState<T>(
         }
     }
 
-    fun getLatestValue(context: Context, executor: ExecutorService, forceReload: Boolean = false): Future<T> {
+    fun getLatestValue(context: Context, executor: ExecutorService, forceReload: Boolean = freshness.invoke(context) >= Shared.NEVER_REFRESH_INTERVAL): Future<T> {
         initializeStateIfNotAlready(context)
         synchronized (this) {
             latestFuture?.let { if (!it.isDone) return it }
@@ -190,8 +216,8 @@ class DataState<T>(
         return isCurrentlyUpdating!!
     }
 
-    fun getState(context: Context, executor: ExecutorService): State<T> {
-        getLatestValue(context, executor)
+    fun getState(context: Context): State<T> {
+        initializeStateIfNotAlready(context)
         return state!!
     }
 

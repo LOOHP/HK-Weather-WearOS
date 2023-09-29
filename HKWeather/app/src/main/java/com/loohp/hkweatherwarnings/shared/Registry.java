@@ -11,15 +11,19 @@ import com.loohp.hkweatherwarnings.R;
 import com.loohp.hkweatherwarnings.tiles.WeatherOverviewTile;
 import com.loohp.hkweatherwarnings.tiles.WeatherTipsTile;
 import com.loohp.hkweatherwarnings.tiles.WeatherWarningsTile;
+import com.loohp.hkweatherwarnings.utils.CompletableFutureWithProgress;
 import com.loohp.hkweatherwarnings.utils.ConnectionUtils;
+import com.loohp.hkweatherwarnings.utils.FutureWithProgress;
 import com.loohp.hkweatherwarnings.utils.HTTPRequestUtils;
 import com.loohp.hkweatherwarnings.utils.JsonUtils;
 import com.loohp.hkweatherwarnings.utils.LocationUtils;
+import com.loohp.hkweatherwarnings.utils.TimeUtils;
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.ForecastWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.HourlyWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.LocalForecastInfo;
 import com.loohp.hkweatherwarnings.weather.LunarDate;
+import com.loohp.hkweatherwarnings.weather.RainfallMapsInfo;
 import com.loohp.hkweatherwarnings.weather.TropicalCycloneInfo;
 import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon;
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType;
@@ -34,12 +38,14 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,7 +57,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -273,6 +282,59 @@ public class Registry {
         }
     }
 
+    public FutureWithProgress<RainfallMapsInfo> getRainfallMaps(Context context) {
+        if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
+            return CompletableFutureWithProgress.completedFuture(null);
+        }
+        CompletableFutureWithProgress<RainfallMapsInfo> future = new CompletableFutureWithProgress<>();
+        new Thread(() -> {
+            try {
+                String lang = getLanguage().equals("en") ? "e" : "c";
+                LocalDateTime now = TimeUtils.findClosestUnitInThePast(LocalDateTime.now(Shared.Companion.getHK_TIMEZONE().toZoneId()).minusMinutes(11).withSecond(0).withNano(0), 15, ChronoField.MINUTE_OF_HOUR);
+                String closest15 = now.format(DateTimeFormatter.ofPattern("HHmm"));
+
+                String past24HoursUrl = "https://www.hko.gov.hk/wxinfo/rainfall/cokrig_barnes/rfmap24hrs" + closest15 + lang + ".png";
+                String todayUrl = "https://www.hko.gov.hk/wxinfo/rainfall/cokrig_barnes/rfmapmid" + closest15 + lang + ".png";
+                String yesterdayUrl = "https://www.hko.gov.hk/wxinfo/rainfall/cokrig_barnes/rfmap24hrs0000" + lang + ".png";
+
+                LocalDateTime time = now;
+                List<Future<Pair<LocalDateTime, String>>> hourFutures = new ArrayList<>(24);
+                ExecutorService service = Executors.newCachedThreadPool();
+                while (Duration.between(time, now).getSeconds() <= 86400) {
+                    String timeFormat = time.format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
+                    String hourUrl = "https://www.hko.gov.hk/wxinfo/rainfall/cokrig_barnes/rfmap" + timeFormat + lang + ".png";
+                    LocalDateTime mapTime = time;
+                    hourFutures.add(service.submit(() -> {
+                        try {
+                            return HTTPRequestUtils.isResponseOk(hourUrl) ? Pair.create(mapTime, hourUrl) : null;
+                        } finally {
+                            future.addProgress(1F / 24F);
+                        }
+                    }));
+                    if (time.getMinute() == 0) {
+                        time = time.minusHours(1);
+                    } else {
+                        time = time.withMinute(0);
+                    }
+                }
+                Map<LocalDateTime, String> past1HourUrls = new TreeMap<>();
+                for (Future<Pair<LocalDateTime, String>> hourFuture : hourFutures) {
+                    Pair<LocalDateTime, String> result = hourFuture.get();
+                    if (result != null) {
+                        past1HourUrls.put(result.first, result.second);
+                    }
+                }
+                service.shutdown();
+
+                future.complete(new RainfallMapsInfo(past1HourUrls, past24HoursUrl, todayUrl, yesterdayUrl));
+            } catch (Throwable e) {
+                e.printStackTrace();
+                future.complete(null);
+            }
+        }).start();
+        return future;
+    }
+
     public Future<List<TropicalCycloneInfo>> getTropicalCycloneInfo(Context context) {
         if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
             return CompletableFuture.completedFuture(null);
@@ -463,8 +525,8 @@ public class Registry {
                         gust = -1F;
                     } else {
                         windDirection = tempWindDirection;
-                        windSpeed = (float) windHere.optDouble(lang.equals("en") ? "10-Minute Mean Speed(km/hour)" : "十分鐘平均風速（公里/小時）");
-                        gust = (float) windHere.optDouble(lang.equals("en") ? "10-Minute Maximum Gust(km/hour)" : "十分鐘最高陣風風速（公里/小時）");
+                        windSpeed = (float) windHere.optDouble(lang.equals("en") ? "10-Minute Mean Speed(km/hour)" : "十分鐘平均風速（公里/小時）", 0);
+                        gust = (float) windHere.optDouble(lang.equals("en") ? "10-Minute Maximum Gust(km/hour)" : "十分鐘最高陣風風速（公里/小時）", 0);
                     }
                 }
 
