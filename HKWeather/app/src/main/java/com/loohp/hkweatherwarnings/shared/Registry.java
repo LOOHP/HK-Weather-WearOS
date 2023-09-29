@@ -597,7 +597,7 @@ public class Registry {
                     for (int i = 0; i < array.length(); i++) {
                         JSONObject details = array.optJSONObject(i);
                         try {
-                            WeatherWarningsType warningType = WeatherWarningsType.valueOf(details.optString("warningStatementCode").toUpperCase());
+                            WeatherWarningsType warningType = WeatherWarningsType.valueOf((details.has("subtype") ? details.optString("subtype") : details.optString("warningStatementCode")).toUpperCase());
                             String warningName = getLanguage().equals("en") ? warningType.getNameEn() : warningType.getNameZh();
                             JSONArray contentsArray = details.optJSONArray("contents");
                             String contents;

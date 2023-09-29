@@ -216,7 +216,7 @@ class WeatherOverviewTile : TileService() {
                                 .setFontStyle(
                                     LayoutElementBuilders.FontStyle.Builder()
                                         .setSize(
-                                            DimensionBuilders.SpProp.Builder().setValue(clampSp(this, StringUtils.findOptimalSp(this, text, StringUtils.scaledSize(230, this), 1, 1F, 17F), dpMax = 18F)).build()
+                                            DimensionBuilders.SpProp.Builder().setValue(clampSp(this, UnitUtils.dpToSp(this, StringUtils.findOptimalSp(this, text, StringUtils.scaledSize(230, this), 1, 1F, 17F)), dpMax = 18F)).build()
                                         )
                                         .setWeight(
                                             LayoutElementBuilders.FontWeightProp.Builder()
@@ -305,7 +305,7 @@ class WeatherOverviewTile : TileService() {
                                     .setFontStyle(
                                         LayoutElementBuilders.FontStyle.Builder()
                                             .setSize(
-                                                DimensionBuilders.SpProp.Builder().setValue(11F).build()
+                                                DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 11F)).build()
                                             )
                                             .build()
                                     )
@@ -474,7 +474,7 @@ class WeatherOverviewTile : TileService() {
                                 .setFontStyle(
                                     LayoutElementBuilders.FontStyle.Builder()
                                         .setSize(
-                                            DimensionBuilders.SpProp.Builder().setValue(35F).build()
+                                            DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 35F)).build()
                                         )
                                         .setWeight(
                                             LayoutElementBuilders.FontWeightProp.Builder()
@@ -518,7 +518,7 @@ class WeatherOverviewTile : TileService() {
                                         .setFontStyle(
                                             LayoutElementBuilders.FontStyle.Builder()
                                                 .setSize(
-                                                    DimensionBuilders.SpProp.Builder().setValue(13F).build()
+                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 13F)).build()
                                                 )
                                                 .build()
                                         )
@@ -538,7 +538,7 @@ class WeatherOverviewTile : TileService() {
                                         .setFontStyle(
                                             LayoutElementBuilders.FontStyle.Builder()
                                                 .setSize(
-                                                    DimensionBuilders.SpProp.Builder().setValue(13F).build()
+                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 13F)).build()
                                                 )
                                                 .build()
                                         )
@@ -558,7 +558,7 @@ class WeatherOverviewTile : TileService() {
                                         .setFontStyle(
                                             LayoutElementBuilders.FontStyle.Builder()
                                                 .setSize(
-                                                    DimensionBuilders.SpProp.Builder().setValue(13F).build()
+                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 13F)).build()
                                                 )
                                                 .build()
                                         )

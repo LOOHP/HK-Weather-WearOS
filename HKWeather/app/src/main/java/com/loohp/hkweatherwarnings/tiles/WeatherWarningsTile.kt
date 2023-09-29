@@ -25,6 +25,7 @@ import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.FRESHNESS_TIME
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWarnings
 import com.loohp.hkweatherwarnings.utils.StringUtils
+import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
 import java.util.Date
@@ -171,7 +172,7 @@ class WeatherWarningsTile : TileService() {
                             .setFontStyle(
                                 LayoutElementBuilders.FontStyle.Builder()
                                     .setSize(
-                                        DimensionBuilders.SpProp.Builder().setValue(17F).build()
+                                        DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 17F)).build()
                                     )
                                     .setWeight(
                                         LayoutElementBuilders.FontWeightProp.Builder()
@@ -192,7 +193,7 @@ class WeatherWarningsTile : TileService() {
                                     .setFontStyle(
                                         LayoutElementBuilders.FontStyle.Builder()
                                             .setSize(
-                                                DimensionBuilders.SpProp.Builder().setValue(11F).build()
+                                                DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 11F)).build()
                                             )
                                             .build()
                                     )
@@ -266,7 +267,7 @@ class WeatherWarningsTile : TileService() {
                         .setFontStyle(
                             LayoutElementBuilders.FontStyle.Builder()
                                 .setSize(
-                                    DimensionBuilders.SpProp.Builder().setValue(15F).build()
+                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 15F)).build()
                                 )
                                 .build()
                         )

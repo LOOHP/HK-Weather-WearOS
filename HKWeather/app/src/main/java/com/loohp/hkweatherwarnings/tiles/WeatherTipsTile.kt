@@ -28,6 +28,7 @@ import com.loohp.hkweatherwarnings.shared.Shared.Companion.FRESHNESS_TIME
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentTips
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
+import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.timeZone
 import java.util.Date
 import java.util.concurrent.Callable
@@ -199,7 +200,7 @@ class WeatherTipsTile : TileService() {
                             .setFontStyle(
                                 LayoutElementBuilders.FontStyle.Builder()
                                     .setSize(
-                                        DimensionBuilders.SpProp.Builder().setValue(17F).build()
+                                        DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 17F)).build()
                                     )
                                     .setWeight(
                                         LayoutElementBuilders.FontWeightProp.Builder()
@@ -220,7 +221,7 @@ class WeatherTipsTile : TileService() {
                                     .setFontStyle(
                                         LayoutElementBuilders.FontStyle.Builder()
                                             .setSize(
-                                                DimensionBuilders.SpProp.Builder().setValue(11F).build()
+                                                DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 11F)).build()
                                             )
                                             .build()
                                     )
@@ -283,7 +284,7 @@ class WeatherTipsTile : TileService() {
         }
         val tipText = if (tip == null) (if (Registry.getInstance(this).language == "en") "There are currently no active special weather tips." else "目前沒有任何特別天氣提示") else tip.first
         val heightMultiplier = if (Registry.getInstance(this).language == "en") 0.45F else 0.35F
-        val tipTextSize = StringUtils.findOptimalSpForHeight(this, tipText, ScreenSizeUtils.getScreenWidth(this) - 50, (ScreenSizeUtils.getScreenHeight(this).toFloat() * heightMultiplier).roundToInt(), 1F, 15F)
+        val tipTextSize = UnitUtils.dpToSp(this, StringUtils.findOptimalSpForHeight(this, tipText, ScreenSizeUtils.getScreenWidth(this) - 50, (ScreenSizeUtils.getScreenHeight(this).toFloat() * heightMultiplier).roundToInt(), 1F, 15F))
 
         layouts.add(
             LayoutElementBuilders.Box.Builder()
@@ -358,7 +359,7 @@ class WeatherTipsTile : TileService() {
                                     .setFontStyle(
                                         LayoutElementBuilders.FontStyle.Builder()
                                             .setSize(
-                                                DimensionBuilders.SpProp.Builder().setValue(11F).build()
+                                                DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 11F)).build()
                                             )
                                             .build()
                                     )
@@ -371,7 +372,7 @@ class WeatherTipsTile : TileService() {
                                     .setFontStyle(
                                         LayoutElementBuilders.FontStyle.Builder()
                                             .setSize(
-                                                DimensionBuilders.SpProp.Builder().setValue(11F).build()
+                                                DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 11F)).build()
                                             )
                                             .build()
                                     )
