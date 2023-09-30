@@ -183,7 +183,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                     Spacer(modifier = Modifier.size(StringUtils.scaledSize(10, instance).dp))
                     LinearProgressIndicator(
                         modifier = Modifier
-                            .fillMaxWidth(0.6F)
+                            .fillMaxWidth(0.7F)
                             .padding(25.dp, 0.dp),
                         color = Color(0xFF42D3FF),
                         trackColor = Color(0xFF797979),
