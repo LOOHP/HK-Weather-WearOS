@@ -1,5 +1,5 @@
 # HK-Weather-WearOS
-A weather app for checking the current weather overview, active weather warnings and special weather tips issued by the Hong Kong Observatory for Wear OS, designed as an unofficial watch companion app for the official MyOverservtory app in WearOS smartwatches for users in Hong Kong.
+A weather app for checking the current weather overview, current active weather warnings, special weather tips, radar images and more provided by the Hong Kong Observatory for Wear OS, designed as an unofficial watch companion app for the official MyOverservtory app in WearOS smartwatches for users in Hong Kong.
 
 For more info, check out the app listing on Google Play with the link below.
 
