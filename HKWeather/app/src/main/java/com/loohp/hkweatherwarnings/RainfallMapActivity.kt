@@ -107,7 +107,7 @@ class RainfallMapImageTransformation : Transformation {
         return output
     }
 
-    override fun equals(other: Any?) = other is TrackImageTransformation
+    override fun equals(other: Any?) = other is RainfallMapImageTransformation
 
     override fun hashCode() = javaClass.hashCode()
 }
