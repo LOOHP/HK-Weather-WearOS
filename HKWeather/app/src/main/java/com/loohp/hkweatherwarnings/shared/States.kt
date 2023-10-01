@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import com.loohp.hkweatherwarnings.utils.CompletableFutureWithSuppliedIntermediateValue
+import com.loohp.hkweatherwarnings.utils.FutureWithIntermediateValue
+import com.loohp.hkweatherwarnings.utils.FutureWithProgress
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
@@ -116,7 +119,7 @@ class DataState<T>(
     private val initializer: (Context) -> DataStateInitializeResult<T>,
     private val resetCallback: (Context) -> Unit,
     private val freshness: (Context) -> Long,
-    private val updateFunction: (Context, DataState<T>) -> UpdateResult<T>,
+    private val updateFunction: (Context, DataState<T>, MutableState<Float>) -> UpdateResult<T>,
     private val updateSuccessCallback: (Context, DataState<T>, T) -> Unit = { _, _, _ -> }
 ) {
 
@@ -125,7 +128,8 @@ class DataState<T>(
     private var isLastUpdateSuccessful: MutableState<Boolean>? = null
     private var isCurrentlyUpdating: MutableState<Boolean>? = null
 
-    private var latestFuture: Future<T>? = null
+    private var updateProgress: MutableState<Float>? = null
+    private var latestFuture: FutureWithIntermediateValue<T>? = null
 
     private fun initializeStateIfNotAlready(context: Context) {
         synchronized (this) {
@@ -135,41 +139,46 @@ class DataState<T>(
                 lastSuccessfulUpdateTime = mutableStateOf(t)
                 isLastUpdateSuccessful = mutableStateOf(s)
                 isCurrentlyUpdating = mutableStateOf(c)
+                updateProgress = mutableStateOf(if (s) 1F else 0F)
             }
         }
     }
 
-    fun getLatestValue(context: Context, executor: ExecutorService, forceReload: Boolean = freshness.invoke(context) >= Shared.NEVER_REFRESH_INTERVAL): Future<T> {
+    fun getLatestValue(context: Context, executor: ExecutorService, forceReload: Boolean = freshness.invoke(context) >= Shared.NEVER_REFRESH_INTERVAL): FutureWithIntermediateValue<T> {
         initializeStateIfNotAlready(context)
         synchronized (this) {
             latestFuture?.let { if (!it.isDone) return it }
             latestFuture = if (forceReload || System.currentTimeMillis() - lastSuccessfulUpdateTime!!.value > freshness.invoke(context)) {
+                updateProgress!!.value = 0F
                 update(context, executor)
             } else {
-                CompletableFuture.completedFuture(state!!.value)
+                CompletableFutureWithSuppliedIntermediateValue.completedFuture(state!!.value)
             }
             return latestFuture!!
         }
     }
 
-    private fun update(context: Context, executor: ExecutorService): Future<T> {
+    private fun update(context: Context, executor: ExecutorService): FutureWithIntermediateValue<T> {
         isCurrentlyUpdating!!.value = true
-        return executor.submit(Callable {
+        val future: CompletableFutureWithSuppliedIntermediateValue<T> = CompletableFutureWithSuppliedIntermediateValue { getCachedValue(context) }
+        executor.execute {
             try {
-                val result = updateFunction.invoke(context, this)
+                val result = updateFunction.invoke(context, this, updateProgress!!)
                 if (result.isSuccessful) {
                     state!!.value = result.value!!
                     lastSuccessfulUpdateTime!!.value = System.currentTimeMillis()
                     isLastUpdateSuccessful!!.value = true
+                    updateProgress!!.value = 1F
                     updateSuccessCallback.invoke(context, this, result.value)
                 } else {
                     isLastUpdateSuccessful!!.value = false
                 }
-                return@Callable state!!.value
+                future.complete(state!!.value)
             } finally {
                 isCurrentlyUpdating!!.value = false
             }
-        })
+        }
+        return future
     }
 
     fun reset(context: Context) {
@@ -179,6 +188,16 @@ class DataState<T>(
         isLastUpdateSuccessful!!.value = false
         isCurrentlyUpdating!!.value = true
         resetCallback.invoke(context)
+    }
+
+    fun getCurrentProgress(context: Context): Float {
+        initializeStateIfNotAlready(context)
+        return updateProgress!!.value
+    }
+
+    fun getCurrentProgressState(context: Context): State<Float> {
+        initializeStateIfNotAlready(context)
+        return updateProgress!!
     }
 
     fun getCachedValue(context: Context): T {

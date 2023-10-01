@@ -11,6 +11,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.TweenSpec
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,6 +37,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -291,7 +294,7 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
                 ) {
                     LanguageButton(instance, !combinedUpdating)
                     Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
-                    UpdateTilesButton(instance)
+                    UpdateTilesButton(combinedUpdating, instance)
                 }
             }
             item {
@@ -309,6 +312,13 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
 
 @Composable
 fun UpdatingElements(instance: TitleActivity) {
+    val currentProgress by remember { Shared.currentWeatherInfo.getCurrentProgressState(instance) }
+    val progressAnimation by animateFloatAsState(
+        targetValue = currentProgress,
+        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        label = "LoadingProgressAnimation"
+    )
+
     Box(
         modifier = Modifier
             .width(
@@ -329,13 +339,27 @@ fun UpdatingElements(instance: TitleActivity) {
             ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            modifier = Modifier.fillMaxWidth(0.8F),
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colors.primary,
-            fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp),
-            text = if (Registry.getInstance(instance).language == "en") "Updating weather information..." else "正在更新天氣資訊..."
-        )
+        Column (
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                modifier = Modifier.fillMaxWidth(0.8F),
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.primary,
+                fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp),
+                text = if (Registry.getInstance(instance).language == "en") "Updating weather information..." else "正在更新天氣資訊..."
+            )
+            Spacer(modifier = Modifier.size(StringUtils.scaledSize(15, instance).dp))
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth(0.7F)
+                    .padding(25.dp, 0.dp),
+                color = Color(0xFFF9DE09),
+                trackColor = Color(0xFF797979),
+                progress = progressAnimation
+            )
+        }
     }
 }
 
@@ -668,7 +692,15 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                             .padding(5.dp, 5.dp, 5.dp, 5.dp)
                             .combinedClickable(
                                 onClick = {
-                                    instance.runOnUiThread { Toast.makeText(instance, weatherDescription, Toast.LENGTH_LONG).show() }
+                                    instance.runOnUiThread {
+                                        Toast
+                                            .makeText(
+                                                instance,
+                                                weatherDescription,
+                                                Toast.LENGTH_LONG
+                                            )
+                                            .show()
+                                    }
                                 }
                             ),
                         contentAlignment = Alignment.CenterStart
@@ -683,7 +715,10 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                                 modifier = Modifier
                                     .size(StringUtils.scaledSize(20, instance).dp)
                                     .offset(5.dp, 0.dp)
-                                    .background(Color(0xFF000000), RoundedCornerShape(StringUtils.scaledSize(3F, instance).dp))
+                                    .background(
+                                        Color(0xFF000000),
+                                        RoundedCornerShape(StringUtils.scaledSize(3F, instance).dp)
+                                    )
                                     .align(Alignment.BottomEnd),
                                 painter = painterResource(weatherInfo.nextWeatherIcon.iconId),
                                 contentDescription = weatherDescription
@@ -1778,7 +1813,7 @@ fun RadarButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.
                         max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                     ),
                     maxLines = 1,
-                    text = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64 公里)"
+                    text = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64公里)"
                 )
             }
         }
@@ -2037,15 +2072,29 @@ fun LanguageButton(instance: TitleActivity, enabled: Boolean) {
 }
 
 @Composable
-fun UpdateTilesButton(instance: TitleActivity) {
+fun UpdateTilesButton(updating: Boolean, instance: TitleActivity) {
     Button(
         onClick = {
             Shared.currentWeatherInfo.reset(instance)
             Shared.currentWarnings.reset(instance)
             Shared.currentTips.reset(instance)
-            Registry.getInstance(instance).updateTileServices(instance)
+            Shared.currentWeatherInfo.getLatestValue(
+                instance,
+                ForkJoinPool.commonPool(),
+                true
+            )
+            Shared.currentWarnings.getLatestValue(
+                instance,
+                ForkJoinPool.commonPool(),
+                true
+            )
+            Shared.currentTips.getLatestValue(
+                instance,
+                ForkJoinPool.commonPool(),
+                true
+            )
             instance.runOnUiThread {
-                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Refreshing all tiles" else "正在更新所有資訊方塊", Toast.LENGTH_SHORT).show()
+                Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Refreshing..." else "正在更新...", Toast.LENGTH_SHORT).show()
             }
         },
         modifier = Modifier
@@ -2058,7 +2107,7 @@ fun UpdateTilesButton(instance: TitleActivity) {
         content = {
             Image(
                 modifier = Modifier.size(StringUtils.scaledSize(19, instance).dp),
-                painter = painterResource(R.mipmap.reload),
+                painter = painterResource(if (updating) R.mipmap.reloading else R.mipmap.reload),
                 contentDescription = if (Registry.getInstance(instance).language == "en") "Refresh all tiles" else "更新所有資訊方塊"
             )
         }

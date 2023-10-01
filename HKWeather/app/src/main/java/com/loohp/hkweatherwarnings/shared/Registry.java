@@ -62,6 +62,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -399,11 +400,12 @@ public class Registry {
         return future;
     }
 
-    public Future<CurrentWeatherInfo> getCurrentWeatherInfo(Context context, LocationUtils.LocationResult locationResult) {
+    public FutureWithProgress<CurrentWeatherInfo> getCurrentWeatherInfo(Context context, LocationUtils.LocationResult locationResult) {
         if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
-            return CompletableFuture.completedFuture(null);
+            return CompletableFutureWithProgress.completedFuture(null);
         }
-        CompletableFuture<CurrentWeatherInfo> future = new CompletableFuture<>();
+        CompletableFutureWithProgress<CurrentWeatherInfo> future = new CompletableFutureWithProgress<>();
+        float totalStages = 14F;
         new Thread(() -> {
             try {
                 LocalDate today = LocalDate.now(Shared.Companion.getHK_TIMEZONE().toZoneId());
@@ -420,6 +422,7 @@ public class Registry {
                     location = Shared.Companion.getDEFAULT_LOCATION().getLocation();
                     tempWeatherStationName = getLanguage().equals("en") ? "Hong Kong" : "香港";
                 }
+                future.addProgress(1 / totalStages);
 
                 AtomicDouble minDistance = new AtomicDouble(Double.MAX_VALUE);
                 JSONObject weatherStation = WEATHER_STATIONS.stream().min(Comparator.comparing(s -> {
@@ -430,6 +433,7 @@ public class Registry {
                     }
                     return distance;
                 })).orElseThrow(RuntimeException::new).optJSONObject("properties");
+                future.addProgress(1 / totalStages);
 
                 String actualWeatherStationName;
                 if (minDistance.get() > 100) {
@@ -442,6 +446,7 @@ public class Registry {
                     actualWeatherStationName = weatherStation.optString("AutomaticWeatherStation_" + lang2);
                 }
                 String weatherStationName = tempWeatherStationName;
+                future.addProgress(1 / totalStages);
 
                 String temperatureLang = lang.equals("en") ? "" : "_uc";
                 List<JSONObject> temperatureData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/hko_data/regional-weather/latest_1min_temperature" + temperatureLang + ".csv");
@@ -456,6 +461,7 @@ public class Registry {
                     throw new RuntimeException();
                 }
                 float currentTemperature = (float) temperatureHere.optDouble(lang.equals("en") ? "Air Temperature(degree Celsius)" : "氣溫（攝氏）");
+                future.addProgress(1 / totalStages);
 
                 String humidityStation = HUMIDITY_STATIONS.stream().min(Comparator.comparing(s -> {
                     JSONArray pos = s.optJSONObject("geometry").optJSONArray("coordinates");
@@ -475,12 +481,14 @@ public class Registry {
                     throw new RuntimeException();
                 }
                 float currentHumidity = (float) humidityHere.optDouble(lang.equals("en") ? "Relative Humidity(percent)" : "相對濕度（百分比）");
+                future.addProgress(1 / totalStages);
 
                 JSONObject currentWeatherData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=" + lang);
                 float uvIndex = currentWeatherData.opt("uvindex") instanceof JSONObject ? (float) currentWeatherData.optJSONObject("uvindex").optJSONArray("data").optJSONObject(0).optDouble("value") : -1F;
                 JSONArray iconsArray = currentWeatherData.optJSONArray("icon");
                 WeatherStatusIcon weatherIcon = WeatherStatusIcon.getByCode(iconsArray.optInt(0));
                 WeatherStatusIcon nextWeatherIcon = iconsArray.length() > 1 ? WeatherStatusIcon.getByCode(iconsArray.optInt(1)) : null;
+                future.addProgress(1 / totalStages);
 
                 String forecastStation = StreamSupport.stream(Spliterators.spliteratorUnknownSize(FORECAST_STATIONS.keys(), Spliterator.ORDERED), false).min(Comparator.comparing(k -> {
                     JSONArray pos = FORECAST_STATIONS.optJSONArray(k);
@@ -492,6 +500,7 @@ public class Registry {
 
                 String chanceOfRainStr = dailyForecastArray.get(0).optString("ForecastChanceOfRain");
                 float chanceOfRain = Float.parseFloat(chanceOfRainStr.substring(0, chanceOfRainStr.length() - 1));
+                future.addProgress(1 / totalStages);
 
                 String windLang = lang.equals("en") ? "" : "_uc";
                 List<JSONObject> windData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/hko_data/regional-weather/latest_10min_wind" + windLang + ".csv");
@@ -531,6 +540,7 @@ public class Registry {
                         gust = (float) windHere.optDouble(lang.equals("en") ? "10-Minute Maximum Gust(km/hour)" : "十分鐘最高陣風風速（公里/小時）", 0);
                     }
                 }
+                future.addProgress(1 / totalStages);
 
                 String todayDateStr = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
@@ -542,6 +552,7 @@ public class Registry {
                 LocalTime sunriseTime = LocalTime.parse(todaySun.optString("RISE"), timeFormatter);
                 LocalTime sunTransitTime = LocalTime.parse(todaySun.optString("TRAN."), timeFormatter);
                 LocalTime sunsetTime = LocalTime.parse(todaySun.optString("SET"), timeFormatter);
+                future.addProgress(1 / totalStages);
 
                 List<JSONObject> moonData = HTTPRequestUtils.getCSVResponse("https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=MRS&year=" + today.getYear() + "&rformat=csv", s -> s.replaceAll("[^a-zA-Z.0-9:\\-,]", ""));
                 if (moonData == null) {
@@ -551,6 +562,7 @@ public class Registry {
                 LocalTime moonriseTime = todayMoon.optString("RISE").isEmpty() ? null : LocalTime.parse(todayMoon.optString("RISE"), timeFormatter);
                 LocalTime moonTransitTime = todayMoon.optString("TRAN.").isEmpty() ? null : LocalTime.parse(todayMoon.optString("TRAN."), timeFormatter);
                 LocalTime moonsetTime = todayMoon.optString("SET").isEmpty() ? null : LocalTime.parse(todayMoon.optString("SET"), timeFormatter);
+                future.addProgress(1 / totalStages);
 
                 JSONObject forecastData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=" + lang);
                 if (forecastData == null) {
@@ -567,6 +579,7 @@ public class Registry {
                 float lowestTemperature = (float) dayObj.optJSONObject("forecastMintemp").optDouble("value", -Float.MAX_VALUE);
                 float maxRelativeHumidity = (float) dayObj.optJSONObject("forecastMaxrh").optDouble("value", -Float.MAX_VALUE);
                 float minRelativeHumidity = (float) dayObj.optJSONObject("forecastMinrh").optDouble("value", -Float.MAX_VALUE);
+                future.addProgress(1 / totalStages);
 
                 for (int i = 0; i < dayArray.length(); i++) {
                     JSONObject forecastDayObj = dayArray.optJSONObject(i);
@@ -593,6 +606,7 @@ public class Registry {
 
                     forecastInfo.add(new ForecastWeatherInfo(forecastDate, forecastHighestTemperature, forecastLowestTemperature, forecastMaxRelativeHumidity, forecastMinRelativeHumidity, forecastChanceOfRain, forecastWeatherIcon, forecastWind, forecastWeather));
                 }
+                future.addProgress(1 / totalStages);
 
                 JSONArray hourArray = forecastStationData.optJSONArray("HourlyWeatherForecast");
                 List<HourlyWeatherInfo> hourlyWeatherInfo = new ArrayList<>(hourArray.length());
@@ -619,6 +633,7 @@ public class Registry {
 
                     hourlyWeatherInfo.add(new HourlyWeatherInfo(hour, hourTemperature, hourHumidity, hourWindDirection, hourWindSpeed, hourIcon));
                 }
+                future.addProgress(1 / totalStages);
 
                 JSONObject localForecastData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=" + lang);
                 if (localForecastData == null) {
@@ -632,6 +647,7 @@ public class Registry {
                 String outlook = localForecastData.optString("outlook");
                 LocalDateTime updateTime = LocalDateTime.parse(localForecastData.optString("updateTime"), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
                 LocalForecastInfo localForecastInfo = new LocalForecastInfo(generalSituation, tcInfo, fireDangerWarning, forecastPeriod, forecastDesc, outlook, updateTime);
+                future.addProgress(1 / totalStages);
 
                 future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo));
             } catch (Throwable e) {
@@ -703,6 +719,7 @@ public class Registry {
         CompletableFuture<List<Pair<String, Long>>> future = new CompletableFuture<>();
         new Thread(() -> {
             try {
+                TimeUnit.SECONDS.sleep(5);
                 String lang = getLanguage().equals("en") ? "en" : "tc";
                 JSONObject data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=swt&lang=" + lang);
                 if (data == null) {

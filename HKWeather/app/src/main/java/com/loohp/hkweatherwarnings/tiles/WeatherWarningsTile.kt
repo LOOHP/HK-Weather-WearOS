@@ -49,7 +49,9 @@ class WeatherWarningsTile : TileService() {
         @Suppress("UnstableApiUsage")
         return Futures.submit(Callable {
             val isReload = requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicBuilders.DynamicString>("reload"))
-            val warnings = currentWarnings.getLatestValue(this, ForkJoinPool.commonPool(), isReload).get()
+            val future = currentWarnings.getLatestValue(this, ForkJoinPool.commonPool(), isReload)
+            val warnings = future.orIntermediateValue
+            val updating = !future.isDone
             val updateSuccess = currentWarnings.isLastUpdateSuccess(this)
             val updateTime = currentWarnings.getLastSuccessfulUpdateTime(this)
             tileUpdatedTime = System.currentTimeMillis()
@@ -87,7 +89,7 @@ class WeatherWarningsTile : TileService() {
                             .build()
                     )
                     .addContent(
-                        buildTitle(updateTime, updateSuccess)
+                        buildTitle(updateTime, updateSuccess, updating)
                     )
                     .addContent(
                         buildContent(warnings)
@@ -130,6 +132,13 @@ class WeatherWarningsTile : TileService() {
                         .build()
                 ).build()
             )
+            .addIdToImageMapping("reloading", ResourceBuilders.ImageResource.Builder()
+                .setAndroidResourceByResId(
+                    ResourceBuilders.AndroidImageResourceByResId.Builder()
+                        .setResourceId(R.mipmap.reloading)
+                        .build()
+                ).build()
+            )
         for (type in WeatherWarningsType.values()) {
             bundle.addIdToImageMapping(type.iconName, ResourceBuilders.ImageResource.Builder()
                 .setAndroidResourceByResId(
@@ -142,7 +151,7 @@ class WeatherWarningsTile : TileService() {
         return Futures.immediateFuture(bundle.build())
     }
 
-    private fun buildTitle(updateTime: Long, updateSuccess: Boolean): LayoutElementBuilders.LayoutElement {
+    private fun buildTitle(updateTime: Long, updateSuccess: Boolean, updating: Boolean): LayoutElementBuilders.LayoutElement {
         var lastUpdateText = (if (Registry.getInstance(this).language == "en") "Updated: " else "更新時間: ").plus(
             DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date(updateTime)))
         if (!updateSuccess) {
@@ -236,7 +245,7 @@ class WeatherWarningsTile : TileService() {
                                             )
                                             .build()
                                     )
-                                    .setResourceId("reload")
+                                    .setResourceId(if (updating) "reloading" else "reload")
                                     .build()
                             )
                             .build()

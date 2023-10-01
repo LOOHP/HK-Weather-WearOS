@@ -80,8 +80,8 @@ import java.util.concurrent.ForkJoinPool
 
 enum class RainfallMapMode(val nameZh: String, val nameEn: String) {
 
-    PAST_ONE_HOUR("過去一小時", "Last Hour"),
-    PAST_TWENTY_FOUR_HOUR("過去二十四小時", "Past 24-hour"),
+    PAST_ONE_HOUR("過去1小時", "Last Hour"),
+    PAST_TWENTY_FOUR_HOUR("過去24小時", "Past 24-hour"),
     TODAY("今天", "Today"),
     YESTERDAY("昨天", "Yesterday");
 
@@ -89,9 +89,7 @@ enum class RainfallMapMode(val nameZh: String, val nameEn: String) {
         private val values = values()
     }
 
-    fun next(): RainfallMapMode {
-        return values[(ordinal + 1) % values.size]
-    }
+    fun next(): RainfallMapMode = values[(ordinal + 1) % values.size]
 }
 
 class RainfallMapImageTransformation : Transformation {
@@ -180,7 +178,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                         ),
                         text = if (Registry.getInstance(instance).language == "en") "Loading Isohyet Charts..." else "正在載入等雨量線圖..."
                     )
-                    Spacer(modifier = Modifier.size(StringUtils.scaledSize(10, instance).dp))
+                    Spacer(modifier = Modifier.size(StringUtils.scaledSize(15, instance).dp))
                     LinearProgressIndicator(
                         modifier = Modifier
                             .fillMaxWidth(0.7F)
@@ -354,7 +352,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                             content = {
                                 Row (
                                     modifier = Modifier
-                                        .fillMaxWidth(0.9F)
+                                        .fillMaxWidth(0.925F)
                                         .align(Alignment.Center),
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
@@ -366,7 +364,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                                         tint = Color(0xFFFFFFFF)
                                     )
                                     AutoResizeText(
-                                        modifier = Modifier.fillMaxWidth(0.9F),
+                                        modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.Center,
                                         color = MaterialTheme.colors.primary,
                                         fontSizeRange = FontSizeRange(

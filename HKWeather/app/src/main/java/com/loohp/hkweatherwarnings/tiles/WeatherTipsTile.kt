@@ -56,7 +56,9 @@ class WeatherTipsTile : TileService() {
                 currentIndex++
             }
             val isReload = requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicString>("reload"))
-            val tips = currentTips.getLatestValue(this, ForkJoinPool.commonPool(), isReload).get()
+            val future = currentTips.getLatestValue(this, ForkJoinPool.commonPool(), isReload)
+            val tips = future.orIntermediateValue
+            val updating = !future.isDone
             val updateSuccess = currentTips.isLastUpdateSuccess(this)
             val updateTime = currentTips.getLastSuccessfulUpdateTime(this)
             tileUpdatedTime = System.currentTimeMillis()
@@ -120,7 +122,7 @@ class WeatherTipsTile : TileService() {
                                 .build()
                         )
                         .addContent(
-                            buildTitle(updateSuccess, updateTime)
+                            buildTitle(updateSuccess, updateTime, updating)
                         )
                         .addContent(
                             content[0]
@@ -167,10 +169,17 @@ class WeatherTipsTile : TileService() {
                             .setResourceId(R.mipmap.reload)
                             .build()
                     ).build()
+                )
+                .addIdToImageMapping("reloading", ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.mipmap.reloading)
+                            .build()
+                    ).build()
                 ).build())
     }
 
-    private fun buildTitle(updateSuccess: Boolean, updatedTime: Long): LayoutElementBuilders.LayoutElement {
+    private fun buildTitle(updateSuccess: Boolean, updatedTime: Long, updating: Boolean): LayoutElementBuilders.LayoutElement {
         var lastUpdateText = (if (Registry.getInstance(this).language == "en") "Updated: " else "更新時間: ").plus(
             DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date(updatedTime)))
         if (!updateSuccess) {
@@ -264,7 +273,7 @@ class WeatherTipsTile : TileService() {
                                             )
                                             .build()
                                     )
-                                    .setResourceId("reload")
+                                    .setResourceId(if (updating) "reloading" else "reload")
                                     .build()
                             )
                             .build()

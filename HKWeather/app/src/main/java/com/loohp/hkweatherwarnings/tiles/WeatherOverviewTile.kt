@@ -32,7 +32,9 @@ import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWarnings
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWeatherInfo
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
+import com.loohp.hkweatherwarnings.utils.any
 import com.loohp.hkweatherwarnings.utils.clampSp
+import com.loohp.hkweatherwarnings.utils.map
 import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
 import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon
@@ -60,14 +62,14 @@ class WeatherOverviewTile : TileService() {
         @Suppress("UnstableApiUsage")
         return Futures.submit(Callable {
             val isReload = requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicBuilders.DynamicString>("reload"))
-            val data = Triple(
+            val futures = Triple(
                 currentWeatherInfo.getLatestValue(this, ForkJoinPool.commonPool(), isReload),
                 currentWarnings.getLatestValue(this, ForkJoinPool.commonPool(), isReload),
                 currentTips.getLatestValue(this, ForkJoinPool.commonPool(), isReload)
             )
-            val weatherInfo = data.first.get()
-            val warnings = data.second.get()
-            val tips = data.third.get()
+            val data: Triple<CurrentWeatherInfo?, Map<WeatherWarningsType, String?>, List<Pair<String, Long>>> = futures.map { it.orIntermediateValue }
+            val (weatherInfo, warnings, tips) = data
+            val updating = futures.any { !it.isDone }
             val updateSuccess = currentWeatherInfo.isLastUpdateSuccess(this)
             val updateTime = currentWeatherInfo.getLastSuccessfulUpdateTime(this)
             tileUpdatedTime = System.currentTimeMillis()
@@ -97,7 +99,7 @@ class WeatherOverviewTile : TileService() {
                             .build()
                     )
                     .addContent(
-                        buildContent(updateTime, updateSuccess, weatherInfo, warnings, tips)
+                        buildContent(updateTime, updateSuccess, weatherInfo, warnings, tips, updating)
                     )
                     .build()
 
@@ -134,6 +136,13 @@ class WeatherOverviewTile : TileService() {
                 .setAndroidResourceByResId(
                     ResourceBuilders.AndroidImageResourceByResId.Builder()
                         .setResourceId(R.mipmap.reload)
+                        .build()
+                ).build()
+            )
+            .addIdToImageMapping("reloading", ResourceBuilders.ImageResource.Builder()
+                .setAndroidResourceByResId(
+                    ResourceBuilders.AndroidImageResourceByResId.Builder()
+                        .setResourceId(R.mipmap.reloading)
                         .build()
                 ).build()
             )
@@ -191,7 +200,7 @@ class WeatherOverviewTile : TileService() {
         return Futures.immediateFuture(bundle.build())
     }
 
-    private fun buildTitle(updateTime: Long, updateSuccess: Boolean, weatherInfo: CurrentWeatherInfo?): LayoutElementBuilders.LayoutElement {
+    private fun buildTitle(updateTime: Long, updateSuccess: Boolean, weatherInfo: CurrentWeatherInfo?, updating: Boolean): LayoutElementBuilders.LayoutElement {
         var lastUpdateText = (if (Registry.getInstance(this).language == "en") "Updated: " else "更新時間: ").plus(
             DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date(updateTime)))
         if (!updateSuccess) {
@@ -348,7 +357,7 @@ class WeatherOverviewTile : TileService() {
                                             )
                                             .build()
                                     )
-                                    .setResourceId("reload")
+                                    .setResourceId(if (updating) "reloading" else "reload")
                                     .build()
                             )
                             .build()
@@ -358,7 +367,7 @@ class WeatherOverviewTile : TileService() {
             .build()
     }
 
-    private fun buildContent(updateTime: Long, updateSuccess: Boolean, weatherInfo: CurrentWeatherInfo?, warnings: Map<WeatherWarningsType, String?>, tips: List<Pair<String, Long>>): LayoutElementBuilders.LayoutElement {
+    private fun buildContent(updateTime: Long, updateSuccess: Boolean, weatherInfo: CurrentWeatherInfo?, warnings: Map<WeatherWarningsType, String?>, tips: List<Pair<String, Long>>, updating: Boolean): LayoutElementBuilders.LayoutElement {
         return if (weatherInfo == null) {
             LayoutElementBuilders.Column.Builder()
                 .setWidth(DimensionBuilders.expand())
@@ -376,7 +385,7 @@ class WeatherOverviewTile : TileService() {
                         ).build()
                 )
                 .addContent(
-                    buildTitle(updateTime, updateSuccess, null)
+                    buildTitle(updateTime, updateSuccess, null, updating)
                 )
                 .addContent(
                     LayoutElementBuilders.Box.Builder()
@@ -493,7 +502,7 @@ class WeatherOverviewTile : TileService() {
                                 .build()
                         )
                         .addContent(
-                            buildTitle(updateTime, updateSuccess, weatherInfo)
+                            buildTitle(updateTime, updateSuccess, weatherInfo, updating)
                         )
                         .build()
                 )

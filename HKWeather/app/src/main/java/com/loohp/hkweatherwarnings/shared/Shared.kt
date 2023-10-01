@@ -13,6 +13,7 @@ import com.loohp.hkweatherwarnings.background.PeriodicUpdateWorker
 import com.loohp.hkweatherwarnings.tiles.WeatherOverviewTile
 import com.loohp.hkweatherwarnings.tiles.WeatherTipsTile
 import com.loohp.hkweatherwarnings.tiles.WeatherWarningsTile
+import com.loohp.hkweatherwarnings.utils.FutureWithProgress
 import com.loohp.hkweatherwarnings.utils.LocationUtils
 import com.loohp.hkweatherwarnings.utils.LocationUtils.LocationResult
 import com.loohp.hkweatherwarnings.utils.orElse
@@ -71,10 +72,10 @@ class Shared {
             DataStateInitializeResult.defaultEmpty(null)
         }, {
             it.applicationContext.deleteFile(WEATHER_CACHE_FILE)
-        }, FRESHNESS_TIME, { context, _ ->
+        }, FRESHNESS_TIME, { context, _, updateProgress ->
             val locationType = Registry.getInstance(context).location
             val location = if (locationType.first == "GPS") LocationUtils.getGPSLocation(context).get() else LocationResult.ofNullable(locationType.second)
-            val result = Registry.getInstance(context).getCurrentWeatherInfo(context, location).orElse(60, TimeUnit.SECONDS, null)
+            val result = Registry.getInstance(context).getCurrentWeatherInfo(context, location).listen { _, value -> updateProgress.value = value }.orElse(60, TimeUnit.SECONDS, null)
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->
             TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java)
@@ -117,7 +118,7 @@ class Shared {
             DataStateInitializeResult.defaultEmpty(emptyMap())
         }, {
             it.applicationContext.deleteFile(WARNINGS_CACHE_FILE)
-        }, FRESHNESS_TIME, { context, _ ->
+        }, FRESHNESS_TIME, { context, _, _ ->
             val result = Registry.getInstance(context).getActiveWarnings(context).orElse(60, TimeUnit.SECONDS, null)
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->
@@ -168,7 +169,7 @@ class Shared {
             DataStateInitializeResult.defaultEmpty(emptyList())
         }, {
             it.applicationContext.deleteFile(TIPS_CACHE_FILE)
-        }, FRESHNESS_TIME, { context, _ ->
+        }, FRESHNESS_TIME, { context, _, _ ->
             val result = Registry.getInstance(context).getWeatherTips(context).orElse(60, TimeUnit.SECONDS, null)
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->

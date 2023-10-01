@@ -64,7 +64,7 @@ fun AutoResizeText(
                 }
                 previousText = text
             }
-            if (it.didOverflowHeight) {
+            if (it.didOverflowHeight || (maxLines <= 1 && it.didOverflowWidth)) {
                 if (readyToDraw) {
                     readyToDraw = false
                 }
