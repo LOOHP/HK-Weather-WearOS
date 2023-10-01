@@ -186,6 +186,7 @@ class DataState<T>(
         lastSuccessfulUpdateTime!!.value = 0
         isLastUpdateSuccessful!!.value = false
         isCurrentlyUpdating!!.value = true
+        updateProgress!!.value = 0F
         resetCallback.invoke(context)
     }
 
