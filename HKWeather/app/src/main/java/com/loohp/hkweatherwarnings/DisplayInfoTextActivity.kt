@@ -10,7 +10,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,12 +53,20 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 
+private val emptyIntArray = IntArray(0)
+
 class DisplayInfoTextActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val imageDrawable = intent.extras!!.getInt("imageDrawable", -1)
+        var imageDrawables = intent.extras!!.getIntArray("imageDrawables")?: emptyIntArray
+        if (imageDrawables.isEmpty()) {
+            val imageDrawable = intent.extras!!.getInt("imageDrawable", -1)
+            if (imageDrawable >= 0) {
+                imageDrawables = intArrayOf(imageDrawable)
+            }
+        }
         val imageUrl = intent.extras!!.getString("imageUrl")
         val imageWidth = intent.extras!!.getInt("imageWidth", -1)
         val imageHeight = intent.extras!!.getInt("imageHeight", -1)
@@ -65,14 +75,14 @@ class DisplayInfoTextActivity : ComponentActivity() {
         val footer = intent.extras!!.getString("footer", "")
 
         setContent {
-            DisplayInfo(imageDrawable, imageUrl, imageWidth, imageHeight, imageDescription, text, footer, this)
+            DisplayInfo(imageDrawables, imageUrl, imageWidth, imageHeight, imageDescription, text, footer, this)
         }
     }
 
 }
 
 @Composable
-fun DisplayInfo(imageDrawable: Int, imageUrl: String?, imageWidth: Int, imageHeight: Int, imageDescription: String, text: String, footer: String, instance: DisplayInfoTextActivity) {
+fun DisplayInfo(imageDrawables: IntArray, imageUrl: String?, imageWidth: Int, imageHeight: Int, imageDescription: String, text: String, footer: String, instance: DisplayInfoTextActivity) {
     HKWeatherTheme {
         val focusRequester = remember { FocusRequester() }
         val scroll = rememberScrollState()
@@ -138,23 +148,31 @@ fun DisplayInfo(imageDrawable: Int, imageUrl: String?, imageWidth: Int, imageHei
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.size(StringUtils.scaledSize(35, instance).dp))
-            if (imageWidth >= 0) {
-                var modifier = Modifier
-                    .width(imageWidth.dp)
-                if (imageHeight >= 0) {
-                    modifier = modifier
-                        .height(imageHeight.dp)
+            if (imageWidth >= 0 || imageHeight >= 0) {
+                var modifier: Modifier? = null
+                if (imageWidth >= 0) {
+                    modifier = Modifier.width(imageWidth.dp)
                 }
-                if (imageDrawable >= 0) {
-                    Image(
-                        modifier = modifier,
-                        painter = painterResource(imageDrawable),
-                        contentDescription = imageDescription
-                    )
+                if (imageHeight >= 0) {
+                    modifier = (modifier?: Modifier).height(imageHeight.dp)
+                }
+                if (imageDrawables.isNotEmpty()) {
+                    Row (
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        for (imageDrawable in imageDrawables) {
+                            Image(
+                                modifier = modifier!!,
+                                painter = painterResource(imageDrawable),
+                                contentDescription = imageDescription
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
                 } else if (imageUrl != null) {
                     AsyncImage(
-                        modifier = modifier,
+                        modifier = modifier!!,
                         model = imageUrl,
                         contentDescription = imageDescription
                     )

@@ -411,6 +411,59 @@ class WeatherOverviewTile : TileService() {
             val today = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
             val forecastIndex = if (weatherInfo.forecastInfo[0].date.equals(today)) 1 else 0
 
+            val weatherBox = LayoutElementBuilders.Box.Builder()
+                .setWidth(if (weatherInfo.nextWeatherIcon == null) DimensionBuilders.wrap() else DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(65F, this)).build())
+                .setHeight(DimensionBuilders.wrap())
+                .setModifiers(
+                    ModifiersBuilders.Modifiers.Builder()
+                        .setPadding(
+                            ModifiersBuilders.Padding.Builder()
+                                .setTop(DimensionBuilders.DpProp.Builder(5F).build())
+                                .setBottom(DimensionBuilders.DpProp.Builder(5F).build())
+                                .setStart(DimensionBuilders.DpProp.Builder(5F).build())
+                                .setEnd(DimensionBuilders.DpProp.Builder(if (weatherInfo.nextWeatherIcon == null) 5F else 0F).build())
+                                .build()
+                        ).build()
+                )
+                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_START)
+                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                .addContent(
+                    LayoutElementBuilders.Image.Builder()
+                        .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
+                        .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(55F, this)).build())
+                        .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(55F, this)).build())
+                        .setResourceId(weatherInfo.weatherIcon.iconName)
+                        .build()
+                )
+            if (weatherInfo.nextWeatherIcon != null) {
+                weatherBox.addContent(
+                    LayoutElementBuilders.Box.Builder()
+                        .setWidth(DimensionBuilders.expand())
+                        .setHeight(DimensionBuilders.expand())
+                        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_END)
+                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_BOTTOM)
+                        .addContent(
+                            LayoutElementBuilders.Image.Builder()
+                                .setModifiers(
+                                    ModifiersBuilders.Modifiers.Builder()
+                                        .setBackground(
+                                            ModifiersBuilders.Background.Builder()
+                                                .setColor(ColorBuilders.ColorProp.Builder(Color(0xFF000000).toArgb()).build())
+                                                .setCorner(ModifiersBuilders.Corner.Builder().setRadius(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(3F, this)).build()).build())
+                                                .build()
+                                        )
+                                        .build()
+                                )
+                                .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
+                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(20F, this)).build())
+                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(20F, this)).build())
+                                .setResourceId(weatherInfo.nextWeatherIcon.iconName)
+                                .build()
+                        )
+                        .build()
+                )
+            }
+
             val layout = LayoutElementBuilders.Box.Builder()
                 .setWidth(DimensionBuilders.expand())
                 .setHeight(DimensionBuilders.expand())
@@ -450,23 +503,7 @@ class WeatherOverviewTile : TileService() {
                         .setHeight(DimensionBuilders.expand())
                         .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
                         .addContent(
-                            LayoutElementBuilders.Image.Builder()
-                                .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
-                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(55F, this)).build())
-                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(55F, this)).build())
-                                .setModifiers(
-                                    ModifiersBuilders.Modifiers.Builder()
-                                        .setPadding(
-                                            ModifiersBuilders.Padding.Builder()
-                                                .setTop(DimensionBuilders.DpProp.Builder(5F).build())
-                                                .setBottom(DimensionBuilders.DpProp.Builder(5F).build())
-                                                .setStart(DimensionBuilders.DpProp.Builder(5F).build())
-                                                .setEnd(DimensionBuilders.DpProp.Builder(5F).build())
-                                                .build()
-                                        ).build()
-                                )
-                                .setResourceId(weatherInfo.weatherIcon.iconName)
-                                .build()
+                            weatherBox.build()
                         )
                         .addContent(
                             LayoutElementBuilders.Text.Builder()
@@ -487,136 +524,44 @@ class WeatherOverviewTile : TileService() {
                         .build()
                 )
                 .addContent(
-                    LayoutElementBuilders.Column.Builder()
+                    LayoutElementBuilders.Box.Builder()
                         .setWidth(DimensionBuilders.wrap())
                         .setHeight(DimensionBuilders.expand())
                         .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
-                        .setModifiers(
-                            ModifiersBuilders.Modifiers.Builder()
-                                .setPadding(
-                                    ModifiersBuilders.Padding.Builder()
-                                        .setTop(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(130F, this)).build())
-                                        .build()
-                                ).build()
-                        )
+                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_BOTTOM)
                         .addContent(
-                            LayoutElementBuilders.Row.Builder()
+                            LayoutElementBuilders.Column.Builder()
                                 .setWidth(DimensionBuilders.wrap())
                                 .setHeight(DimensionBuilders.wrap())
-                                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
-                                .addContent(
-                                    LayoutElementBuilders.Image.Builder()
-                                        .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
-                                        .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
-                                        .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
-                                        .setResourceId("highest")
-                                        .build()
-                                )
-                                .addContent(
-                                    LayoutElementBuilders.Text.Builder()
-                                        .setText(String.format("%.1f", weatherInfo.highestTemperature).plus("°  "))
-                                        .setFontStyle(
-                                            LayoutElementBuilders.FontStyle.Builder()
-                                                .setSize(
-                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 13F)).build()
-                                                )
-                                                .build()
-                                        )
-                                        .build()
-                                )
-                                .addContent(
-                                    LayoutElementBuilders.Image.Builder()
-                                        .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
-                                        .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
-                                        .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
-                                        .setResourceId("lowest")
-                                        .build()
-                                )
-                                .addContent(
-                                    LayoutElementBuilders.Text.Builder()
-                                        .setText(String.format("%.1f", weatherInfo.lowestTemperature).plus("°  "))
-                                        .setFontStyle(
-                                            LayoutElementBuilders.FontStyle.Builder()
-                                                .setSize(
-                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 13F)).build()
-                                                )
-                                                .build()
-                                        )
-                                        .build()
-                                )
-                                .addContent(
-                                    LayoutElementBuilders.Image.Builder()
-                                        .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
-                                        .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
-                                        .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
-                                        .setResourceId("umbrella")
-                                        .build()
-                                )
-                                .addContent(
-                                    LayoutElementBuilders.Text.Builder()
-                                        .setText(String.format("%.0f", weatherInfo.chanceOfRain).plus("%"))
-                                        .setFontStyle(
-                                            LayoutElementBuilders.FontStyle.Builder()
-                                                .setSize(
-                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 13F)).build()
-                                                )
-                                                .build()
-                                        )
-                                        .build()
-                                )
-                                .build()
-                        )
-                        .addContent(
-                            LayoutElementBuilders.Row.Builder()
-                                .setWidth(DimensionBuilders.wrap())
-                                .setHeight(DimensionBuilders.wrap())
-                                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
                                 .setModifiers(
                                     ModifiersBuilders.Modifiers.Builder()
-                                        .setClickable(
-                                            ModifiersBuilders.Clickable.Builder()
-                                                .setOnClick(
-                                                    ActionBuilders.LaunchAction.Builder()
-                                                        .setAndroidActivity(
-                                                            ActionBuilders.AndroidActivity.Builder()
-                                                                .setClassName(MainActivity::class.java.name)
-                                                                .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.FORECAST.name))
-                                                                .setPackageName(packageName)
-                                                                .build()
-                                                        ).build()
-                                                )
-                                                .setId("open")
-                                                .build()
-                                        )
                                         .setPadding(
                                             ModifiersBuilders.Padding.Builder()
-                                                .setTop(DimensionBuilders.DpProp.Builder(10F).build())
+                                                .setBottom(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(7F, this)).build())
                                                 .build()
-                                        )
-                                        .build()
+                                        ).build()
                                 )
                                 .addContent(
-                                    LayoutElementBuilders.Column.Builder()
+                                    LayoutElementBuilders.Row.Builder()
                                         .setWidth(DimensionBuilders.wrap())
                                         .setHeight(DimensionBuilders.wrap())
-                                        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
-                                        .setModifiers(
-                                            ModifiersBuilders.Modifiers.Builder()
-                                                .setPadding(
-                                                    ModifiersBuilders.Padding.Builder()
-                                                        .setStart(DimensionBuilders.DpProp.Builder(2F).build())
-                                                        .setEnd(DimensionBuilders.DpProp.Builder(2F).build())
-                                                        .build()
-                                                )
+                                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+                                        .addContent(
+                                            LayoutElementBuilders.Image.Builder()
+                                                .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
+                                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
+                                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
+                                                .setResourceId("highest")
                                                 .build()
                                         )
                                         .addContent(
                                             LayoutElementBuilders.Text.Builder()
-                                                .setText(weatherInfo.forecastInfo[forecastIndex + 0].dayOfWeek.getDisplayName(TextStyle.SHORT, if (Registry.getInstance(this).language == "en") Locale.ENGLISH else Locale.TRADITIONAL_CHINESE))
+                                                .setText(String.format("%.1f", weatherInfo.highestTemperature).plus("°  "))
                                                 .setFontStyle(
                                                     LayoutElementBuilders.FontStyle.Builder()
                                                         .setSize(
-                                                            DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                                            DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 13F)).build()
                                                         )
                                                         .build()
                                                 )
@@ -625,47 +570,18 @@ class WeatherOverviewTile : TileService() {
                                         .addContent(
                                             LayoutElementBuilders.Image.Builder()
                                                 .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
-                                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
-                                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
-                                                .setResourceId(weatherInfo.forecastInfo[forecastIndex + 0].weatherIcon.iconName)
+                                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
+                                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
+                                                .setResourceId("lowest")
                                                 .build()
                                         )
                                         .addContent(
                                             LayoutElementBuilders.Text.Builder()
-                                                .setText(String.format("%.0f", weatherInfo.forecastInfo[forecastIndex + 0].lowestTemperature).plus("-").plus(String.format("%.0f", weatherInfo.forecastInfo[0].highestTemperature)))
+                                                .setText(String.format("%.1f", weatherInfo.lowestTemperature).plus("°  "))
                                                 .setFontStyle(
                                                     LayoutElementBuilders.FontStyle.Builder()
                                                         .setSize(
-                                                            DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
-                                                        )
-                                                        .build()
-                                                )
-                                                .build()
-                                        )
-                                        .build()
-                                )
-                                .addContent(
-                                    LayoutElementBuilders.Column.Builder()
-                                        .setWidth(DimensionBuilders.wrap())
-                                        .setHeight(DimensionBuilders.wrap())
-                                        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
-                                        .setModifiers(
-                                            ModifiersBuilders.Modifiers.Builder()
-                                                .setPadding(
-                                                    ModifiersBuilders.Padding.Builder()
-                                                        .setStart(DimensionBuilders.DpProp.Builder(2F).build())
-                                                        .setEnd(DimensionBuilders.DpProp.Builder(2F).build())
-                                                        .build()
-                                                )
-                                                .build()
-                                        )
-                                        .addContent(
-                                            LayoutElementBuilders.Text.Builder()
-                                                .setText(weatherInfo.forecastInfo[forecastIndex + 1].dayOfWeek.getDisplayName(TextStyle.SHORT, if (Registry.getInstance(this).language == "en") Locale.ENGLISH else Locale.TRADITIONAL_CHINESE))
-                                                .setFontStyle(
-                                                    LayoutElementBuilders.FontStyle.Builder()
-                                                        .setSize(
-                                                            DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                                            DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 13F)).build()
                                                         )
                                                         .build()
                                                 )
@@ -674,18 +590,18 @@ class WeatherOverviewTile : TileService() {
                                         .addContent(
                                             LayoutElementBuilders.Image.Builder()
                                                 .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
-                                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
-                                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
-                                                .setResourceId(weatherInfo.forecastInfo[forecastIndex + 1].weatherIcon.iconName)
+                                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
+                                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(14F, this)).build())
+                                                .setResourceId("umbrella")
                                                 .build()
                                         )
                                         .addContent(
                                             LayoutElementBuilders.Text.Builder()
-                                                .setText(String.format("%.0f", weatherInfo.forecastInfo[forecastIndex + 1].lowestTemperature).plus("-").plus(String.format("%.0f", weatherInfo.forecastInfo[1].highestTemperature)))
+                                                .setText(String.format("%.0f", weatherInfo.chanceOfRain).plus("%"))
                                                 .setFontStyle(
                                                     LayoutElementBuilders.FontStyle.Builder()
                                                         .setSize(
-                                                            DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                                            DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 13F)).build()
                                                         )
                                                         .build()
                                                 )
@@ -694,47 +610,176 @@ class WeatherOverviewTile : TileService() {
                                         .build()
                                 )
                                 .addContent(
-                                    LayoutElementBuilders.Column.Builder()
+                                    LayoutElementBuilders.Row.Builder()
                                         .setWidth(DimensionBuilders.wrap())
                                         .setHeight(DimensionBuilders.wrap())
-                                        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+                                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
                                         .setModifiers(
                                             ModifiersBuilders.Modifiers.Builder()
+                                                .setClickable(
+                                                    ModifiersBuilders.Clickable.Builder()
+                                                        .setOnClick(
+                                                            ActionBuilders.LaunchAction.Builder()
+                                                                .setAndroidActivity(
+                                                                    ActionBuilders.AndroidActivity.Builder()
+                                                                        .setClassName(MainActivity::class.java.name)
+                                                                        .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.FORECAST.name))
+                                                                        .setPackageName(packageName)
+                                                                        .build()
+                                                                ).build()
+                                                        )
+                                                        .setId("open")
+                                                        .build()
+                                                )
                                                 .setPadding(
                                                     ModifiersBuilders.Padding.Builder()
-                                                        .setStart(DimensionBuilders.DpProp.Builder(2F).build())
-                                                        .setEnd(DimensionBuilders.DpProp.Builder(2F).build())
+                                                        .setTop(DimensionBuilders.DpProp.Builder(10F).build())
                                                         .build()
                                                 )
                                                 .build()
                                         )
                                         .addContent(
-                                            LayoutElementBuilders.Text.Builder()
-                                                .setText(weatherInfo.forecastInfo[forecastIndex + 2].dayOfWeek.getDisplayName(TextStyle.SHORT, if (Registry.getInstance(this).language == "en") Locale.ENGLISH else Locale.TRADITIONAL_CHINESE))
-                                                .setFontStyle(
-                                                    LayoutElementBuilders.FontStyle.Builder()
-                                                        .setSize(
-                                                            DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                            LayoutElementBuilders.Column.Builder()
+                                                .setWidth(DimensionBuilders.wrap())
+                                                .setHeight(DimensionBuilders.wrap())
+                                                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+                                                .setModifiers(
+                                                    ModifiersBuilders.Modifiers.Builder()
+                                                        .setPadding(
+                                                            ModifiersBuilders.Padding.Builder()
+                                                                .setStart(DimensionBuilders.DpProp.Builder(2F).build())
+                                                                .setEnd(DimensionBuilders.DpProp.Builder(2F).build())
+                                                                .build()
+                                                        )
+                                                        .build()
+                                                )
+                                                .addContent(
+                                                    LayoutElementBuilders.Text.Builder()
+                                                        .setText(weatherInfo.forecastInfo[forecastIndex + 0].dayOfWeek.getDisplayName(TextStyle.SHORT, if (Registry.getInstance(this).language == "en") Locale.ENGLISH else Locale.TRADITIONAL_CHINESE))
+                                                        .setFontStyle(
+                                                            LayoutElementBuilders.FontStyle.Builder()
+                                                                .setSize(
+                                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                                                )
+                                                                .build()
+                                                        )
+                                                        .build()
+                                                )
+                                                .addContent(
+                                                    LayoutElementBuilders.Image.Builder()
+                                                        .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
+                                                        .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
+                                                        .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
+                                                        .setResourceId(weatherInfo.forecastInfo[forecastIndex + 0].weatherIcon.iconName)
+                                                        .build()
+                                                )
+                                                .addContent(
+                                                    LayoutElementBuilders.Text.Builder()
+                                                        .setText(String.format("%.0f", weatherInfo.forecastInfo[forecastIndex + 0].lowestTemperature).plus("-").plus(String.format("%.0f", weatherInfo.forecastInfo[0].highestTemperature)))
+                                                        .setFontStyle(
+                                                            LayoutElementBuilders.FontStyle.Builder()
+                                                                .setSize(
+                                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                                                )
+                                                                .build()
                                                         )
                                                         .build()
                                                 )
                                                 .build()
                                         )
                                         .addContent(
-                                            LayoutElementBuilders.Image.Builder()
-                                                .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
-                                                .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
-                                                .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
-                                                .setResourceId(weatherInfo.forecastInfo[forecastIndex + 2].weatherIcon.iconName)
+                                            LayoutElementBuilders.Column.Builder()
+                                                .setWidth(DimensionBuilders.wrap())
+                                                .setHeight(DimensionBuilders.wrap())
+                                                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+                                                .setModifiers(
+                                                    ModifiersBuilders.Modifiers.Builder()
+                                                        .setPadding(
+                                                            ModifiersBuilders.Padding.Builder()
+                                                                .setStart(DimensionBuilders.DpProp.Builder(2F).build())
+                                                                .setEnd(DimensionBuilders.DpProp.Builder(2F).build())
+                                                                .build()
+                                                        )
+                                                        .build()
+                                                )
+                                                .addContent(
+                                                    LayoutElementBuilders.Text.Builder()
+                                                        .setText(weatherInfo.forecastInfo[forecastIndex + 1].dayOfWeek.getDisplayName(TextStyle.SHORT, if (Registry.getInstance(this).language == "en") Locale.ENGLISH else Locale.TRADITIONAL_CHINESE))
+                                                        .setFontStyle(
+                                                            LayoutElementBuilders.FontStyle.Builder()
+                                                                .setSize(
+                                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                                                )
+                                                                .build()
+                                                        )
+                                                        .build()
+                                                )
+                                                .addContent(
+                                                    LayoutElementBuilders.Image.Builder()
+                                                        .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
+                                                        .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
+                                                        .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
+                                                        .setResourceId(weatherInfo.forecastInfo[forecastIndex + 1].weatherIcon.iconName)
+                                                        .build()
+                                                )
+                                                .addContent(
+                                                    LayoutElementBuilders.Text.Builder()
+                                                        .setText(String.format("%.0f", weatherInfo.forecastInfo[forecastIndex + 1].lowestTemperature).plus("-").plus(String.format("%.0f", weatherInfo.forecastInfo[1].highestTemperature)))
+                                                        .setFontStyle(
+                                                            LayoutElementBuilders.FontStyle.Builder()
+                                                                .setSize(
+                                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                                                )
+                                                                .build()
+                                                        )
+                                                        .build()
+                                                )
                                                 .build()
                                         )
                                         .addContent(
-                                            LayoutElementBuilders.Text.Builder()
-                                                .setText(String.format("%.0f", weatherInfo.forecastInfo[forecastIndex + 2].lowestTemperature).plus("-").plus(String.format("%.0f", weatherInfo.forecastInfo[2].highestTemperature)))
-                                                .setFontStyle(
-                                                    LayoutElementBuilders.FontStyle.Builder()
-                                                        .setSize(
-                                                            DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                            LayoutElementBuilders.Column.Builder()
+                                                .setWidth(DimensionBuilders.wrap())
+                                                .setHeight(DimensionBuilders.wrap())
+                                                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+                                                .setModifiers(
+                                                    ModifiersBuilders.Modifiers.Builder()
+                                                        .setPadding(
+                                                            ModifiersBuilders.Padding.Builder()
+                                                                .setStart(DimensionBuilders.DpProp.Builder(2F).build())
+                                                                .setEnd(DimensionBuilders.DpProp.Builder(2F).build())
+                                                                .build()
+                                                        )
+                                                        .build()
+                                                )
+                                                .addContent(
+                                                    LayoutElementBuilders.Text.Builder()
+                                                        .setText(weatherInfo.forecastInfo[forecastIndex + 2].dayOfWeek.getDisplayName(TextStyle.SHORT, if (Registry.getInstance(this).language == "en") Locale.ENGLISH else Locale.TRADITIONAL_CHINESE))
+                                                        .setFontStyle(
+                                                            LayoutElementBuilders.FontStyle.Builder()
+                                                                .setSize(
+                                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                                                )
+                                                                .build()
+                                                        )
+                                                        .build()
+                                                )
+                                                .addContent(
+                                                    LayoutElementBuilders.Image.Builder()
+                                                        .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
+                                                        .setWidth(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
+                                                        .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(18F, this)).build())
+                                                        .setResourceId(weatherInfo.forecastInfo[forecastIndex + 2].weatherIcon.iconName)
+                                                        .build()
+                                                )
+                                                .addContent(
+                                                    LayoutElementBuilders.Text.Builder()
+                                                        .setText(String.format("%.0f", weatherInfo.forecastInfo[forecastIndex + 2].lowestTemperature).plus("-").plus(String.format("%.0f", weatherInfo.forecastInfo[2].highestTemperature)))
+                                                        .setFontStyle(
+                                                            LayoutElementBuilders.FontStyle.Builder()
+                                                                .setSize(
+                                                                    DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                                                )
+                                                                .build()
                                                         )
                                                         .build()
                                                 )

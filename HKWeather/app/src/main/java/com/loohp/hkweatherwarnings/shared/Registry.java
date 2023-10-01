@@ -478,7 +478,9 @@ public class Registry {
 
                 JSONObject currentWeatherData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=" + lang);
                 float uvIndex = currentWeatherData.opt("uvindex") instanceof JSONObject ? (float) currentWeatherData.optJSONObject("uvindex").optJSONArray("data").optJSONObject(0).optDouble("value") : -1F;
-                WeatherStatusIcon weatherIcon = WeatherStatusIcon.getByCode(currentWeatherData.optJSONArray("icon").optInt(0));
+                JSONArray iconsArray = currentWeatherData.optJSONArray("icon");
+                WeatherStatusIcon weatherIcon = WeatherStatusIcon.getByCode(iconsArray.optInt(0));
+                WeatherStatusIcon nextWeatherIcon = iconsArray.length() > 1 ? WeatherStatusIcon.getByCode(iconsArray.optInt(1)) : null;
 
                 String forecastStation = StreamSupport.stream(Spliterators.spliteratorUnknownSize(FORECAST_STATIONS.keys(), Spliterator.ORDERED), false).min(Comparator.comparing(k -> {
                     JSONArray pos = FORECAST_STATIONS.optJSONArray(k);
@@ -631,7 +633,7 @@ public class Registry {
                 LocalDateTime updateTime = LocalDateTime.parse(localForecastData.optString("updateTime"), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
                 LocalForecastInfo localForecastInfo = new LocalForecastInfo(generalSituation, tcInfo, fireDangerWarning, forecastPeriod, forecastDesc, outlook, updateTime);
 
-                future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo));
+                future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo));
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);

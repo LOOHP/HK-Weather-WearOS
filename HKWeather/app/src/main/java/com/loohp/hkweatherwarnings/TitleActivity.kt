@@ -26,12 +26,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -657,26 +659,37 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Image(
+                    var weatherDescription = if (Registry.getInstance(instance).language == "en") weatherInfo.weatherIcon.descriptionEn else weatherInfo.weatherIcon.descriptionZh
+                    if (weatherInfo.nextWeatherIcon != null) {
+                        weatherDescription = weatherDescription.plus(if (Registry.getInstance(instance).language == "en") " to ".plus(weatherInfo.nextWeatherIcon.descriptionEn) else " 至 ".plus(weatherInfo.nextWeatherIcon.descriptionZh))
+                    }
+                    Box (
                         modifier = Modifier
-                            .padding(5.dp, 5.dp)
-                            .size(StringUtils.scaledSize(55, instance).dp)
+                            .padding(5.dp, 5.dp, 5.dp, 5.dp)
                             .combinedClickable(
                                 onClick = {
-                                    instance.runOnUiThread {
-                                        Toast
-                                            .makeText(
-                                                instance,
-                                                if (Registry.getInstance(instance).language == "en") weatherInfo.weatherIcon.descriptionEn else weatherInfo.weatherIcon.descriptionZh,
-                                                Toast.LENGTH_LONG
-                                            )
-                                            .show()
-                                    }
+                                    instance.runOnUiThread { Toast.makeText(instance, weatherDescription, Toast.LENGTH_LONG).show() }
                                 }
                             ),
-                        painter = painterResource(weatherInfo.weatherIcon.iconId),
-                        contentDescription = if (Registry.getInstance(instance).language == "en") weatherInfo.weatherIcon.descriptionEn else weatherInfo.weatherIcon.descriptionZh
-                    )
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Image(
+                            modifier = Modifier.size(StringUtils.scaledSize(55, instance).dp),
+                            painter = painterResource(weatherInfo.weatherIcon.iconId),
+                            contentDescription = weatherDescription
+                        )
+                        if (weatherInfo.nextWeatherIcon != null) {
+                            Image(
+                                modifier = Modifier
+                                    .size(StringUtils.scaledSize(20, instance).dp)
+                                    .offset(5.dp, 0.dp)
+                                    .background(Color(0xFF000000), RoundedCornerShape(StringUtils.scaledSize(3F, instance).dp))
+                                    .align(Alignment.BottomEnd),
+                                painter = painterResource(weatherInfo.nextWeatherIcon.iconId),
+                                contentDescription = weatherDescription
+                            )
+                        }
+                    }
                     Text(
                         modifier = Modifier
                             .combinedClickable(
@@ -761,7 +774,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         }
         if (weatherWarnings.isEmpty() && weatherTips.isEmpty()) {
             itemList.add {
-                LocalForecastButton(weatherInfo.weatherIcon, weatherInfo.localForecastInfo, instance)
+                LocalForecastButton(weatherInfo.weatherIcon, weatherInfo.nextWeatherIcon, weatherInfo.localForecastInfo, instance)
             }
             itemList.add {
                 Spacer(modifier = Modifier.size(10.dp))
@@ -926,7 +939,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         }
         if (weatherWarnings.isNotEmpty() || weatherTips.isNotEmpty()) {
             itemList.add {
-                LocalForecastButton(weatherInfo.weatherIcon, weatherInfo.localForecastInfo, instance)
+                LocalForecastButton(weatherInfo.weatherIcon, weatherInfo.nextWeatherIcon, weatherInfo.localForecastInfo, instance)
             }
             itemList.add {
                 Spacer(modifier = Modifier.size(10.dp))
@@ -1627,14 +1640,21 @@ fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivi
 }
 
 @Composable
-fun LocalForecastButton(weatherIcon: WeatherStatusIcon, localForecastInfo: LocalForecastInfo, instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
+fun LocalForecastButton(weatherIcon: WeatherStatusIcon, nextWeatherIcon: WeatherStatusIcon?, localForecastInfo: LocalForecastInfo, instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
     Button(
         onClick = {
-            val weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
+            var weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
+            if (nextWeatherIcon != null) {
+                weatherDescription = weatherDescription.plus(if (Registry.getInstance(instance).language == "en") " to ".plus(nextWeatherIcon.descriptionEn) else " 至 ".plus(nextWeatherIcon.descriptionZh))
+            }
             val text = (if (Registry.getInstance(instance).language == "en") "Now: " else "現時 ").plus(weatherDescription).plus("\n").plus(localForecastInfo.toDisplayText(instance))
             val intent = Intent(instance, DisplayInfoTextActivity::class.java)
-            intent.putExtra("imageDrawable", weatherIcon.iconId)
-            intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
+            if (nextWeatherIcon == null) {
+                intent.putExtra("imageDrawable", weatherIcon.iconId)
+            } else {
+                intent.putExtra("imageDrawables", intArrayOf(weatherIcon.iconId, R.mipmap.towards, nextWeatherIcon.iconId))
+            }
+            intent.putExtra("imageHeight", StringUtils.scaledSize(60, instance))
             intent.putExtra("imageDescription", weatherDescription)
             intent.putExtra("text", text)
             intent.putExtra("footer", localForecastInfo.toDisplayFooter(instance))

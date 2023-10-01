@@ -28,6 +28,7 @@ public class CurrentWeatherInfo extends WeatherInfo {
         float chanceOfRain = (float) jsonObject.optDouble("chanceOfRain");
         WeatherStatusIcon weatherIcon = WeatherStatusIcon.valueOf(jsonObject.optString("weatherIcon"));
         String weatherStation = jsonObject.optString("weatherStation");
+        WeatherStatusIcon nextWeatherIcon = jsonObject.has("nextWeatherIcon") ? WeatherStatusIcon.valueOf(jsonObject.optString("nextWeatherIcon")) : null;
         float currentTemperature = (float) jsonObject.optDouble("currentTemperature");
         float currentHumidity = (float) jsonObject.optDouble("currentHumidity");
         float uvIndex = (float) jsonObject.optDouble("uvIndex");
@@ -52,10 +53,11 @@ public class CurrentWeatherInfo extends WeatherInfo {
         for (int i = 0; i < hourlyWeatherInfoArray.length(); i++) {
             hourlyWeatherInfo.add(HourlyWeatherInfo.deserialize(hourlyWeatherInfoArray.optJSONObject(i)));
         }
-        return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStation, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo);
+        return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo);
     }
 
     private final String weatherStation;
+    private final WeatherStatusIcon nextWeatherIcon;
     private final float currentTemperature;
     private final float currentHumidity;
     private final float uvIndex;
@@ -73,9 +75,10 @@ public class CurrentWeatherInfo extends WeatherInfo {
     private final List<ForecastWeatherInfo> forecastInfo;
     private final List<HourlyWeatherInfo> hourlyWeatherInfo;
 
-    public CurrentWeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, WeatherStatusIcon weatherIcon, String weatherStation, float currentTemperature, float currentHumidity, float uvIndex, String windDirection, float windSpeed, float gust, LocalTime sunriseTime, LocalTime sunTransitTime, LocalTime sunsetTime, LocalTime moonriseTime, LocalTime moonTransitTime, LocalTime moonsetTime, LocalForecastInfo localForecastInfo, String forecastGeneralSituation, List<ForecastWeatherInfo> forecastInfo, List<HourlyWeatherInfo> hourlyWeatherInfo) {
+    public CurrentWeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, WeatherStatusIcon weatherIcon, String weatherStation, WeatherStatusIcon nextWeatherIcon, float currentTemperature, float currentHumidity, float uvIndex, String windDirection, float windSpeed, float gust, LocalTime sunriseTime, LocalTime sunTransitTime, LocalTime sunsetTime, LocalTime moonriseTime, LocalTime moonTransitTime, LocalTime moonsetTime, LocalForecastInfo localForecastInfo, String forecastGeneralSituation, List<ForecastWeatherInfo> forecastInfo, List<HourlyWeatherInfo> hourlyWeatherInfo) {
         super(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon);
         this.weatherStation = weatherStation;
+        this.nextWeatherIcon = nextWeatherIcon;
         this.currentTemperature = currentTemperature;
         this.currentHumidity = currentHumidity;
         this.uvIndex = uvIndex;
@@ -96,6 +99,10 @@ public class CurrentWeatherInfo extends WeatherInfo {
 
     public String getWeatherStation() {
         return weatherStation;
+    }
+
+    public WeatherStatusIcon getNextWeatherIcon() {
+        return nextWeatherIcon;
     }
 
     public float getCurrentTemperature() {
@@ -166,6 +173,9 @@ public class CurrentWeatherInfo extends WeatherInfo {
     public JSONObject serialize() throws JSONException {
         JSONObject jsonObject = super.serialize();
         jsonObject.put("weatherStation", weatherStation);
+        if (nextWeatherIcon != null) {
+            jsonObject.put("nextWeatherIcon", nextWeatherIcon.name());
+        }
         jsonObject.put("currentTemperature", currentTemperature);
         jsonObject.put("currentHumidity", currentHumidity);
         jsonObject.put("uvIndex", uvIndex);
@@ -199,11 +209,11 @@ public class CurrentWeatherInfo extends WeatherInfo {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         CurrentWeatherInfo that = (CurrentWeatherInfo) o;
-        return Float.compare(that.currentTemperature, currentTemperature) == 0 && Float.compare(that.currentHumidity, currentHumidity) == 0 && Float.compare(that.uvIndex, uvIndex) == 0 && Float.compare(that.windSpeed, windSpeed) == 0 && Float.compare(that.gust, gust) == 0 && Objects.equals(weatherStation, that.weatherStation) && Objects.equals(windDirection, that.windDirection) && Objects.equals(sunriseTime, that.sunriseTime) && Objects.equals(sunTransitTime, that.sunTransitTime) && Objects.equals(sunsetTime, that.sunsetTime) && Objects.equals(moonriseTime, that.moonriseTime) && Objects.equals(moonTransitTime, that.moonTransitTime) && Objects.equals(moonsetTime, that.moonsetTime) && Objects.equals(localForecastInfo, that.localForecastInfo) && Objects.equals(forecastGeneralSituation, that.forecastGeneralSituation) && Objects.equals(forecastInfo, that.forecastInfo) && Objects.equals(hourlyWeatherInfo, that.hourlyWeatherInfo);
+        return Float.compare(that.currentTemperature, currentTemperature) == 0 && Float.compare(that.currentHumidity, currentHumidity) == 0 && Float.compare(that.uvIndex, uvIndex) == 0 && Float.compare(that.windSpeed, windSpeed) == 0 && Float.compare(that.gust, gust) == 0 && Objects.equals(weatherStation, that.weatherStation) && nextWeatherIcon == that.nextWeatherIcon && Objects.equals(windDirection, that.windDirection) && Objects.equals(sunriseTime, that.sunriseTime) && Objects.equals(sunTransitTime, that.sunTransitTime) && Objects.equals(sunsetTime, that.sunsetTime) && Objects.equals(moonriseTime, that.moonriseTime) && Objects.equals(moonTransitTime, that.moonTransitTime) && Objects.equals(moonsetTime, that.moonsetTime) && Objects.equals(localForecastInfo, that.localForecastInfo) && Objects.equals(forecastGeneralSituation, that.forecastGeneralSituation) && Objects.equals(forecastInfo, that.forecastInfo) && Objects.equals(hourlyWeatherInfo, that.hourlyWeatherInfo);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), weatherStation, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo);
+        return Objects.hash(super.hashCode(), weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo);
     }
 }
