@@ -4,9 +4,8 @@ import android.content.Context
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import com.loohp.hkweatherwarnings.utils.CompletableFutureWithSuppliedIntermediateValue
+import com.loohp.hkweatherwarnings.utils.CompletableFutureWithIntermediateValue
 import com.loohp.hkweatherwarnings.utils.FutureWithIntermediateValue
-import com.loohp.hkweatherwarnings.utils.FutureWithProgress
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
@@ -152,7 +151,7 @@ class DataState<T>(
                 updateProgress!!.value = 0F
                 update(context, executor)
             } else {
-                CompletableFutureWithSuppliedIntermediateValue.completedFuture(state!!.value)
+                CompletableFutureWithIntermediateValue.completedFuture(state!!.value)
             }
             return latestFuture!!
         }
@@ -160,7 +159,7 @@ class DataState<T>(
 
     private fun update(context: Context, executor: ExecutorService): FutureWithIntermediateValue<T> {
         isCurrentlyUpdating!!.value = true
-        val future: CompletableFutureWithSuppliedIntermediateValue<T> = CompletableFutureWithSuppliedIntermediateValue { getCachedValue(context) }
+        val future: CompletableFutureWithIntermediateValue<T> = CompletableFutureWithIntermediateValue(getCachedValue(context))
         executor.execute {
             try {
                 val result = updateFunction.invoke(context, this, updateProgress!!)
