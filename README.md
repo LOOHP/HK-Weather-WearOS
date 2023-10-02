@@ -36,5 +36,5 @@ This app contains information that is copied or extracted from data made availab
 <a href="https://www.flaticon.com/free-icons/weather" title="weather icons">Weather icons created by iconixar - Flaticon</a><br>
 <a href="https://www.flaticon.com/free-icons/rain" title="rain icons">Rain icons created by bqlqn - Flaticon</a><br>
 <a href="https://www.flaticon.com/free-icons/sky" title="sky icons">Sky icons created by kosonicon - Flaticon</a><br>
-<a href="https://www.flaticon.com/free-icons/warning" title="warning icons">Warning icons created by Good Ware - Flaticon</a><br>
+<a href="https://www.flaticon.com/free-icons/alert" title="alert icons">Alert icons created by Freepik - Flaticon</a><br>
 <a href="https://www.flaticon.com/free-icons/new-year" title="new year icons">New year icons created by Freepik - Flaticon</a>
