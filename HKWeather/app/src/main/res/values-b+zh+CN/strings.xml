@@ -1,5 +1,15 @@
 <resources>
     <string name="app_name">香港天氣</string>
+    <string name="weather_temperature_complication">天氣圖標及氣溫</string>
+    <string name="temperature_range_complication">最高/最低氣溫</string>
+    <string name="weather_alerts_complication">天氣警告及特別天氣提示</string>
+    <string name="humidity_complication">相對濕度</string>
+    <string name="uvindex_complication">紫外線指數</string>
+    <string name="chance_of_rain_complication">降雨概率</string>
+    <string name="wind_complication">風向風速及陣風</string>
+    <string name="sunrise_sunset_complication">日出/日落</string>
+    <string name="moonrise_moonset_complication">月出/月落</string>
+    <string name="lunar_date_complication">農曆日期</string>
     <string name="weather_overview_tile">天氣概況</string>
     <string name="weather_warnings_tile">天氣警告</string>
     <string name="weather_tips_tile">特別天氣提示</string>

@@ -907,7 +907,7 @@ class WeatherOverviewTile : TileService() {
                         .addContent(
                             LayoutElementBuilders.ArcLine.Builder()
                                 .setLength(
-                                    DimensionBuilders.DegreesProp.Builder(weatherInfo.uvIndex.coerceAtLeast(0F).coerceAtMost(11F) / 11F * -80F).build()
+                                    DimensionBuilders.DegreesProp.Builder(weatherInfo.uvIndex.coerceIn(0F, 11F) / 11F * -80F).build()
                                 )
                                 .setThickness(
                                     DimensionBuilders.DpProp.Builder(8.5F).build()

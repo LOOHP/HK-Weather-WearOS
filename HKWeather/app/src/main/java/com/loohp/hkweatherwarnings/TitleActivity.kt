@@ -106,7 +106,7 @@ import java.util.concurrent.ForkJoinPool
 
 
 enum class Section {
-    MAIN, WARNINGS, TIPS, HUMIDITY, UVINDEX, FORECAST, HOURLY;
+    MAIN, DATE, WARNINGS, TIPS, HUMIDITY, UVINDEX, WIND, SUN, MOON, FORECAST, HOURLY;
 }
 
 class ItemList : ArrayList<kotlin.Pair<@Composable () -> Unit, Section?>>() {
@@ -801,7 +801,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 }
             }
         }
-        itemList.add {
+        itemList.add(Section.DATE) {
             DateTimeElements(lunarDate, instance)
         }
         itemList.add {
@@ -1092,7 +1092,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         itemList.add {
             Spacer(modifier = Modifier.size(10.dp))
         }
-        itemList.add {
+        itemList.add(Section.WIND) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -1120,7 +1120,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             weatherInfo.windDirection.plus(" ")
                 .plus(String.format("%.0f", weatherInfo.windSpeed)).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
         }
-        itemList.add {
+        itemList.add(Section.WIND) {
             Box (
                 modifier = Modifier.fillMaxWidth(0.9F),
                 contentAlignment = Alignment.Center
@@ -1141,7 +1141,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         itemList.add {
             Spacer(modifier = Modifier.size(10.dp))
         }
-        itemList.add {
+        itemList.add(Section.WIND) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -1169,7 +1169,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         } else {
             String.format("%.0f", weatherInfo.gust).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
         }
-        itemList.add {
+        itemList.add(Section.WIND) {
             Box (
                 modifier = Modifier.fillMaxWidth(0.9F),
                 contentAlignment = Alignment.Center
@@ -1190,7 +1190,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         itemList.add {
             Spacer(modifier = Modifier.size(10.dp))
         }
-        itemList.add {
+        itemList.add(Section.SUN) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -1212,7 +1212,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 )
             }
         }
-        itemList.add {
+        itemList.add(Section.SUN) {
             Text(
                 textAlign = TextAlign.Center,
                 color = Color(0xFFFFC32B),
@@ -1224,7 +1224,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         itemList.add {
             Spacer(modifier = Modifier.size(10.dp))
         }
-        itemList.add {
+        itemList.add(Section.SUN) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -1246,7 +1246,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 )
             }
         }
-        itemList.add {
+        itemList.add(Section.SUN) {
             Text(
                 textAlign = TextAlign.Center,
                 color = Color(0xFFFF802B),
@@ -1258,7 +1258,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         itemList.add {
             Spacer(modifier = Modifier.size(10.dp))
         }
-        itemList.add {
+        itemList.add(Section.MOON) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -1280,7 +1280,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 )
             }
         }
-        itemList.add {
+        itemList.add(Section.MOON) {
             SubcomposeAsyncImage(
                 modifier = Modifier
                     .padding(8.sp.dp)
@@ -1359,23 +1359,23 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             )
         }
         if (weatherInfo.moonriseTime == null || weatherInfo.moonsetTime == null || weatherInfo.moonriseTime.isBefore(weatherInfo.moonsetTime)) {
-            itemList.add {
+            itemList.add(Section.MOON) {
                 moonrise()
             }
             itemList.add {
                 Spacer(modifier = Modifier.size(10.dp))
             }
-            itemList.add {
+            itemList.add(Section.MOON) {
                 moonset()
             }
         } else {
-            itemList.add {
+            itemList.add(Section.MOON) {
                 moonset()
             }
             itemList.add {
                 Spacer(modifier = Modifier.size(10.dp))
             }
-            itemList.add {
+            itemList.add(Section.MOON) {
                 moonrise()
             }
         }

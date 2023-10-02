@@ -1,5 +1,15 @@
 <resources>
     <string name="app_name">HK Weather</string>
+    <string name="weather_temperature_complication">Weather Temperature</string>
+    <string name="temperature_range_complication">Highest / Lowest Temperature</string>
+    <string name="weather_alerts_complication">Weather Alerts</string>
+    <string name="humidity_complication">Humidity</string>
+    <string name="uvindex_complication">UV Index</string>
+    <string name="chance_of_rain_complication">Chance of Rain</string>
+    <string name="wind_complication">Wind and Gust</string>
+    <string name="sunrise_sunset_complication">Sunrise / Sunset</string>
+    <string name="moonrise_moonset_complication">Moonrise / Moonset</string>
+    <string name="lunar_date_complication">Lunar Date</string>
     <string name="weather_overview_tile">Weather Overview</string>
     <string name="weather_warnings_tile">Weather Warnings</string>
     <string name="weather_tips_tile">Special Weather Tips</string>

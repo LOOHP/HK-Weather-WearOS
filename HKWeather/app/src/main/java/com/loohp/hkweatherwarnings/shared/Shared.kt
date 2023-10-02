@@ -1,8 +1,10 @@
 package com.loohp.hkweatherwarnings.shared
 
+import android.content.ComponentName
 import android.content.Context
 import android.util.Pair
 import androidx.wear.tiles.TileService
+import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -10,10 +12,18 @@ import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.loohp.hkweatherwarnings.background.PeriodicUpdateWorker
+import com.loohp.hkweatherwarnings.complications.ChanceOfRainComplication
+import com.loohp.hkweatherwarnings.complications.HumidityComplication
+import com.loohp.hkweatherwarnings.complications.MoonriseMoonsetComplication
+import com.loohp.hkweatherwarnings.complications.SunriseSunsetComplication
+import com.loohp.hkweatherwarnings.complications.TemperatureRangeComplication
+import com.loohp.hkweatherwarnings.complications.UVIndexComplication
+import com.loohp.hkweatherwarnings.complications.WeatherAlertsComplication
+import com.loohp.hkweatherwarnings.complications.WeatherTemperatureComplication
+import com.loohp.hkweatherwarnings.complications.WindComplication
 import com.loohp.hkweatherwarnings.tiles.WeatherOverviewTile
 import com.loohp.hkweatherwarnings.tiles.WeatherTipsTile
 import com.loohp.hkweatherwarnings.tiles.WeatherWarningsTile
-import com.loohp.hkweatherwarnings.utils.FutureWithProgress
 import com.loohp.hkweatherwarnings.utils.LocationUtils
 import com.loohp.hkweatherwarnings.utils.LocationUtils.LocationResult
 import com.loohp.hkweatherwarnings.utils.orElse
@@ -79,6 +89,15 @@ class Shared {
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->
             TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java)
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, WeatherTemperatureComplication::class.java)).requestUpdateAll()
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, TemperatureRangeComplication::class.java)).requestUpdateAll()
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, HumidityComplication::class.java)).requestUpdateAll()
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, UVIndexComplication::class.java)).requestUpdateAll()
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, ChanceOfRainComplication::class.java)).requestUpdateAll()
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, SunriseSunsetComplication::class.java)).requestUpdateAll()
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, MoonriseMoonsetComplication::class.java)).requestUpdateAll()
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, WindComplication::class.java)).requestUpdateAll()
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, WeatherAlertsComplication::class.java)).requestUpdateAll()
             try {
                 PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(WEATHER_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
                     val json = JSONObject()
@@ -123,6 +142,7 @@ class Shared {
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->
             TileService.getUpdater(context).requestUpdate(WeatherWarningsTile::class.java)
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, WeatherAlertsComplication::class.java)).requestUpdateAll()
             PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(WARNINGS_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
                 try {
                     val array = JSONArray()
@@ -174,6 +194,7 @@ class Shared {
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->
             TileService.getUpdater(context).requestUpdate(WeatherTipsTile::class.java)
+            ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, WeatherAlertsComplication::class.java)).requestUpdateAll()
             PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(TIPS_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
                 try {
                     val array = JSONArray()
