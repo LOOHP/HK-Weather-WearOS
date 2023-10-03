@@ -29,6 +29,7 @@ import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentTips
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
+import com.loohp.hkweatherwarnings.utils.floorToInt
 import com.loohp.hkweatherwarnings.utils.timeZone
 import java.util.Date
 import java.util.concurrent.Callable
@@ -209,7 +210,7 @@ class WeatherTipsTile : TileService() {
                             .setFontStyle(
                                 LayoutElementBuilders.FontStyle.Builder()
                                     .setSize(
-                                        DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 17F)).build()
+                                        DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 16F)).build()
                                     )
                                     .setWeight(
                                         LayoutElementBuilders.FontWeightProp.Builder()
@@ -293,12 +294,32 @@ class WeatherTipsTile : TileService() {
         }
         val tipText = if (tip == null) (if (Registry.getInstance(this).language == "en") "There are currently no active special weather tips." else "目前沒有任何特別天氣提示") else tip.first
         val heightMultiplier = if (Registry.getInstance(this).language == "en") 0.45F else 0.35F
-        val tipTextSize = UnitUtils.dpToSp(this, StringUtils.findOptimalSpForHeight(this, tipText, ScreenSizeUtils.getScreenWidth(this) - 50, (ScreenSizeUtils.getScreenHeight(this).toFloat() * heightMultiplier).roundToInt(), 1F, 15F))
+        val maxLines = (ScreenSizeUtils.getScreenHeight(this) * (if (Registry.getInstance(this).language == "en") 0.0155F else 0.0133F)).floorToInt()
+        val tipTextSize = UnitUtils.dpToSp(this, StringUtils.findOptimalSpForHeight(this, tipText, ScreenSizeUtils.getScreenWidth(this) - 50, (ScreenSizeUtils.getScreenHeight(this).toFloat() * heightMultiplier).roundToInt(), 11F, 15F))
 
         layouts.add(
             LayoutElementBuilders.Box.Builder()
                 .setWidth(DimensionBuilders.wrap())
-                .setHeight(DimensionBuilders.expand())
+                .setHeight(DimensionBuilders.DpProp.Builder(UnitUtils.pixelsToDp(this, ScreenSizeUtils.getScreenHeight(this) * 0.45F)).build())
+                .setModifiers(
+                    ModifiersBuilders.Modifiers.Builder()
+                        .setClickable(
+                            ModifiersBuilders.Clickable.Builder()
+                                .setOnClick(
+                                    ActionBuilders.LaunchAction.Builder()
+                                        .setAndroidActivity(
+                                            ActionBuilders.AndroidActivity.Builder()
+                                                .setClassName(MainActivity::class.java.name)
+                                                .addKeyToExtraMapping("launchSection", ActionBuilders.stringExtra(Section.TIPS.name))
+                                                .setPackageName(packageName)
+                                                .build()
+                                        ).build()
+                                )
+                                .setId("open")
+                                .build()
+                        )
+                        .build()
+                )
                 .setHorizontalAlignment(
                     LayoutElementBuilders.HorizontalAlignmentProp.Builder()
                         .setValue(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
@@ -312,6 +333,7 @@ class WeatherTipsTile : TileService() {
                 .addContent(
                     LayoutElementBuilders.Text.Builder()
                         .setText(tipText)
+                        .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END)
                         .setFontStyle(
                             LayoutElementBuilders.FontStyle.Builder()
                                 .setSize(
@@ -319,7 +341,7 @@ class WeatherTipsTile : TileService() {
                                 )
                                 .build()
                         )
-                        .setMaxLines(Int.MAX_VALUE)
+                        .setMaxLines(maxLines)
                         .build()
                 )
                 .build()
@@ -333,7 +355,7 @@ class WeatherTipsTile : TileService() {
 
             layouts.add(
                 LayoutElementBuilders.Box.Builder()
-                    .setWidth(DimensionBuilders.wrap())
+                    .setWidth(DimensionBuilders.expand())
                     .setHeight(DimensionBuilders.expand())
                     .setModifiers(
                         ModifiersBuilders.Modifiers.Builder()
@@ -341,7 +363,8 @@ class WeatherTipsTile : TileService() {
                                 ModifiersBuilders.Padding.Builder()
                                     .setBottom(DimensionBuilders.DpProp.Builder(3F).build())
                                     .build()
-                            ).build()
+                            )
+                            .build()
                     )
                     .setHorizontalAlignment(
                         LayoutElementBuilders.HorizontalAlignmentProp.Builder()
@@ -355,7 +378,7 @@ class WeatherTipsTile : TileService() {
                     )
                     .addContent(
                         LayoutElementBuilders.Column.Builder()
-                            .setWidth(DimensionBuilders.wrap())
+                            .setWidth(DimensionBuilders.expand())
                             .setHeight(DimensionBuilders.wrap())
                             .setHorizontalAlignment(
                                 LayoutElementBuilders.HorizontalAlignmentProp.Builder()

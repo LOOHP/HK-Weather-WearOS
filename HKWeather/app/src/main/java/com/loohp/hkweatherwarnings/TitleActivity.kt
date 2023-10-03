@@ -133,7 +133,15 @@ class TitleActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleCreate(intent)
+    }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleCreate(intent)
+    }
+
+    private fun handleCreate(intent: Intent) {
         var launchSection: Section? = null
         if (intent.extras != null && intent.extras!!.containsKey("launchSection")) {
             try {

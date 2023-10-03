@@ -181,7 +181,7 @@ class WeatherWarningsTile : TileService() {
                             .setFontStyle(
                                 LayoutElementBuilders.FontStyle.Builder()
                                     .setSize(
-                                        DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 17F)).build()
+                                        DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 16F)).build()
                                     )
                                     .setWeight(
                                         LayoutElementBuilders.FontWeightProp.Builder()
