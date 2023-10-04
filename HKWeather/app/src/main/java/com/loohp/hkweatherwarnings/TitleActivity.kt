@@ -2050,11 +2050,16 @@ fun OpenHKOAppButton(instance: TitleActivity) {
             contentColor = MaterialTheme.colors.primary
         ),
         content = {
-            Text(
-                modifier = Modifier.fillMaxWidth(),
+            AutoResizeText(
+                modifier = Modifier.fillMaxWidth(0.9F),
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
-                fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                fontSizeRange = FontSizeRange(
+                    min = TextUnit(1F, TextUnitType.Sp),
+                    max = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp).clamp(max = 16.dp)
+                ),
+                maxLines = 2,
                 text = if (Registry.getInstance(instance).language == "en") "Open MyObservatory" else "開啟我的天文台"
             )
         }
@@ -2077,11 +2082,16 @@ fun ChangeLocationButton(instance: TitleActivity, enabled: Boolean) {
             contentColor = MaterialTheme.colors.primary
         ),
         content = {
-            Text(
-                modifier = Modifier.fillMaxWidth(),
+            AutoResizeText(
+                modifier = Modifier.fillMaxWidth(0.9F),
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
-                fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp).clamp(max = 16.dp),
+                fontWeight = FontWeight.Bold,
+                fontSizeRange = FontSizeRange(
+                    min = TextUnit(1F, TextUnitType.Sp),
+                    max = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp).clamp(max = 16.dp)
+                ),
+                maxLines = 2,
                 text = if (Registry.getInstance(instance).language == "en") "Set Weather Location" else "設定天氣資訊位置"
             )
         }
@@ -2119,11 +2129,16 @@ fun SetRefreshRateButton(instance: TitleActivity) {
             } else {
                 (refreshRate / 60000).toString().plus(if (Registry.getInstance(instance).language == "en") " Mins" else "分鐘")
             }
-            Text(
-                modifier = Modifier.fillMaxWidth(),
+            AutoResizeText(
+                modifier = Modifier.fillMaxWidth(0.9F),
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
-                fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp).clamp(max = 16.dp),
+                fontWeight = FontWeight.Bold,
+                fontSizeRange = FontSizeRange(
+                    min = TextUnit(1F, TextUnitType.Sp),
+                    max = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp).clamp(max = 16.dp)
+                ),
+                maxLines = 2,
                 text = (if (Registry.getInstance(instance).language == "en") "Set Refresh Rate: " else "更新頻率: ").plus(timeText)
             )
         }

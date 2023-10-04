@@ -712,7 +712,7 @@ public class Registry {
                                 contents = String.join("\n", lines);
                                 OffsetDateTime time = OffsetDateTime.parse(details.optString("updateTime"));
                                 if (getLanguage().equals("en")) {
-                                    contents += "\nDispatched by the Hong Kong Observatory at " + DateTimeFormatter.ofPattern("HH:mm' HKT on 'dd.MM.yyyy", Locale.ENGLISH);
+                                    contents += "\nDispatched by the Hong Kong Observatory at " + DateTimeFormatter.ofPattern("HH:mm' HKT on 'dd.MM.yyyy", Locale.ENGLISH).format(time);
                                 } else {
                                     contents += "\n以上天氣稿由天文台於" + DateTimeFormatter.ofPattern("yyyy年MM月dd日HH時mm分", Locale.TRADITIONAL_CHINESE).format(time) + "發出";
                                 }
