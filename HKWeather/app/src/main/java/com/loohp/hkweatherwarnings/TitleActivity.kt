@@ -744,7 +744,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colors.primary,
                         fontWeight = FontWeight.Bold,
-                        fontSize = TextUnit(35F, TextUnitType.Sp),
+                        fontSize = StringUtils.scaledSize(35, instance).dp.sp,
                         text = String.format("%.1f", weatherInfo.currentTemperature).plus("°")
                     )
                 }
@@ -769,7 +769,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                         Text(
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(13F, TextUnitType.Sp),
+                            fontSize = StringUtils.scaledSize(13, instance).dp.sp,
                             text = String.format("%.1f", weatherInfo.highestTemperature).plus("° ")
                         )
                         Image(
@@ -782,7 +782,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                         Text(
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(13F, TextUnitType.Sp),
+                            fontSize = StringUtils.scaledSize(13, instance).dp.sp,
                             text = String.format("%.1f", weatherInfo.lowestTemperature).plus("°")
                         )
                     }
@@ -802,7 +802,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                         Text(
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(13F, TextUnitType.Sp),
+                            fontSize = StringUtils.scaledSize(13, instance).dp.sp,
                             text = (if (Registry.getInstance(instance).language == "en") "Chance of Rain" else "降雨概率")
                                 .plus(String.format(" %.0f", weatherInfo.chanceOfRain).plus("%"))
                         )
