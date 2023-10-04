@@ -85,6 +85,7 @@ import com.loohp.hkweatherwarnings.utils.dp
 import com.loohp.hkweatherwarnings.utils.sp
 import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
+import com.loohp.hkweatherwarnings.weather.HeatStressAtWorkWarningAction
 import com.loohp.hkweatherwarnings.weather.LocalForecastInfo
 import com.loohp.hkweatherwarnings.weather.LunarDate
 import com.loohp.hkweatherwarnings.weather.UVIndexType
@@ -106,7 +107,7 @@ import java.util.concurrent.ForkJoinPool
 
 
 enum class Section {
-    MAIN, DATE, WARNINGS, TIPS, HUMIDITY, UVINDEX, WIND, SUN, MOON, FORECAST, HOURLY;
+    MAIN, DATE, WARNINGS, HEAT_STRESS_AT_WORK_WARNING, TIPS, HUMIDITY, UVINDEX, WIND, SUN, MOON, FORECAST, HOURLY;
 }
 
 class ItemList : ArrayList<kotlin.Pair<@Composable () -> Unit, Section?>>() {
@@ -915,6 +916,87 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         }
         itemList.add {
             Spacer(modifier = Modifier.size(10.dp))
+        }
+        if (weatherInfo.heatStressAtWorkInfo != null) {
+            val heatStressAtWorkInfo = weatherInfo.heatStressAtWorkInfo
+            itemList.add(Section.HEAT_STRESS_AT_WORK_WARNING) {
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    text = if (Registry.getInstance(instance).language == "en") "Heat Stress at Work Warning" else "工作暑熱警告"
+                )
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(4.dp))
+            }
+            when (heatStressAtWorkInfo.action!!) {
+                HeatStressAtWorkWarningAction.ISSUE -> {
+                    val warningLevel = heatStressAtWorkInfo.warningsLevel!!
+                    itemList.add {
+                        Image(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(StringUtils.scaledSize(40, instance).dp)
+                                .combinedClickable(
+                                    onClick = {
+                                        instance.runOnUiThread {
+                                            Toast
+                                                .makeText(
+                                                    instance,
+                                                    if (Registry.getInstance(instance).language == "en") warningLevel.nameEn else warningLevel.nameZh,
+                                                    Toast.LENGTH_LONG
+                                                )
+                                                .show()
+                                        }
+                                    }
+                                ),
+                            painter = painterResource(warningLevel.iconId),
+                            contentDescription = if (Registry.getInstance(instance).language == "en") warningLevel.nameEn else warningLevel.nameZh
+                        )
+                    }
+                    itemList.add {
+                        Spacer(modifier = Modifier.size(4.dp))
+                    }
+                    itemList.add {
+                        Text(
+                            modifier = Modifier.padding(20.dp, 0.dp),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colors.primary,
+                            fontSize = TextUnit(15F, TextUnitType.Sp),
+                            text = heatStressAtWorkInfo.description
+                        )
+                    }
+                }
+                HeatStressAtWorkWarningAction.CANCEL -> {
+                    itemList.add {
+                        Text(
+                            modifier = Modifier.padding(20.dp, 0.dp),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colors.primary,
+                            fontSize = TextUnit(13F, TextUnitType.Sp),
+                            text = heatStressAtWorkInfo.description
+                        )
+                    }
+                }
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(4.dp))
+            }
+            val dateFormat = DateTimeFormatter.ofPattern(DateFormat.getDateFormat(instance).let { if (it is SimpleDateFormat) it.toPattern() else "d/M/yy" }
+                .plus(" ").plus(DateFormat.getTimeFormat(instance).let { if (it is SimpleDateFormat) it.toPattern() else "HH:mm" }))
+            itemList.add {
+                Text(
+                    modifier = Modifier.padding(5.dp, 0.dp),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = TextUnit(10F, TextUnitType.Sp),
+                    text = dateFormat.format(heatStressAtWorkInfo.issueTime)
+                )
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
         }
         itemList.add(Section.TIPS) {
             Text(

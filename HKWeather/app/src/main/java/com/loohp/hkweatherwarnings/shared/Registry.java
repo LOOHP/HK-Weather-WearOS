@@ -20,6 +20,9 @@ import com.loohp.hkweatherwarnings.utils.LocationUtils;
 import com.loohp.hkweatherwarnings.utils.TimeUtils;
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.ForecastWeatherInfo;
+import com.loohp.hkweatherwarnings.weather.HeatStressAtWorkInfo;
+import com.loohp.hkweatherwarnings.weather.HeatStressAtWorkWarningAction;
+import com.loohp.hkweatherwarnings.weather.HeatStressAtWorkWarningLevel;
 import com.loohp.hkweatherwarnings.weather.HourlyWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.LocalForecastInfo;
 import com.loohp.hkweatherwarnings.weather.LunarDate;
@@ -405,7 +408,7 @@ public class Registry {
             return CompletableFutureWithProgress.completedFuture(null);
         }
         CompletableFutureWithProgress<CurrentWeatherInfo> future = new CompletableFutureWithProgress<>();
-        float totalStages = 14F;
+        float totalStages = 15F;
         new Thread(() -> {
             try {
                 LocalDate today = LocalDate.now(Shared.Companion.getHK_TIMEZONE().toZoneId());
@@ -649,7 +652,25 @@ public class Registry {
                 LocalForecastInfo localForecastInfo = new LocalForecastInfo(generalSituation, tcInfo, fireDangerWarning, forecastPeriod, forecastDesc, outlook, updateTime);
                 future.addProgress(1 / totalStages);
 
-                future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo));
+                JSONObject heatStressAtWorkData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/hsww.php?lang=" + lang);
+                if (heatStressAtWorkData == null) {
+                    throw new RuntimeException();
+                }
+                HeatStressAtWorkInfo heatStressAtWorkInfo;
+                if (heatStressAtWorkData.has("hsww")) {
+                    JSONObject hswwData = heatStressAtWorkData.optJSONObject("hsww");
+                    String description = hswwData.optString("desc");
+                    HeatStressAtWorkWarningLevel warningsLevel = HeatStressAtWorkWarningLevel.getByName(hswwData.optString("warningLevel").toUpperCase());
+                    HeatStressAtWorkWarningAction action = HeatStressAtWorkWarningAction.valueOf(hswwData.optString("actionCode").toUpperCase());
+                    LocalDateTime effectiveTime = LocalDateTime.parse(hswwData.optString("effectiveTime"), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                    LocalDateTime issueTime = LocalDateTime.parse(hswwData.optString("issueTime"), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                    heatStressAtWorkInfo = new HeatStressAtWorkInfo(description, warningsLevel, action, effectiveTime, issueTime);
+                } else {
+                    heatStressAtWorkInfo = null;
+                }
+                future.addProgress(1 / totalStages);
+
+                future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo));
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);
