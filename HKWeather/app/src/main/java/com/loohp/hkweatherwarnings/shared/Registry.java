@@ -541,6 +541,10 @@ public class Registry {
                         windDirection = tempWindDirection;
                         windSpeed = (float) windHere.optDouble(lang.equals("en") ? "10-Minute Mean Speed(km/hour)" : "十分鐘平均風速（公里/小時）", 0);
                         gust = (float) windHere.optDouble(lang.equals("en") ? "10-Minute Maximum Gust(km/hour)" : "十分鐘最高陣風風速（公里/小時）", 0);
+                        if (windDirection.equals("無風") || windDirection.equals("Calm")) {
+                            gust = windSpeed;
+                            windSpeed = 0F;
+                        }
                     }
                 }
                 future.addProgress(1 / totalStages);
