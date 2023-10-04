@@ -502,7 +502,7 @@ public class Registry {
                 List<JSONObject> dailyForecastArray = JsonUtils.toList(forecastDailyData, JSONObject.class);
 
                 String chanceOfRainStr = dailyForecastArray.get(0).optString("ForecastChanceOfRain");
-                float chanceOfRain = Float.parseFloat(chanceOfRainStr.substring(0, chanceOfRainStr.length() - 1));
+                float chanceOfRain = Float.parseFloat(chanceOfRainStr.substring(0, chanceOfRainStr.length() - 1).replace("< ", ""));
                 future.addProgress(1 / totalStages);
 
                 String windLang = lang.equals("en") ? "" : "_uc";
@@ -604,7 +604,7 @@ public class Registry {
                         forecastChanceOfRain = -1F;
                     } else {
                         String forecastChanceOfRainStr = forecastStationDayObj.optString("ForecastChanceOfRain");
-                        forecastChanceOfRain = Float.parseFloat(forecastChanceOfRainStr.substring(0, forecastChanceOfRainStr.length() - 1));
+                        forecastChanceOfRain = Float.parseFloat(forecastChanceOfRainStr.substring(0, forecastChanceOfRainStr.length() - 1).replace("< ", ""));
                     }
 
                     forecastInfo.add(new ForecastWeatherInfo(forecastDate, forecastHighestTemperature, forecastLowestTemperature, forecastMaxRelativeHumidity, forecastMinRelativeHumidity, forecastChanceOfRain, forecastWeatherIcon, forecastWind, forecastWeather));
