@@ -192,7 +192,7 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
     }
 
     HKWeatherTheme {
-        val moonPhaseUrl by remember { derivedStateOf { "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime(instance)) } }
+        var moonPhaseUrl by remember { mutableStateOf("") }
         val elements by remember { derivedStateOf { generateWeatherInfoItems(weatherInfoUpdating, updateSuccessful, weatherInfo, weatherWarnings, weatherTips, lunarDate, moonPhaseUrl, instance) } }
 
         val focusRequester = remember { FocusRequester() }
@@ -227,8 +227,10 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
                 scrollMoved++
             }
         }
-        LaunchedEffect (moonPhaseUrl) {
-            instance.imageLoader.execute(ImageRequest.Builder(instance).data(moonPhaseUrl).build())
+        LaunchedEffect (weatherInfo) {
+            val url = "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime(instance))
+            moonPhaseUrl = url
+            instance.imageLoader.execute(ImageRequest.Builder(instance).data(url).build())
         }
         LaunchedEffect (Unit) {
             focusRequester.requestFocus()
@@ -1383,7 +1385,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                         strokeCap = StrokeCap.Round,
                     )
                 },
-                model = moonPhaseUrl,
+                model = ImageRequest.Builder(instance).size(30, 30).data(moonPhaseUrl).build(),
                 contentDescription = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
             )
         }

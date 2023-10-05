@@ -31,6 +31,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -214,14 +215,15 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                         .focusRequester(focusRequester)
                         .focusable()
                 ) {
+                    val zoomPadding by remember { derivedStateOf { if (zoom) 0F else UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getMinScreenSize(instance) * 0.15F) } }
+                    val animatedZoomPadding by animateFloatAsState(
+                        targetValue = zoomPadding,
+                        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                        label = "AnimatedZoomPadding"
+                    )
                     var modifier = Modifier
                         .fillMaxSize()
-                        .padding(
-                            if (zoom) 0.dp else UnitUtils.pixelsToDp(
-                                instance,
-                                ScreenSizeUtils.getMinScreenSize(instance) * 0.15F
-                            ).dp
-                        )
+                        .padding(animatedZoomPadding.dp)
                     if (zoom) {
                         modifier = modifier.zoomable(
                             state = rememberZoomableState(),
@@ -255,7 +257,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                                             strokeCap = StrokeCap.Round,
                                         )
                                     },
-                                    model = ImageRequest.Builder(instance).data(rainfallMapsInfo!!.past1HourUrls.values.elementAt(currentPosition)).transformations(RainfallMapImageTransformation()).build(),
+                                    model = ImageRequest.Builder(instance).size(545, 550).data(rainfallMapsInfo!!.past1HourUrls.values.elementAt(currentPosition)).transformations(RainfallMapImageTransformation()).build(),
                                     contentDescription = if (Registry.getInstance(instance).language == "en") "Isohyet Chart for Last Hour" else "過去一小時等雨量線圖"
                                 )
                             }

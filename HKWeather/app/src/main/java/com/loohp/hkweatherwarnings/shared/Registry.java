@@ -362,7 +362,9 @@ public class Registry {
                     String nameEn = tc.optString("enName");
                     String imgFile = "nwp_" + id + ".png";
                     String trackStaticImageUrl = images.contains(imgFile) ? "https://pda.weather.gov.hk/locspc/android_data/TCTrackImg/" + imgFile : null;
-                    list.add(new TropicalCycloneInfo(id, displayOrder, nameZh, nameEn, trackStaticImageUrl));
+                    String zoomImgFile = "zoom_" + id + ".png";
+                    String trackStaticZoomImageUrl = images.contains(zoomImgFile) ? "https://pda.weather.gov.hk/locspc/android_data/TCTrackImg/" + zoomImgFile : null;
+                    list.add(new TropicalCycloneInfo(id, displayOrder, nameZh, nameEn, trackStaticImageUrl, trackStaticZoomImageUrl));
                 }
                 future.complete(list);
             } catch (Throwable e) {

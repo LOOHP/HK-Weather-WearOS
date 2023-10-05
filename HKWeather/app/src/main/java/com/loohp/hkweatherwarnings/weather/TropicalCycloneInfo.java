@@ -12,13 +12,15 @@ public class TropicalCycloneInfo {
     private final String nameZh;
     private final String nameEn;
     private final String trackStaticImageUrl;
+    private final String trackStaticZoomImageUrl;
 
-    public TropicalCycloneInfo(int id, int displayOrder, String nameZh, String nameEn, String trackStaticImageUrl) {
+    public TropicalCycloneInfo(int id, int displayOrder, String nameZh, String nameEn, String trackStaticImageUrl, String trackStaticZoomImageUrl) {
         this.id = id;
         this.displayOrder = displayOrder;
         this.nameZh = nameZh;
         this.nameEn = nameEn;
         this.trackStaticImageUrl = trackStaticImageUrl;
+        this.trackStaticZoomImageUrl = trackStaticZoomImageUrl;
     }
 
     public int getId() {
@@ -39,6 +41,10 @@ public class TropicalCycloneInfo {
 
     public String getTrackStaticImageUrl() {
         return trackStaticImageUrl;
+    }
+
+    public String getTrackStaticZoomImageUrl() {
+        return trackStaticZoomImageUrl;
     }
 
     @Override

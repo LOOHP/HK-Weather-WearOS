@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +46,7 @@ import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
@@ -143,14 +145,15 @@ fun RadarElement(instance: RadarActivity) {
                     contentDescription = if (Registry.getInstance(instance).language == "en") "Legend" else "圖例"
                 )
             } else {
+                val zoomPadding by remember { derivedStateOf { if (zoom) 0F else UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getMinScreenSize(instance) * 0.15F) } }
+                val animatedZoomPadding by animateFloatAsState(
+                    targetValue = zoomPadding,
+                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                    label = "AnimatedZoomPadding"
+                )
                 var modifier = Modifier
                     .fillMaxSize()
-                    .padding(
-                        if (zoom) 0.dp else UnitUtils.pixelsToDp(
-                            instance,
-                            ScreenSizeUtils.getMinScreenSize(instance) * 0.15F
-                        ).dp
-                    )
+                    .padding(animatedZoomPadding.dp)
                 if (zoom) {
                     modifier = modifier.zoomable(
                         state = rememberZoomableState(),
@@ -169,15 +172,15 @@ fun RadarElement(instance: RadarActivity) {
                 Box(
                     modifier = modifier
                 ) {
-                    Image(
+                    AsyncImage(
                         modifier = Modifier.fillMaxSize(),
-                        painter = painterResource(R.mipmap.radar_64_background),
-                        contentDescription = ""
+                        model = ImageRequest.Builder(instance).size(640).data(R.mipmap.radar_64_background).build(),
+                        contentDescription = "",
                     )
-                    Image(
+                    AsyncImage(
                         modifier = Modifier.fillMaxSize(),
-                        painter = painterResource(R.mipmap.radar_64_gridline),
-                        contentDescription = ""
+                        model = ImageRequest.Builder(instance).size(640).data(R.mipmap.radar_64_gridline).build(),
+                        contentDescription = "",
                     )
                     for (i in 1..20) {
                         @Suppress("UnnecessaryVariable")
@@ -187,7 +190,7 @@ fun RadarElement(instance: RadarActivity) {
                             onSuccess = {
                                 ready[index] = true
                             },
-                            model = "https://pda.weather.gov.hk/locspc/android_data/radar/rad_064_320/${index}_64km.png",
+                            model = ImageRequest.Builder(instance).size(640).data("https://pda.weather.gov.hk/locspc/android_data/radar/rad_064_640/${index}_64km.png").build(),
                             contentDescription = if (Registry.getInstance(instance).language == "en") "Radar Image $index / 20" else "雷達圖像 $index / 20",
                             alpha = if (currentPosition == index) 1F else 0F
                         )
@@ -209,7 +212,7 @@ fun RadarElement(instance: RadarActivity) {
                         .align(if (zoom) Alignment.BottomCenter else Alignment.TopCenter)
                         .padding(0.dp, 6.dp),
                     textAlign = TextAlign.Center,
-                    color = if (zoom) MaterialTheme.colors.secondary else MaterialTheme.colors.primary,
+                    color = MaterialTheme.colors.primary,
                     fontWeight = if (zoom) FontWeight.Bold else FontWeight.Normal,
                     fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
                     text = currentPosition.toString().plus(" / 20")
@@ -266,7 +269,7 @@ fun RadarElement(instance: RadarActivity) {
                         Image(
                             modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
                             painter = painterResource(R.mipmap.radar_legend),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") "Toggle Playback" else "開始/暫停播放"
+                            contentDescription = if (Registry.getInstance(instance).language == "en") "Toggle Show Legend" else "顯示/隱藏圖例"
                         )
                     }
                 )
