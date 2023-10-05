@@ -31,7 +31,7 @@ class UVIndexComplication : ComplicationDataSourceService() {
             ComplicationType.SHORT_TEXT -> {
                 ShortTextComplicationData.Builder(
                     text = PlainComplicationText.Builder(String.format("%.0f", uvindex)).build(),
-                    contentDescription = PlainComplicationText.Builder(String.format("%.0f", uvindex)).build()
+                    contentDescription = PlainComplicationText.Builder(String.format("%.1f", uvindex)).build()
                 )
                     .setTapAction(null)
                     .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -39,8 +39,8 @@ class UVIndexComplication : ComplicationDataSourceService() {
             }
             ComplicationType.LONG_TEXT -> {
                 LongTextComplicationData.Builder(
-                    text = PlainComplicationText.Builder(String.format("%.0f", uvindex)).build(),
-                    contentDescription = PlainComplicationText.Builder(String.format("%.0f", uvindex)).build()
+                    text = PlainComplicationText.Builder(String.format("%.1f", uvindex)).build(),
+                    contentDescription = PlainComplicationText.Builder(String.format("%.1f", uvindex)).build()
                 )
                     .setTapAction(null)
                     .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -51,7 +51,7 @@ class UVIndexComplication : ComplicationDataSourceService() {
                     value = uvindex,
                     min = 0F,
                     max = 11F,
-                    contentDescription = PlainComplicationText.Builder(String.format("%.0f", uvindex)).build()
+                    contentDescription = PlainComplicationText.Builder(String.format("%.1f", uvindex)).build()
                 )
                     .setValueType(TYPE_RATING)
                     .setTapAction(null)
@@ -81,7 +81,7 @@ class UVIndexComplication : ComplicationDataSourceService() {
                     ComplicationType.SHORT_TEXT -> {
                         ShortTextComplicationData.Builder(
                             text = PlainComplicationText.Builder(String.format("%.0f", uvindex)).build(),
-                            contentDescription = PlainComplicationText.Builder(String.format("%.0f", uvindex)).build()
+                            contentDescription = PlainComplicationText.Builder(String.format("%.1f", uvindex)).build()
                         )
                             .setTapAction(pendingIntent)
                             .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -89,8 +89,8 @@ class UVIndexComplication : ComplicationDataSourceService() {
                     }
                     ComplicationType.LONG_TEXT -> {
                         LongTextComplicationData.Builder(
-                            text = PlainComplicationText.Builder(String.format("%.0f", uvindex).plus(" ").plus(if (Registry.getInstance(this).language == "en") uvIndexType.en else uvIndexType.zh)).build(),
-                            contentDescription = PlainComplicationText.Builder(String.format("%.0f", uvindex).plus(" ").plus(if (Registry.getInstance(this).language == "en") uvIndexType.en else uvIndexType.zh)).build()
+                            text = PlainComplicationText.Builder(String.format("%.1f", uvindex).plus(" ").plus(if (Registry.getInstance(this).language == "en") uvIndexType.en else uvIndexType.zh)).build(),
+                            contentDescription = PlainComplicationText.Builder(String.format("%.1f", uvindex).plus(" ").plus(if (Registry.getInstance(this).language == "en") uvIndexType.en else uvIndexType.zh)).build()
                         )
                             .setTapAction(pendingIntent)
                             .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -101,7 +101,7 @@ class UVIndexComplication : ComplicationDataSourceService() {
                             value = uvindex,
                             min = 0F,
                             max = 11F,
-                            contentDescription = PlainComplicationText.Builder(String.format("%.0f", uvindex)).build()
+                            contentDescription = PlainComplicationText.Builder(String.format("%.1f", uvindex)).build()
                         )
                             .setValueType(TYPE_RATING)
                             .setTapAction(pendingIntent)

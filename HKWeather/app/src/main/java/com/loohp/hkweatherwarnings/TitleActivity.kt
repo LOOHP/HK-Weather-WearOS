@@ -1130,7 +1130,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                     color = Color(uvIndexType.color),
                     fontSize = TextUnit(25F, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
-                    text = String.format("%.0f", weatherInfo.uvIndex).plus(" ")
+                    text = String.format("%.1f", weatherInfo.uvIndex).plus(" ")
                         .plus(if (Registry.getInstance(instance).language == "en") uvIndexType.en else uvIndexType.zh)
                 )
             }
