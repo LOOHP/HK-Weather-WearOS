@@ -72,7 +72,7 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import com.loohp.hkweatherwarnings.compose.AutoResizeText
 import com.loohp.hkweatherwarnings.compose.FontSizeRange
-import com.loohp.hkweatherwarnings.compose.verticalLazyScrollbar
+import com.loohp.hkweatherwarnings.compose.fullPageVerticalLazyScrollbar
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
@@ -88,6 +88,7 @@ import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
 import com.loohp.hkweatherwarnings.weather.HeatStressAtWorkWarningAction
 import com.loohp.hkweatherwarnings.weather.LocalForecastInfo
 import com.loohp.hkweatherwarnings.weather.LunarDate
+import com.loohp.hkweatherwarnings.weather.SpecialTyphoonInfo
 import com.loohp.hkweatherwarnings.weather.UVIndexType
 import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsCategory
@@ -245,7 +246,7 @@ fun MainElements(today: LocalDate, launchSection: Section? = null, instance: Tit
         LazyColumn (
             modifier = Modifier
                 .fillMaxSize()
-                .verticalLazyScrollbar(
+                .fullPageVerticalLazyScrollbar(
                     state = scroll
                 )
                 .onRotaryScrollEvent {
@@ -825,6 +826,13 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             itemList.add {
                 Spacer(modifier = Modifier.size(10.dp))
             }
+        } else if (weatherInfo.specialTyphoonInfo?.hasAnyDisplay() == true) {
+            itemList.add {
+                StormLatestButton(instance, weatherInfo.specialTyphoonInfo!!)
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
         }
         itemList.add(Section.WARNINGS) {
             Text(
@@ -1073,7 +1081,16 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             }
         }
         var specialButton = false
-        if (weatherWarnings.keys.any { it.category == WeatherWarningsCategory.WRAIN }) {
+        if (weatherWarnings.keys.any { it.category == WeatherWarningsCategory.WTCSGNL }) {
+            itemList.add {
+                StormTrackButton(instance, Color(0xFF460000))
+            }
+            itemList.add {
+                Spacer(modifier = Modifier.size(10.dp))
+            }
+            specialButton = true
+        }
+        if (weatherWarnings.keys.any { it.category == WeatherWarningsCategory.WRAIN || it == WeatherWarningsType.WFNTSA || it.isOnOrAboveTyphoonSignalEight }) {
             itemList.add {
                 RadarButton(instance, Color(0xFF460000))
             }
@@ -1082,15 +1099,6 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             }
             itemList.add {
                 RainfallMapButton(instance, Color(0xFF460000))
-            }
-            itemList.add {
-                Spacer(modifier = Modifier.size(10.dp))
-            }
-            specialButton = true
-        }
-        if (weatherWarnings.keys.any { it.category == WeatherWarningsCategory.WTCSGNL }) {
-            itemList.add {
-                StormTrackButton(instance, Color(0xFF460000))
             }
             itemList.add {
                 Spacer(modifier = Modifier.size(10.dp))
@@ -1818,6 +1826,56 @@ fun LocalForecastButton(weatherIcon: WeatherStatusIcon, nextWeatherIcon: Weather
                     ),
                     maxLines = 1,
                     text = if (Registry.getInstance(instance).language == "en") "Local Forecast" else "本港預報"
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun StormLatestButton(instance: TitleActivity, specialTyphoonInfo: SpecialTyphoonInfo, backgroundColor: Color = MaterialTheme.colors.secondary) {
+    Button(
+        onClick = {
+            val intent = Intent(instance, DisplayInfoTextActivity::class.java)
+            specialTyphoonInfo.signalType?.let {
+                intent.putExtra("imageDrawable", it.iconId)
+                intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
+                intent.putExtra("imageDescription", if (Registry.getInstance(instance).language == "en") it.nameEn else it.nameZh)
+            }
+            intent.putExtra("text", (if (Registry.getInstance(instance).language == "en") "Latest TC News" else "最新風暴消息").plus("\n").plus(specialTyphoonInfo.toDisplayText()))
+            instance.startActivity(intent)
+        },
+        modifier = Modifier
+            .width(StringUtils.scaledSize(180, instance).dp)
+            .height(StringUtils.scaledSize(45, instance).dp),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = backgroundColor,
+            contentColor = MaterialTheme.colors.primary
+        ),
+        content = {
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth(0.9F)
+                    .align(Alignment.Center),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    modifier = Modifier
+                        .padding(0.dp, 0.dp, 2.dp, 0.dp)
+                        .size(15.sp.clamp(max = 15.dp).dp),
+                    painter = painterResource(R.mipmap.cyclone_latest),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Latest TC News" else "最新風暴消息"
+                )
+                AutoResizeText(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSizeRange = FontSizeRange(
+                        min = TextUnit(1F, TextUnitType.Sp),
+                        max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
+                    ),
+                    maxLines = 1,
+                    text = if (Registry.getInstance(instance).language == "en") "Latest TC News" else "最新風暴消息"
                 )
             }
         }

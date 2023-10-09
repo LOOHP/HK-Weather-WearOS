@@ -65,4 +65,9 @@ public enum WeatherWarningsType {
     public int getColor() {
         return color;
     }
+
+    public boolean isOnOrAboveTyphoonSignalEight() {
+        return category == WeatherWarningsCategory.WTCSGNL && this.ordinal() > TC3.ordinal();
+    }
+
 }

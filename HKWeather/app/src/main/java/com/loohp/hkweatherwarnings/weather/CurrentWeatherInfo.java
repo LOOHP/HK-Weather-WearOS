@@ -54,7 +54,8 @@ public class CurrentWeatherInfo extends WeatherInfo {
             hourlyWeatherInfo.add(HourlyWeatherInfo.deserialize(hourlyWeatherInfoArray.optJSONObject(i)));
         }
         HeatStressAtWorkInfo heatStressAtWorkInfo = jsonObject.has("heatStressAtWorkInfo") ? HeatStressAtWorkInfo.deserialize(jsonObject.optJSONObject("heatStressAtWorkInfo")) : null;
-        return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo);
+        SpecialTyphoonInfo specialTyphoonInfo = jsonObject.has("specialTyphoonInfo") ? SpecialTyphoonInfo.deserialize(jsonObject.optJSONObject("specialTyphoonInfo")) : null;
+        return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo, specialTyphoonInfo);
     }
 
     private final String weatherStation;
@@ -76,8 +77,9 @@ public class CurrentWeatherInfo extends WeatherInfo {
     private final List<ForecastWeatherInfo> forecastInfo;
     private final List<HourlyWeatherInfo> hourlyWeatherInfo;
     private final HeatStressAtWorkInfo heatStressAtWorkInfo;
+    private final SpecialTyphoonInfo specialTyphoonInfo;
 
-    public CurrentWeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, WeatherStatusIcon weatherIcon, String weatherStation, WeatherStatusIcon nextWeatherIcon, float currentTemperature, float currentHumidity, float uvIndex, String windDirection, float windSpeed, float gust, LocalTime sunriseTime, LocalTime sunTransitTime, LocalTime sunsetTime, LocalTime moonriseTime, LocalTime moonTransitTime, LocalTime moonsetTime, LocalForecastInfo localForecastInfo, String forecastGeneralSituation, List<ForecastWeatherInfo> forecastInfo, List<HourlyWeatherInfo> hourlyWeatherInfo, HeatStressAtWorkInfo heatStressAtWorkInfo) {
+    public CurrentWeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, WeatherStatusIcon weatherIcon, String weatherStation, WeatherStatusIcon nextWeatherIcon, float currentTemperature, float currentHumidity, float uvIndex, String windDirection, float windSpeed, float gust, LocalTime sunriseTime, LocalTime sunTransitTime, LocalTime sunsetTime, LocalTime moonriseTime, LocalTime moonTransitTime, LocalTime moonsetTime, LocalForecastInfo localForecastInfo, String forecastGeneralSituation, List<ForecastWeatherInfo> forecastInfo, List<HourlyWeatherInfo> hourlyWeatherInfo, HeatStressAtWorkInfo heatStressAtWorkInfo, SpecialTyphoonInfo specialTyphoonInfo) {
         super(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon);
         this.weatherStation = weatherStation;
         this.nextWeatherIcon = nextWeatherIcon;
@@ -98,6 +100,7 @@ public class CurrentWeatherInfo extends WeatherInfo {
         this.forecastInfo = Collections.unmodifiableList(forecastInfo);
         this.hourlyWeatherInfo = Collections.unmodifiableList(hourlyWeatherInfo);
         this.heatStressAtWorkInfo = heatStressAtWorkInfo;
+        this.specialTyphoonInfo = specialTyphoonInfo;
     }
 
     public String getWeatherStation() {
@@ -176,6 +179,10 @@ public class CurrentWeatherInfo extends WeatherInfo {
         return heatStressAtWorkInfo;
     }
 
+    public SpecialTyphoonInfo getSpecialTyphoonInfo() {
+        return specialTyphoonInfo;
+    }
+
     @Override
     public JSONObject serialize() throws JSONException {
         JSONObject jsonObject = super.serialize();
@@ -210,6 +217,9 @@ public class CurrentWeatherInfo extends WeatherInfo {
         if (heatStressAtWorkInfo != null) {
             jsonObject.put("heatStressAtWorkInfo", heatStressAtWorkInfo.serialize());
         }
+        if (specialTyphoonInfo != null) {
+            jsonObject.put("specialTyphoonInfo", specialTyphoonInfo.serialize());
+        }
         return jsonObject;
     }
 
@@ -219,11 +229,11 @@ public class CurrentWeatherInfo extends WeatherInfo {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         CurrentWeatherInfo that = (CurrentWeatherInfo) o;
-        return Float.compare(that.currentTemperature, currentTemperature) == 0 && Float.compare(that.currentHumidity, currentHumidity) == 0 && Float.compare(that.uvIndex, uvIndex) == 0 && Float.compare(that.windSpeed, windSpeed) == 0 && Float.compare(that.gust, gust) == 0 && Objects.equals(weatherStation, that.weatherStation) && nextWeatherIcon == that.nextWeatherIcon && Objects.equals(windDirection, that.windDirection) && Objects.equals(sunriseTime, that.sunriseTime) && Objects.equals(sunTransitTime, that.sunTransitTime) && Objects.equals(sunsetTime, that.sunsetTime) && Objects.equals(moonriseTime, that.moonriseTime) && Objects.equals(moonTransitTime, that.moonTransitTime) && Objects.equals(moonsetTime, that.moonsetTime) && Objects.equals(localForecastInfo, that.localForecastInfo) && Objects.equals(forecastGeneralSituation, that.forecastGeneralSituation) && Objects.equals(forecastInfo, that.forecastInfo) && Objects.equals(hourlyWeatherInfo, that.hourlyWeatherInfo) && Objects.equals(heatStressAtWorkInfo, that.heatStressAtWorkInfo);
+        return Float.compare(that.currentTemperature, currentTemperature) == 0 && Float.compare(that.currentHumidity, currentHumidity) == 0 && Float.compare(that.uvIndex, uvIndex) == 0 && Float.compare(that.windSpeed, windSpeed) == 0 && Float.compare(that.gust, gust) == 0 && Objects.equals(weatherStation, that.weatherStation) && nextWeatherIcon == that.nextWeatherIcon && Objects.equals(windDirection, that.windDirection) && Objects.equals(sunriseTime, that.sunriseTime) && Objects.equals(sunTransitTime, that.sunTransitTime) && Objects.equals(sunsetTime, that.sunsetTime) && Objects.equals(moonriseTime, that.moonriseTime) && Objects.equals(moonTransitTime, that.moonTransitTime) && Objects.equals(moonsetTime, that.moonsetTime) && Objects.equals(localForecastInfo, that.localForecastInfo) && Objects.equals(forecastGeneralSituation, that.forecastGeneralSituation) && Objects.equals(forecastInfo, that.forecastInfo) && Objects.equals(hourlyWeatherInfo, that.hourlyWeatherInfo) && Objects.equals(heatStressAtWorkInfo, that.heatStressAtWorkInfo) && Objects.equals(specialTyphoonInfo, that.specialTyphoonInfo);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo);
+        return Objects.hash(super.hashCode(), weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo, specialTyphoonInfo);
     }
 }

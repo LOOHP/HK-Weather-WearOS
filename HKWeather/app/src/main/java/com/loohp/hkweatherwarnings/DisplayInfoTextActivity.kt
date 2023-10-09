@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import coil.compose.AsyncImage
-import com.loohp.hkweatherwarnings.compose.verticalScrollWithScrollbar
+import com.loohp.hkweatherwarnings.compose.fullPageVerticalScrollWithScrollbar
 import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import kotlinx.coroutines.delay
@@ -123,7 +123,7 @@ fun DisplayInfo(imageDrawables: IntArray, imageUrl: String?, imageWidth: Int, im
         Column (
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScrollWithScrollbar(
+                .fullPageVerticalScrollWithScrollbar(
                     state = scroll,
                     flingBehavior = ScrollableDefaults.flingBehavior()
                 )

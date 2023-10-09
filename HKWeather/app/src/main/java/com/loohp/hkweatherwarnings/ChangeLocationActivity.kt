@@ -51,7 +51,7 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.loohp.hkweatherwarnings.compose.AutoResizeText
 import com.loohp.hkweatherwarnings.compose.FontSizeRange
-import com.loohp.hkweatherwarnings.compose.verticalLazyScrollbar
+import com.loohp.hkweatherwarnings.compose.fullPageVerticalLazyScrollbar
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
@@ -192,7 +192,7 @@ fun MainElements(instance: ChangeLocationActivity) {
             LazyColumn (
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalLazyScrollbar(
+                    .fullPageVerticalLazyScrollbar(
                         state = scroll
                     )
                     .onRotaryScrollEvent {

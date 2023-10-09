@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 
-fun Modifier.verticalScrollbar(
+fun Modifier.fullPageVerticalScrollbar(
     state: ScrollState,
     indicatorThickness: Dp = 8.dp,
     indicatorColor: Color = Color.LightGray,
@@ -99,7 +99,7 @@ fun Modifier.verticalScrollbar(
     }
 }
 
-fun Modifier.verticalScrollbar(
+fun Modifier.fullPageVerticalScrollbar(
     state: LazyListState,
     indicatorThickness: Dp = 8.dp,
     indicatorColor: Color = Color.LightGray,
@@ -191,36 +191,36 @@ fun Modifier.verticalScrollbar(
     }
 }
 
-data class ScrollBarConfig(
+data class FullPageScrollBarConfig(
     val indicatorThickness: Dp = 8.dp,
     val indicatorColor: Color = Color.LightGray,
     val alpha: Float? = null,
     val alphaAnimationSpec: AnimationSpec<Float>? = null
 )
 
-fun Modifier.verticalLazyScrollbar(
+fun Modifier.fullPageVerticalLazyScrollbar(
     state: LazyListState,
-    scrollbarConfig: ScrollBarConfig = ScrollBarConfig()
+    scrollbarConfigFullPage: FullPageScrollBarConfig = FullPageScrollBarConfig()
 ) = this
-    .verticalScrollbar(
+    .fullPageVerticalScrollbar(
         state,
-        indicatorThickness = scrollbarConfig.indicatorThickness,
-        indicatorColor = scrollbarConfig.indicatorColor,
-        alpha = scrollbarConfig.alpha ?: 0.8f
+        indicatorThickness = scrollbarConfigFullPage.indicatorThickness,
+        indicatorColor = scrollbarConfigFullPage.indicatorColor,
+        alpha = scrollbarConfigFullPage.alpha ?: 0.8f
     )
 
 
-fun Modifier.verticalScrollWithScrollbar(
+fun Modifier.fullPageVerticalScrollWithScrollbar(
     state: ScrollState,
     enabled: Boolean = true,
     flingBehavior: FlingBehavior? = null,
     reverseScrolling: Boolean = false,
-    scrollbarConfig: ScrollBarConfig = ScrollBarConfig()
+    scrollbarConfigFullPage: FullPageScrollBarConfig = FullPageScrollBarConfig()
 ) = this
-    .verticalScrollbar(
+    .fullPageVerticalScrollbar(
         state,
-        indicatorThickness = scrollbarConfig.indicatorThickness,
-        indicatorColor = scrollbarConfig.indicatorColor,
-        alpha = scrollbarConfig.alpha ?: 0.8f
+        indicatorThickness = scrollbarConfigFullPage.indicatorThickness,
+        indicatorColor = scrollbarConfigFullPage.indicatorColor,
+        alpha = scrollbarConfigFullPage.alpha ?: 0.8f
     )
     .verticalScroll(state, enabled, flingBehavior, reverseScrolling)

@@ -19,6 +19,7 @@ import com.loohp.hkweatherwarnings.utils.JsonUtils;
 import com.loohp.hkweatherwarnings.utils.LocationUtils;
 import com.loohp.hkweatherwarnings.utils.TimeUtils;
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo;
+import com.loohp.hkweatherwarnings.weather.DisplayableInfo;
 import com.loohp.hkweatherwarnings.weather.ForecastWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.HeatStressAtWorkInfo;
 import com.loohp.hkweatherwarnings.weather.HeatStressAtWorkWarningAction;
@@ -27,6 +28,7 @@ import com.loohp.hkweatherwarnings.weather.HourlyWeatherInfo;
 import com.loohp.hkweatherwarnings.weather.LocalForecastInfo;
 import com.loohp.hkweatherwarnings.weather.LunarDate;
 import com.loohp.hkweatherwarnings.weather.RainfallMapsInfo;
+import com.loohp.hkweatherwarnings.weather.SpecialTyphoonInfo;
 import com.loohp.hkweatherwarnings.weather.TropicalCycloneInfo;
 import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon;
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType;
@@ -410,7 +412,7 @@ public class Registry {
             return CompletableFutureWithProgress.completedFuture(null);
         }
         CompletableFutureWithProgress<CurrentWeatherInfo> future = new CompletableFutureWithProgress<>();
-        float totalStages = 15F;
+        float totalStages = 16F;
         new Thread(() -> {
             try {
                 LocalDate today = LocalDate.now(Shared.Companion.getHK_TIMEZONE().toZoneId());
@@ -676,7 +678,41 @@ public class Registry {
                 }
                 future.addProgress(1 / totalStages);
 
-                future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo));
+                String specialTyphoonInfoLang = lang.equals("en") ? "" : "_tc";
+                JSONObject specialTyphoonInfoData = HTTPRequestUtils.getJSONResponse("https://pda.weather.gov.hk/locspc/android_data/tc_part2" + specialTyphoonInfoLang + ".json");
+                SpecialTyphoonInfo specialTyphoonInfo;
+                if (specialTyphoonInfoData == null) {
+                    throw new RuntimeException();
+                }
+                if (specialTyphoonInfoData.has("WTCB") && specialTyphoonInfoData.optJSONObject("WTCB").optBoolean("isTCPart2Display", false)) {
+                    JSONObject wtcb = specialTyphoonInfoData.optJSONObject("WTCB");
+                    JSONObject typhoonData = wtcb.optJSONObject("part2Content");
+
+                    WeatherWarningsType signalType = null;
+                    try { signalType = WeatherWarningsType.valueOf(wtcb.optString("signalType")); } catch (Throwable ignore) {}
+
+                    JSONObject considerationsData = typhoonData.optJSONObject("Consideration");
+                    DisplayableInfo considerations = considerationsData == null ? DisplayableInfo.EMPTY : new DisplayableInfo(considerationsData.optBoolean("isDisplay"), JsonUtils.toList(considerationsData.optJSONArray("value"), String.class).stream().map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.joining("\n")));
+
+                    JSONObject infoData = typhoonData.optJSONObject("Info");
+                    DisplayableInfo info = infoData == null ? DisplayableInfo.EMPTY : new DisplayableInfo(infoData.optBoolean("isDisplay"), JsonUtils.toList(infoData.optJSONArray("value"), String.class).stream().map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.joining("\n")));
+
+                    JSONObject windsInfoData = typhoonData.optJSONObject("WindsInfo");
+                    DisplayableInfo windsInfo = windsInfoData == null ? DisplayableInfo.EMPTY : new DisplayableInfo(windsInfoData.optBoolean("isDisplay"), JsonUtils.toList(windsInfoData.optJSONArray("value"), String.class).stream().map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.joining("\n")));
+
+                    JSONObject windsHighlightData = typhoonData.optJSONObject("WindsHighlight");
+                    DisplayableInfo windsHighlight = windsHighlightData == null ? DisplayableInfo.EMPTY : new DisplayableInfo(windsHighlightData.optBoolean("isDisplay"), JsonUtils.toList(windsHighlightData.optJSONArray("value"), String.class).stream().map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.joining("\n")));
+
+                    JSONObject tideInfoData = typhoonData.optJSONObject("TideInfo");
+                    DisplayableInfo tideInfo = tideInfoData == null ? DisplayableInfo.EMPTY : new DisplayableInfo(tideInfoData.optBoolean("isDisplay"), JsonUtils.toList(tideInfoData.optJSONArray("value"), String.class).stream().map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.joining("\n")));
+
+                    specialTyphoonInfo = new SpecialTyphoonInfo(signalType, considerations, info, windsInfo, windsHighlight, tideInfo);
+                } else {
+                    specialTyphoonInfo = null;
+                }
+                future.addProgress(1 / totalStages);
+
+                future.complete(new CurrentWeatherInfo(today, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStationName, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo, specialTyphoonInfo));
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);
