@@ -1,5 +1,5 @@
 /*
- * This file is part of HK Weather Warnings.
+ * This file is part of HKWeather.
  *
  * Copyright (C) 2023. LoohpJames <jamesloohp@gmail.com>
  * Copyright (C) 2023. Contributors
