@@ -58,9 +58,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import coil.compose.AsyncImage
@@ -207,7 +206,7 @@ fun DisplayInfo(imageDrawables: IntArray, imageUrl: String?, imageWidth: Int, im
                     textAlign = TextAlign.Left,
                     color = MaterialTheme.colors.primary,
                     fontWeight = if (i == 0) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = TextUnit(StringUtils.scaledSize(15F, instance), TextUnitType.Sp),
+                    fontSize = StringUtils.scaledSize(15F, instance).sp,
                     text = line
                 )
                 Spacer(modifier = Modifier.size(StringUtils.scaledSize(10, instance).dp))
@@ -218,7 +217,7 @@ fun DisplayInfo(imageDrawables: IntArray, imageUrl: String?, imageWidth: Int, im
                     textAlign = TextAlign.Left,
                     color = MaterialTheme.colors.primary,
                     fontWeight = FontWeight.Normal,
-                    fontSize = TextUnit(StringUtils.scaledSize(10F, instance), TextUnitType.Sp),
+                    fontSize = StringUtils.scaledSize(10F, instance).sp,
                     text = footer
                 )
                 Spacer(modifier = Modifier.size(StringUtils.scaledSize(10, instance).dp))

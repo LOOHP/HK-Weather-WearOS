@@ -57,9 +57,8 @@ import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Icon
@@ -234,7 +233,7 @@ fun RadarElement(instance: RadarActivity) {
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
                     fontWeight = if (zoom) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
+                    fontSize = 14F.sp.clamp(max = 14.dp),
                     text = currentPosition.toString().plus(" / 20")
                 )
             }

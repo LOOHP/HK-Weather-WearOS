@@ -57,6 +57,7 @@ fun AutoResizeText(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     style: TextStyle = LocalTextStyle.current,
+    onFontSizeChange: (TextUnit, Boolean) -> Unit = { _, _ -> }
 ) {
     var previousText by remember { mutableStateOf(text) }
     var fontSizeValue by remember { mutableStateOf(fontSizeRange.max.value) }
@@ -102,7 +103,7 @@ fun AutoResizeText(
                 readyToDraw = true
             }
         },
-        modifier = modifier.drawWithContent { if (readyToDraw) drawContent() }
+        modifier = modifier.drawWithContent { if (readyToDraw) drawContent(); onFontSizeChange.invoke(fontSizeValue.sp, readyToDraw) }
     )
 }
 

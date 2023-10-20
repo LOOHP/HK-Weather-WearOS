@@ -68,6 +68,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -92,6 +93,7 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import com.loohp.hkweatherwarnings.compose.AutoResizeText
 import com.loohp.hkweatherwarnings.compose.FontSizeRange
+import com.loohp.hkweatherwarnings.compose.fadeIn
 import com.loohp.hkweatherwarnings.compose.fullPageVerticalLazyScrollbar
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
@@ -353,22 +355,9 @@ fun UpdatingElements(instance: TitleActivity) {
 
     Box(
         modifier = Modifier
-            .width(
-                UnitUtils.pixelsToDp(
-                    instance,
-                    ScreenSizeUtils
-                        .getScreenWidth(instance)
-                        .toFloat()
-                ).dp
-            )
-            .height(
-                UnitUtils.pixelsToDp(
-                    instance,
-                    ScreenSizeUtils
-                        .getScreenHeight(instance)
-                        .toFloat()
-                ).dp
-            ),
+            .fadeIn()
+            .width(UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getScreenWidth(instance).toFloat()).dp)
+            .height(UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getScreenHeight(instance).toFloat()).dp),
         contentAlignment = Alignment.Center
     ) {
         Column (
@@ -379,7 +368,7 @@ fun UpdatingElements(instance: TitleActivity) {
                 modifier = Modifier.fillMaxWidth(0.8F),
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
-                fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp),
+                fontSize = StringUtils.scaledSize(16F, instance).sp,
                 text = if (Registry.getInstance(instance).language == "en") "Updating weather information..." else "正在更新天氣資訊..."
             )
             Spacer(modifier = Modifier.size(StringUtils.scaledSize(15, instance).dp))
@@ -399,22 +388,9 @@ fun UpdatingElements(instance: TitleActivity) {
 fun UpdateFailedElements(instance: TitleActivity) {
     Column(
         modifier = Modifier
-            .width(
-                UnitUtils.pixelsToDp(
-                    instance,
-                    ScreenSizeUtils
-                        .getScreenWidth(instance)
-                        .toFloat()
-                ).dp
-            )
-            .height(
-                UnitUtils.pixelsToDp(
-                    instance,
-                    ScreenSizeUtils
-                        .getScreenHeight(instance)
-                        .toFloat()
-                ).dp
-            ),
+            .fadeIn()
+            .width(UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getScreenWidth(instance).toFloat()).dp)
+            .height(UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getScreenHeight(instance).toFloat()).dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -422,7 +398,7 @@ fun UpdateFailedElements(instance: TitleActivity) {
             modifier = Modifier.fillMaxWidth(0.8F),
             textAlign = TextAlign.Center,
             color = MaterialTheme.colors.primary,
-            fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp),
+            fontSize = StringUtils.scaledSize(16F, instance).sp,
             text = if (Registry.getInstance(instance).language == "en") "Unable to update weather information" else "無法更新天氣資訊"
         )
         Spacer(modifier = Modifier.size(StringUtils.scaledSize(10, instance).dp))
@@ -431,21 +407,9 @@ fun UpdateFailedElements(instance: TitleActivity) {
                 Shared.currentWeatherInfo.reset(instance)
                 Shared.currentWarnings.reset(instance)
                 Shared.currentTips.reset(instance)
-                Shared.currentWeatherInfo.getLatestValue(
-                    instance,
-                    ForkJoinPool.commonPool(),
-                    true
-                )
-                Shared.currentWarnings.getLatestValue(
-                    instance,
-                    ForkJoinPool.commonPool(),
-                    true
-                )
-                Shared.currentTips.getLatestValue(
-                    instance,
-                    ForkJoinPool.commonPool(),
-                    true
-                )
+                Shared.currentWeatherInfo.getLatestValue(instance, ForkJoinPool.commonPool(), true)
+                Shared.currentWarnings.getLatestValue(instance, ForkJoinPool.commonPool(), true)
+                Shared.currentTips.getLatestValue(instance, ForkJoinPool.commonPool(), true)
             },
             modifier = Modifier
                 .width(StringUtils.scaledSize(90, instance).dp)
@@ -461,7 +425,7 @@ fun UpdateFailedElements(instance: TitleActivity) {
                         .align(Alignment.Center),
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp).clamp(max = 14.dp),
+                    fontSize = 13F.sp.clamp(max = 14.dp),
                     text = if (Registry.getInstance(instance).language == "en") "Retry" else "重試"
                 )
             }
@@ -481,8 +445,8 @@ fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
                 fontSizeRange = FontSizeRange(
-                    min = TextUnit(1F, TextUnitType.Sp),
-                    max = TextUnit(13F, TextUnitType.Sp),
+                    min = 1F.sp,
+                    max = 13F.sp,
                 ),
                 maxLines = 1,
                 fontWeight = FontWeight.Bold,
@@ -503,8 +467,8 @@ fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
                 fontSizeRange = FontSizeRange(
-                    min = TextUnit(1F, TextUnitType.Sp),
-                    max = TextUnit(13F, TextUnitType.Sp),
+                    min = 1F.sp,
+                    max = 13F.sp,
                 ),
                 maxLines = 1,
                 fontWeight = FontWeight.Bold,
@@ -526,8 +490,8 @@ fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
-                        max = TextUnit(13F, TextUnitType.Sp),
+                        min = 1F.sp,
+                        max = 13F.sp,
                     ),
                     maxLines = 1,
                     fontWeight = FontWeight.Bold,
@@ -549,7 +513,7 @@ fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
         Text(
             textAlign = TextAlign.Center,
             color = MaterialTheme.colors.primary,
-            fontSize = TextUnit(13F, TextUnitType.Sp),
+            fontSize = 13F.sp,
             fontWeight = FontWeight.Bold,
             text = timeText
         )
@@ -559,7 +523,7 @@ fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
         Text(
             textAlign = TextAlign.Center,
             color = MaterialTheme.colors.primary,
-            fontSize = TextUnit(13F, TextUnitType.Sp),
+            fontSize = 13F.sp,
             fontWeight = FontWeight.Bold,
             text = "節氣: ".plus(lunarDate.climatology)
         )
@@ -581,22 +545,9 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
         itemList.add(Section.MAIN) {
             Box(
                 modifier = Modifier
-                    .width(
-                        UnitUtils.pixelsToDp(
-                            instance,
-                            ScreenSizeUtils
-                                .getScreenWidth(instance)
-                                .toFloat()
-                        ).dp
-                    )
-                    .height(
-                        UnitUtils.pixelsToDp(
-                            instance,
-                            ScreenSizeUtils
-                                .getScreenHeight(instance)
-                                .toFloat()
-                        ).dp
-                    ),
+                    .fadeIn()
+                    .width(UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getScreenWidth(instance).toFloat()).dp)
+                    .height(UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getScreenHeight(instance).toFloat()).dp),
                 contentAlignment = Alignment.TopCenter
             ) {
                 Column (
@@ -608,35 +559,35 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 ) {
                     Row (
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(0.dp, 25.dp, 0.dp, 0.dp),
+                            .fillMaxWidth(0.65F)
+                            .padding(0.dp, 25.dp, 0.dp, 0.dp)
+                            .combinedClickable(
+                                onClick = {
+                                    instance.startActivity(Intent(instance, ChangeLocationActivity::class.java))
+                                }
+                            ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
+                        var dynamicFontSize by remember { mutableStateOf({ StringUtils.scaledSize(16F, instance) }) }
+                        var dynamicReady by remember { mutableStateOf(false) }
                         Box(
                             modifier = Modifier
+                                .weight(1F, false)
                                 .requiredHeight(StringUtils.scaledSize(30F, instance).dp),
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             AutoResizeText(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.65F)
-                                    .combinedClickable(
-                                        onClick = {
-                                            instance.startActivity(
-                                                Intent(
-                                                    instance,
-                                                    ChangeLocationActivity::class.java
-                                                )
-                                            )
-                                        }
-                                    ),
+                                onFontSizeChange = { size, readyToDraw ->
+                                    dynamicFontSize = { UnitUtils.spToDp(instance, size.value) }
+                                    dynamicReady = readyToDraw
+                                },
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colors.primary,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 fontSizeRange = FontSizeRange(
-                                    min = TextUnit(1F, TextUnitType.Sp),
+                                    min = 1F.sp,
                                     max = StringUtils.scaledSize(17F, instance).sp.clamp(max = 18.dp)
                                 ),
                                 text = weatherInfo.weatherStation
@@ -645,18 +596,11 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                         if (Registry.getInstance(instance).location.first == "GPS") {
                             Image(
                                 modifier = Modifier
-                                    .padding(0.dp, 0.dp, 4.dp, 0.dp)
-                                    .size(StringUtils.scaledSize(16F, instance).dp)
-                                    .combinedClickable(
-                                        onClick = {
-                                            instance.startActivity(
-                                                Intent(
-                                                    instance,
-                                                    ChangeLocationActivity::class.java
-                                                )
-                                            )
-                                        }
-                                    ),
+                                    .padding((dynamicFontSize.invoke() / 8F).dp, 0.dp, 0.dp, 0.dp)
+                                    .size(dynamicFontSize.invoke().dp)
+                                    .align(Alignment.Bottom)
+                                    .alpha(if (dynamicReady) 1F else 0F)
+                                    .offset(0.dp, (dynamicFontSize.invoke() / -4F).dp),
                                 painter = painterResource(R.mipmap.gps),
                                 contentDescription = if (Registry.getInstance(instance).language == "en") "GPS Location" else "你的位置"
                             )
@@ -676,7 +620,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                         Text(
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(11F.dp.sp.value, TextUnitType.Sp),
+                            fontSize = 11F.dp.sp.value.sp,
                             text = lastUpdateText
                         )
                         Image(
@@ -687,21 +631,9 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                                     Shared.currentWeatherInfo.reset(instance)
                                     Shared.currentWarnings.reset(instance)
                                     Shared.currentTips.reset(instance)
-                                    Shared.currentWeatherInfo.getLatestValue(
-                                        instance,
-                                        ForkJoinPool.commonPool(),
-                                        true
-                                    )
-                                    Shared.currentWarnings.getLatestValue(
-                                        instance,
-                                        ForkJoinPool.commonPool(),
-                                        true
-                                    )
-                                    Shared.currentTips.getLatestValue(
-                                        instance,
-                                        ForkJoinPool.commonPool(),
-                                        true
-                                    )
+                                    Shared.currentWeatherInfo.getLatestValue(instance, ForkJoinPool.commonPool(), true)
+                                    Shared.currentWarnings.getLatestValue(instance, ForkJoinPool.commonPool(), true)
+                                    Shared.currentTips.getLatestValue(instance, ForkJoinPool.commonPool(), true)
                                 },
                             painter = painterResource(R.mipmap.reload),
                             contentDescription = if (Registry.getInstance(instance).language == "en") "Reload" else "重新載入"
@@ -725,13 +657,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                             .combinedClickable(
                                 onClick = {
                                     instance.runOnUiThread {
-                                        Toast
-                                            .makeText(
-                                                instance,
-                                                weatherDescription,
-                                                Toast.LENGTH_LONG
-                                            )
-                                            .show()
+                                        Toast.makeText(instance, weatherDescription, Toast.LENGTH_LONG).show()
                                     }
                                 }
                             ),
@@ -858,7 +784,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             Text(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
-                fontSize = TextUnit(13F, TextUnitType.Sp),
+                fontSize = 13F.sp,
                 text = if (Registry.getInstance(instance).language == "en") "Weather Warnings" else "天氣警告"
             )
         }
@@ -871,7 +797,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                     modifier = Modifier.padding(20.dp, 0.dp),
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(10F, TextUnitType.Sp),
+                    fontSize = 10F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "There are currently no active warning signals." else "目前沒有任何天氣警告信號"
                 )
             }
@@ -953,7 +879,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    fontSize = 13F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "Heat Stress at Work Warning" else "工作暑熱警告"
                 )
             }
@@ -993,7 +919,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                             modifier = Modifier.padding(20.dp, 0.dp),
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(15F, TextUnitType.Sp),
+                            fontSize = 15F.sp,
                             text = heatStressAtWorkInfo.description
                         )
                     }
@@ -1004,7 +930,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                             modifier = Modifier.padding(20.dp, 0.dp),
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
-                            fontSize = TextUnit(13F, TextUnitType.Sp),
+                            fontSize = 13F.sp,
                             text = heatStressAtWorkInfo.description
                         )
                     }
@@ -1020,7 +946,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                     modifier = Modifier.padding(5.dp, 0.dp),
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(10F, TextUnitType.Sp),
+                    fontSize = 10F.sp,
                     text = dateFormat.format(heatStressAtWorkInfo.issueTime)
                 )
             }
@@ -1032,7 +958,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             Text(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
-                fontSize = TextUnit(13F, TextUnitType.Sp),
+                fontSize = 13F.sp,
                 text = if (Registry.getInstance(instance).language == "en") "Special Weather Tips" else "特別天氣提示"
             )
         }
@@ -1045,7 +971,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                     modifier = Modifier.padding(20.dp, 0.dp),
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(10F, TextUnitType.Sp),
+                    fontSize = 10F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "There are currently no active special weather tips." else "目前沒有任何特別天氣提示"
                 )
             }
@@ -1059,7 +985,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                         modifier = Modifier.padding(20.dp, 0.dp),
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(15F, TextUnitType.Sp),
+                        fontSize = 15F.sp,
                         text = tip.first
                     )
                 }
@@ -1080,7 +1006,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                         modifier = Modifier.padding(5.dp, 0.dp),
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(10F, TextUnitType.Sp),
+                        fontSize = 10F.sp,
                         text = lastUpdateText
                     )
                 }
@@ -1147,7 +1073,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    fontSize = 13F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "UV Index" else "紫外線指數"
                 )
             }
@@ -1158,7 +1084,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = Color(uvIndexType.color),
-                    fontSize = TextUnit(25F, TextUnitType.Sp),
+                    fontSize = 25F.sp,
                     fontWeight = FontWeight.Bold,
                     text = String.format("%.1f", weatherInfo.uvIndex).plus(" ")
                         .plus(if (Registry.getInstance(instance).language == "en") uvIndexType.en else uvIndexType.zh)
@@ -1169,7 +1095,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = Color(0xFFFF9625),
-                    fontSize = TextUnit(25F, TextUnitType.Sp),
+                    fontSize = 25F.sp,
                     fontWeight = FontWeight.Bold,
                     text = "-"
                 )
@@ -1195,7 +1121,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    fontSize = 13F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
                 )
             }
@@ -1204,7 +1130,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             Text(
                 textAlign = TextAlign.Center,
                 color = Color(0xFF3CB0FF),
-                fontSize = TextUnit(25F, TextUnitType.Sp),
+                fontSize = 25F.sp,
                 fontWeight = FontWeight.Bold,
                 text = String.format("%.0f", weatherInfo.currentHumidity).plus("%")
             )
@@ -1229,7 +1155,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    fontSize = 13F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "Wind" else "風向風速"
                 )
             }
@@ -1249,8 +1175,8 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                     textAlign = TextAlign.Center,
                     color = Color(0xFFFFFFFF),
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
-                        max = TextUnit(25F, TextUnitType.Sp)
+                        min = 1F.sp,
+                        max = 25F.sp
                     ),
                     maxLines = 1,
                     fontWeight = FontWeight.Bold,
@@ -1279,7 +1205,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    fontSize = 13F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "Gust" else "陣風"
                 )
             }
@@ -1298,8 +1224,8 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                     textAlign = TextAlign.Center,
                     color = Color(0xFFFFFFFF),
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
-                        max = TextUnit(25F, TextUnitType.Sp)
+                        min = 1F.sp,
+                        max = 25F.sp
                     ),
                     maxLines = 1,
                     fontWeight = FontWeight.Bold,
@@ -1327,7 +1253,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    fontSize = 13F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "Sunrise" else "日出"
                 )
             }
@@ -1336,7 +1262,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             Text(
                 textAlign = TextAlign.Center,
                 color = Color(0xFFFFC32B),
-                fontSize = TextUnit(25F, TextUnitType.Sp),
+                fontSize = 25F.sp,
                 fontWeight = FontWeight.Bold,
                 text = weatherInfo.sunriseTime.format(timeFormat)
             )
@@ -1361,7 +1287,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    fontSize = 13F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "Sunset" else "日落"
                 )
             }
@@ -1370,7 +1296,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
             Text(
                 textAlign = TextAlign.Center,
                 color = Color(0xFFFF802B),
-                fontSize = TextUnit(25F, TextUnitType.Sp),
+                fontSize = 25F.sp,
                 fontWeight = FontWeight.Bold,
                 text = weatherInfo.sunsetTime.format(timeFormat)
             )
@@ -1395,7 +1321,7 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    fontSize = 13F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "Moon Phase" else "月相"
                 )
             }
@@ -1437,14 +1363,14 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    fontSize = 13F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "Moonrise" else "月出"
                 )
             }
             Text(
                 textAlign = TextAlign.Center,
                 color = Color(0xFFDFDFDF),
-                fontSize = TextUnit(25F, TextUnitType.Sp),
+                fontSize = 25F.sp,
                 fontWeight = FontWeight.Bold,
                 text = if (weatherInfo.moonriseTime == null) "-" else weatherInfo.moonriseTime.format(timeFormat)
             )
@@ -1466,14 +1392,14 @@ fun generateWeatherInfoItems(updating: Boolean, lastUpdateSuccessful: Boolean, w
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(13F, TextUnitType.Sp),
+                    fontSize = 13F.sp,
                     text = if (Registry.getInstance(instance).language == "en") "Moonset" else "月落"
                 )
             }
             Text(
                 textAlign = TextAlign.Center,
                 color = Color(0xFFBEBEBE),
-                fontSize = TextUnit(25F, TextUnitType.Sp),
+                fontSize = 25F.sp,
                 fontWeight = FontWeight.Bold,
                 text = if (weatherInfo.moonsetTime == null) "-" else weatherInfo.moonsetTime.format(timeFormat)
             )
@@ -1627,7 +1553,7 @@ fun generateHourlyItems(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFor
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
+                    fontSize = 14F.sp.clamp(max = 14.dp),
                     fontWeight = FontWeight.Bold,
                     text = hourInfo.time.format(timeFormat).plus(if (small) " " else "     ")
                 )
@@ -1646,7 +1572,7 @@ fun generateHourlyItems(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFor
                     Text(
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colors.primary,
-                        fontSize = TextUnit(size - 1F, TextUnitType.Sp).clamp(max = (size - 1).dp),
+                        fontSize = (size - 1F).sp.clamp(max = (size - 1).dp),
                         text = String.format("%.0f", hourInfo.humidity).plus("%").plus(if (small) " " else "  ")
                     )
                 }
@@ -1673,7 +1599,7 @@ fun generateHourlyItems(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFor
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
+                    fontSize = 14F.sp.clamp(max = 14.dp),
                     fontWeight = FontWeight.Bold,
                     text = String.format("%.1f", hourInfo.temperature).plus("°")
                 )
@@ -1717,7 +1643,7 @@ fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivi
                     modifier = Modifier.width(30.dp),
                     textAlign = TextAlign.Start,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
+                    fontSize = 14F.sp.clamp(max = 14.dp),
                     fontWeight = FontWeight.Bold,
                     text = dayInfo.dayOfWeek.getDisplayName(
                         TextStyle.SHORT,
@@ -1734,7 +1660,7 @@ fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivi
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(9F, TextUnitType.Sp).clamp(max = 9.dp),
+                    fontSize = 9F.sp.clamp(max = 9.dp),
                     text = String.format(
                         "%.0f",
                         (dayInfo.minRelativeHumidity + dayInfo.maxRelativeHumidity) / 2F
@@ -1750,7 +1676,7 @@ fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivi
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(9F, TextUnitType.Sp).clamp(max = 9.dp),
+                    fontSize = 9F.sp.clamp(max = 9.dp),
                     text = if (dayInfo.chanceOfRain >= 0) String.format(
                         "%.0f",
                         dayInfo.chanceOfRain
@@ -1779,7 +1705,7 @@ fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivi
                 Text(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
-                    fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
+                    fontSize = 14F.sp.clamp(max = 14.dp),
                     fontWeight = FontWeight.Bold,
                     text = String.format("%.0f", dayInfo.lowestTemperature).plus("-")
                         .plus(String.format("%.0f", dayInfo.highestTemperature))
@@ -1841,7 +1767,7 @@ fun LocalForecastButton(weatherIcon: WeatherStatusIcon, nextWeatherIcon: Weather
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
+                        min = 1F.sp,
                         max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                     ),
                     maxLines = 1,
@@ -1891,7 +1817,7 @@ fun StormLatestButton(instance: TitleActivity, specialTyphoonInfo: SpecialTyphoo
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
+                        min = 1F.sp,
                         max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                     ),
                     maxLines = 1,
@@ -1936,7 +1862,7 @@ fun ForecastGeneralButton(forecastGeneralSituation: String, instance: TitleActiv
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
+                        min = 1F.sp,
                         max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                     ),
                     maxLines = 1,
@@ -1979,7 +1905,7 @@ fun RadarButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
+                        min = 1F.sp,
                         max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                     ),
                     maxLines = 1,
@@ -2022,7 +1948,7 @@ fun RainfallMapButton(instance: TitleActivity, backgroundColor: Color = Material
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
+                        min = 1F.sp,
                         max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                     ),
                     maxLines = 1,
@@ -2065,7 +1991,7 @@ fun StormTrackButton(instance: TitleActivity, backgroundColor: Color = MaterialT
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
+                        min = 1F.sp,
                         max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                     ),
                     maxLines = 1,
@@ -2136,8 +2062,8 @@ fun OpenHKOAppButton(instance: TitleActivity) {
                 color = MaterialTheme.colors.primary,
                 fontWeight = FontWeight.Bold,
                 fontSizeRange = FontSizeRange(
-                    min = TextUnit(1F, TextUnitType.Sp),
-                    max = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp).clamp(max = 16.dp)
+                    min = 1F.sp,
+                    max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                 ),
                 maxLines = 2,
                 text = if (Registry.getInstance(instance).language == "en") "Open MyObservatory" else "開啟我的天文台"
@@ -2168,8 +2094,8 @@ fun ChangeLocationButton(instance: TitleActivity, enabled: Boolean) {
                 color = MaterialTheme.colors.primary,
                 fontWeight = FontWeight.Bold,
                 fontSizeRange = FontSizeRange(
-                    min = TextUnit(1F, TextUnitType.Sp),
-                    max = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp).clamp(max = 16.dp)
+                    min = 1F.sp,
+                    max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                 ),
                 maxLines = 2,
                 text = if (Registry.getInstance(instance).language == "en") "Set Weather Location" else "設定天氣資訊位置"
@@ -2215,8 +2141,8 @@ fun SetRefreshRateButton(instance: TitleActivity) {
                 color = MaterialTheme.colors.primary,
                 fontWeight = FontWeight.Bold,
                 fontSizeRange = FontSizeRange(
-                    min = TextUnit(1F, TextUnitType.Sp),
-                    max = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp).clamp(max = 16.dp)
+                    min = 1F.sp,
+                    max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                 ),
                 maxLines = 2,
                 text = (if (Registry.getInstance(instance).language == "en") "Set Refresh Rate: " else "更新頻率: ").plus(timeText)
@@ -2249,7 +2175,7 @@ fun LanguageButton(instance: TitleActivity, enabled: Boolean) {
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colors.primary,
-                fontSize = TextUnit(StringUtils.scaledSize(16F, instance), TextUnitType.Sp).clamp(max = 16.dp),
+                fontSize = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp),
                 text = if (Registry.getInstance(instance).language == "en") "中文" else "English"
             )
         }
@@ -2309,8 +2235,8 @@ fun UsageText(instance: TitleActivity) {
         color = MaterialTheme.colors.primary,
         maxLines = 1,
         fontSizeRange = FontSizeRange(
-            min = TextUnit(1F, TextUnitType.Sp),
-            max = TextUnit(15F, TextUnitType.Sp)
+            min = 1F.sp,
+            max = 15F.sp
         ),
         text = if (Registry.getInstance(instance).language == "en") "Add tiles to view weather info!" else "添加資訊方塊查看天氣資訊"
     )

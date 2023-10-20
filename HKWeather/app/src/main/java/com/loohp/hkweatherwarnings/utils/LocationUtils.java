@@ -85,14 +85,14 @@ public class LocationUtils {
                             ref0.get().unregister();
                         });
                         ref0.set(launcher0);
-                        launcher0.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+                        new Thread(() -> launcher0.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)).start();
                         ref.get().unregister();
                     } else {
                         callback.accept(false);
                     }
                 });
                 ref.set(launcher);
-                launcher.launch(Manifest.permission.ACCESS_COARSE_LOCATION);
+                launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
             }
         }
         return false;

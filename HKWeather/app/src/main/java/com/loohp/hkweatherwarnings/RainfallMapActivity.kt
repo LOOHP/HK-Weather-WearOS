@@ -194,7 +194,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colors.primary,
                         fontSizeRange = FontSizeRange(
-                            min = TextUnit(1F, TextUnitType.Sp),
+                            min = 1F.sp,
                             max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                         ),
                         text = if (Registry.getInstance(instance).language == "en") "Loading Isohyet Charts..." else "正在載入等雨量線圖..."
@@ -345,7 +345,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                         textAlign = TextAlign.Center,
                         color = if (zoom) MaterialTheme.colors.secondary else MaterialTheme.colors.primary,
                         fontWeight = if (zoom) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = TextUnit(14F, TextUnitType.Sp).clamp(max = 14.dp),
+                        fontSize = 14F.sp.clamp(max = 14.dp),
                         text = when (currentMode) {
                             RainfallMapMode.PAST_ONE_HOUR -> {
                                 val dateFormat = DateFormat.getTimeFormat(instance)
@@ -390,7 +390,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                                         textAlign = TextAlign.Center,
                                         color = MaterialTheme.colors.primary,
                                         fontSizeRange = FontSizeRange(
-                                            min = TextUnit(1F, TextUnitType.Sp),
+                                            min = 1F.sp,
                                             max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                                         ),
                                         maxLines = 1,

@@ -227,6 +227,8 @@ class WeatherOverviewTile : TileService() {
             lastUpdateText = lastUpdateText.plus(if (Registry.getInstance(this).language == "en") " (Update Failed)" else " (無法更新)")
         }
         val text = if (weatherInfo == null) "-" else weatherInfo.weatherStation
+        val textSize = clampSp(this, UnitUtils.dpToSp(this, StringUtils.findOptimalSp(this, text, StringUtils.scaledSize(230, this), 1, 1F, 17F)), dpMax = 18F)
+        val imageSize = UnitUtils.spToDp(this, textSize)
 
         val titleLayout = if (Registry.getInstance(this).location.first == "GPS") {
             LayoutElementBuilders.Row.Builder()
@@ -245,7 +247,7 @@ class WeatherOverviewTile : TileService() {
                                 .setFontStyle(
                                     LayoutElementBuilders.FontStyle.Builder()
                                         .setSize(
-                                            DimensionBuilders.SpProp.Builder().setValue(clampSp(this, UnitUtils.dpToSp(this, StringUtils.findOptimalSp(this, text, StringUtils.scaledSize(230, this), 1, 1F, 17F)), dpMax = 18F)).build()
+                                            DimensionBuilders.SpProp.Builder().setValue(textSize).build()
                                         )
                                         .setWeight(
                                             LayoutElementBuilders.FontWeightProp.Builder()
@@ -258,22 +260,26 @@ class WeatherOverviewTile : TileService() {
                         .build()
                 )
                 .addContent(
-                    LayoutElementBuilders.Image.Builder()
-                        .setWidth(
-                            DimensionBuilders.DpProp.Builder(
-                                StringUtils.scaledSize(
-                                    16F,
-                                    this
+                    LayoutElementBuilders.Box.Builder()
+                        .setWidth(DimensionBuilders.wrap())
+                        .setHeight(DimensionBuilders.expand())
+                        .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_BOTTOM)
+                        .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+                        .addContent(
+                            LayoutElementBuilders.Box.Builder()
+                                .setWidth(DimensionBuilders.wrap())
+                                .setHeight(DimensionBuilders.DpProp.Builder(imageSize * 1.25F).build())
+                                .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_TOP)
+                                .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+                                .addContent(
+                                    LayoutElementBuilders.Image.Builder()
+                                        .setWidth(DimensionBuilders.DpProp.Builder(imageSize).build())
+                                        .setHeight(DimensionBuilders.DpProp.Builder(imageSize).build())
+                                        .setResourceId("gps")
+                                        .build()
                                 )
-                            ).build())
-                        .setHeight(
-                            DimensionBuilders.DpProp.Builder(
-                                StringUtils.scaledSize(
-                                    16F,
-                                    this
-                                )
-                            ).build())
-                        .setResourceId("gps")
+                                .build()
+                        )
                         .build()
                 )
                 .build()

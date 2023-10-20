@@ -189,7 +189,7 @@ fun TCTrackElement(instance: TCTrackActivity) {
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
+                        min = 1F.sp,
                         max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                     ),
                     text = if (Registry.getInstance(instance).language == "en") "Loading storm tracks..." else "正在載入風暴路徑..."
@@ -205,7 +205,7 @@ fun TCTrackElement(instance: TCTrackActivity) {
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.primary,
                     fontSizeRange = FontSizeRange(
-                        min = TextUnit(1F, TextUnitType.Sp),
+                        min = 1F.sp,
                         max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                     ),
                     text = if (Registry.getInstance(instance).language == "en") "There are currently no tropical cyclones entering or forming within the area bounded by 7-36N and 100-140E." else "目前沒有熱帶氣旋進入北緯7至36度，東經100至140度的範圍，或在此範圍內形成"
@@ -324,7 +324,7 @@ fun TCTrackElement(instance: TCTrackActivity) {
                                 color = MaterialTheme.colors.primary,
                                 fontWeight = FontWeight.Bold,
                                 fontSizeRange = FontSizeRange(
-                                    min = TextUnit(1F, TextUnitType.Sp),
+                                    min = 1F.sp,
                                     max = StringUtils.scaledSize(17F, instance).sp.clamp(max = 17.dp)
                                 ),
                                 maxLines = 1,
