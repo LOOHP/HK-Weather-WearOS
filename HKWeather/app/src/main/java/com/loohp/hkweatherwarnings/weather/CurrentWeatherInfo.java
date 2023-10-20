@@ -256,4 +256,175 @@ public class CurrentWeatherInfo extends WeatherInfo {
     public int hashCode() {
         return Objects.hash(super.hashCode(), weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo, specialTyphoonInfo);
     }
+
+    public static class Builder {
+
+        private LocalDate date;
+        private float highestTemperature;
+        private float lowestTemperature;
+        private float maxRelativeHumidity;
+        private float minRelativeHumidity;
+        private float chanceOfRain;
+        private WeatherStatusIcon weatherIcon;
+        private String weatherStation;
+        private WeatherStatusIcon nextWeatherIcon;
+        private float currentTemperature;
+        private float currentHumidity;
+        private float uvIndex;
+        private String windDirection;
+        private float windSpeed;
+        private float gust;
+        private LocalTime sunriseTime;
+        private LocalTime sunTransitTime;
+        private LocalTime sunsetTime;
+        private LocalTime moonriseTime;
+        private LocalTime moonTransitTime;
+        private LocalTime moonsetTime;
+        private LocalForecastInfo localForecastInfo;
+        private String forecastGeneralSituation;
+        private List<ForecastWeatherInfo> forecastInfo;
+        private List<HourlyWeatherInfo> hourlyWeatherInfo;
+        private HeatStressAtWorkInfo heatStressAtWorkInfo;
+        private SpecialTyphoonInfo specialTyphoonInfo;
+
+        public Builder setDate(LocalDate date) {
+            this.date = date;
+            return this;
+        }
+
+        public Builder setHighestTemperature(float highestTemperature) {
+            this.highestTemperature = highestTemperature;
+            return this;
+        }
+
+        public Builder setLowestTemperature(float lowestTemperature) {
+            this.lowestTemperature = lowestTemperature;
+            return this;
+        }
+
+        public Builder setMaxRelativeHumidity(float maxRelativeHumidity) {
+            this.maxRelativeHumidity = maxRelativeHumidity;
+            return this;
+        }
+
+        public Builder setMinRelativeHumidity(float minRelativeHumidity) {
+            this.minRelativeHumidity = minRelativeHumidity;
+            return this;
+        }
+
+        public Builder setChanceOfRain(float chanceOfRain) {
+            this.chanceOfRain = chanceOfRain;
+            return this;
+        }
+
+        public Builder setWeatherIcon(WeatherStatusIcon weatherIcon) {
+            this.weatherIcon = weatherIcon;
+            return this;
+        }
+
+        public Builder setWeatherStation(String weatherStation) {
+            this.weatherStation = weatherStation;
+            return this;
+        }
+
+        public Builder setNextWeatherIcon(WeatherStatusIcon nextWeatherIcon) {
+            this.nextWeatherIcon = nextWeatherIcon;
+            return this;
+        }
+
+        public Builder setCurrentTemperature(float currentTemperature) {
+            this.currentTemperature = currentTemperature;
+            return this;
+        }
+
+        public Builder setCurrentHumidity(float currentHumidity) {
+            this.currentHumidity = currentHumidity;
+            return this;
+        }
+
+        public Builder setUvIndex(float uvIndex) {
+            this.uvIndex = uvIndex;
+            return this;
+        }
+
+        public Builder setWindDirection(String windDirection) {
+            this.windDirection = windDirection;
+            return this;
+        }
+
+        public Builder setWindSpeed(float windSpeed) {
+            this.windSpeed = windSpeed;
+            return this;
+        }
+
+        public Builder setGust(float gust) {
+            this.gust = gust;
+            return this;
+        }
+
+        public Builder setSunriseTime(LocalTime sunriseTime) {
+            this.sunriseTime = sunriseTime;
+            return this;
+        }
+
+        public Builder setSunTransitTime(LocalTime sunTransitTime) {
+            this.sunTransitTime = sunTransitTime;
+            return this;
+        }
+
+        public Builder setSunsetTime(LocalTime sunsetTime) {
+            this.sunsetTime = sunsetTime;
+            return this;
+        }
+
+        public Builder setMoonriseTime(LocalTime moonriseTime) {
+            this.moonriseTime = moonriseTime;
+            return this;
+        }
+
+        public Builder setMoonTransitTime(LocalTime moonTransitTime) {
+            this.moonTransitTime = moonTransitTime;
+            return this;
+        }
+
+        public Builder setMoonsetTime(LocalTime moonsetTime) {
+            this.moonsetTime = moonsetTime;
+            return this;
+        }
+
+        public Builder setLocalForecastInfo(LocalForecastInfo localForecastInfo) {
+            this.localForecastInfo = localForecastInfo;
+            return this;
+        }
+
+        public Builder setForecastGeneralSituation(String forecastGeneralSituation) {
+            this.forecastGeneralSituation = forecastGeneralSituation;
+            return this;
+        }
+
+        public Builder setForecastInfo(List<ForecastWeatherInfo> forecastInfo) {
+            this.forecastInfo = forecastInfo;
+            return this;
+        }
+
+        public Builder setHourlyWeatherInfo(List<HourlyWeatherInfo> hourlyWeatherInfo) {
+            this.hourlyWeatherInfo = hourlyWeatherInfo;
+            return this;
+        }
+
+        public Builder setHeatStressAtWorkInfo(HeatStressAtWorkInfo heatStressAtWorkInfo) {
+            this.heatStressAtWorkInfo = heatStressAtWorkInfo;
+            return this;
+        }
+
+        public Builder setSpecialTyphoonInfo(SpecialTyphoonInfo specialTyphoonInfo) {
+            this.specialTyphoonInfo = specialTyphoonInfo;
+            return this;
+        }
+
+        public CurrentWeatherInfo build() {
+            return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo, specialTyphoonInfo);
+        }
+
+    }
 }
