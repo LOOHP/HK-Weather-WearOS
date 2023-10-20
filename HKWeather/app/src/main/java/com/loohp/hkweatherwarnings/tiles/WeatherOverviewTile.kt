@@ -238,7 +238,7 @@ class WeatherOverviewTile : TileService() {
                 .addContent(
                     LayoutElementBuilders.Box.Builder()
                         .setWidth(DimensionBuilders.wrap())
-                        .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(30F, this)).build())
+                        .setHeight(DimensionBuilders.DpProp.Builder(StringUtils.scaledSize(23F, this)).build())
                         .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_BOTTOM)
                         .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
                         .addContent(
@@ -268,7 +268,7 @@ class WeatherOverviewTile : TileService() {
                         .addContent(
                             LayoutElementBuilders.Box.Builder()
                                 .setWidth(DimensionBuilders.wrap())
-                                .setHeight(DimensionBuilders.DpProp.Builder(imageSize * 1.25F).build())
+                                .setHeight(DimensionBuilders.DpProp.Builder(imageSize * (if (Registry.getInstance(this).language == "en") 1.25F else 1.1F)).build())
                                 .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_TOP)
                                 .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
                                 .addContent(
