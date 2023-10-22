@@ -22,6 +22,8 @@ package com.loohp.hkweatherwarnings.weather;
 
 import android.content.Context;
 
+import androidx.compose.runtime.Immutable;
+
 import com.loohp.hkweatherwarnings.shared.Registry;
 
 import org.json.JSONException;
@@ -33,6 +35,7 @@ import java.time.format.TextStyle;
 import java.util.Locale;
 import java.util.Objects;
 
+@Immutable
 public class ForecastWeatherInfo extends WeatherInfo {
 
     public static ForecastWeatherInfo deserialize(JSONObject jsonObject) {

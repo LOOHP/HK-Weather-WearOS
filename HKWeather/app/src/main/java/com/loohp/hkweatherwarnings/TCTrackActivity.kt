@@ -45,6 +45,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -147,6 +148,7 @@ class ZoomedTrackImageTransformation : Transformation {
     override fun hashCode() = javaClass.hashCode()
 }
 
+@Stable
 class TCTrackActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

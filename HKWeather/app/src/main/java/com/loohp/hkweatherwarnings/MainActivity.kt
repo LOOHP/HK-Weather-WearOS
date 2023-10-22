@@ -25,10 +25,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.loohp.hkweatherwarnings.shared.Shared
 
 
+@Stable
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

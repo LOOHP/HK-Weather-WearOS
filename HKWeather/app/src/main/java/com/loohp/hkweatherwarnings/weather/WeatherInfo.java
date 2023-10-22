@@ -20,6 +20,8 @@
 
 package com.loohp.hkweatherwarnings.weather;
 
+import androidx.compose.runtime.Immutable;
+
 import com.loohp.hkweatherwarnings.cache.JSONSerializable;
 
 import org.json.JSONException;
@@ -30,6 +32,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
+@Immutable
 public abstract class WeatherInfo implements JSONSerializable {
 
     public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");

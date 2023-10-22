@@ -59,6 +59,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -152,6 +154,7 @@ class ItemList : ArrayList<kotlin.Pair<@Composable () -> Unit, Section?>>() {
 
 }
 
+@Stable
 class TitleActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -173,12 +176,12 @@ class TitleActivity : ComponentActivity() {
         }
 
         setContent {
-            var today by remember { mutableStateOf(LocalDate.now(Shared.HK_TIMEZONE.toZoneId())) }
+            val today = remember { mutableStateOf(LocalDate.now(Shared.HK_TIMEZONE.toZoneId())) }
             LaunchedEffect (Unit) {
                 while (true) {
                     val newNow = LocalDate.now(Shared.HK_TIMEZONE.toZoneId())
-                    if (newNow != today) {
-                        today = newNow
+                    if (newNow != today.value) {
+                        today.value = newNow
                     }
                     delay(500)
                 }
@@ -190,7 +193,8 @@ class TitleActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainElements(today: LocalDate, launchSection: Section? = null, instance: TitleActivity) {
+fun MainElements(todayState: State<LocalDate>, launchSection: Section? = null, instance: TitleActivity) {
+    val today = todayState.value
     val weatherInfo by remember { Shared.currentWeatherInfo.getState(instance) }
     val weatherWarnings by remember { Shared.currentWarnings.getState(instance) }
     val weatherTips by remember { Shared.currentTips.getState(instance) }

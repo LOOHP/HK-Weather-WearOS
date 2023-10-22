@@ -20,6 +20,8 @@
 
 package com.loohp.hkweatherwarnings.weather;
 
+import androidx.compose.runtime.Immutable;
+
 import com.loohp.hkweatherwarnings.cache.JSONSerializable;
 
 import org.json.JSONException;
@@ -29,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Immutable
 public class SpecialTyphoonInfo implements JSONSerializable {
 
     public static SpecialTyphoonInfo deserialize(JSONObject jsonObject) {

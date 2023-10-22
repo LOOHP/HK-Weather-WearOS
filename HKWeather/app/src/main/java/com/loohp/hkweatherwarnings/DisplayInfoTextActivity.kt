@@ -47,6 +47,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,8 +77,10 @@ import com.loohp.hkweatherwarnings.compose.FontSizeRange
 import com.loohp.hkweatherwarnings.compose.fullPageVerticalScrollWithScrollbar
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
+import com.loohp.hkweatherwarnings.utils.ImmutableState
 import com.loohp.hkweatherwarnings.utils.RemoteActivityUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
+import com.loohp.hkweatherwarnings.utils.asImmutableState
 import com.loohp.hkweatherwarnings.utils.clamp
 import com.loohp.hkweatherwarnings.utils.dp
 import kotlinx.coroutines.delay
@@ -88,6 +91,7 @@ import kotlinx.coroutines.sync.withLock
 
 private val emptyIntArray = IntArray(0)
 
+@Stable
 class DisplayInfoTextActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -108,14 +112,14 @@ class DisplayInfoTextActivity : ComponentActivity() {
         val footer = intent.extras!!.getString("footer", "")
 
         setContent {
-            DisplayInfo(imageDrawables, imageUrl, imageWidth, imageHeight, imageDescription, text, footer, this)
+            DisplayInfo(imageDrawables.asImmutableState(), imageUrl, imageWidth, imageHeight, imageDescription, text, footer, this)
         }
     }
 
 }
 
 @Composable
-fun DisplayInfo(imageDrawables: IntArray, imageUrl: String?, imageWidth: Int, imageHeight: Int, imageDescription: String, text: String, footer: String, instance: DisplayInfoTextActivity) {
+fun DisplayInfo(imageDrawables: ImmutableState<IntArray>, imageUrl: String?, imageWidth: Int, imageHeight: Int, imageDescription: String, text: String, footer: String, instance: DisplayInfoTextActivity) {
     HKWeatherTheme {
         val focusRequester = remember { FocusRequester() }
         val scroll = rememberScrollState()
@@ -189,12 +193,12 @@ fun DisplayInfo(imageDrawables: IntArray, imageUrl: String?, imageWidth: Int, im
                 if (imageHeight >= 0) {
                     modifier = (modifier?: Modifier).height(imageHeight.dp)
                 }
-                if (imageDrawables.isNotEmpty()) {
+                if (imageDrawables.value.isNotEmpty()) {
                     Row (
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        for (imageDrawable in imageDrawables) {
+                        for (imageDrawable in imageDrawables.value) {
                             Image(
                                 modifier = modifier!!,
                                 painter = painterResource(imageDrawable),

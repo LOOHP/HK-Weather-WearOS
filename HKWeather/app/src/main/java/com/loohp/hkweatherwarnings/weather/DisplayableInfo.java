@@ -20,6 +20,8 @@
 
 package com.loohp.hkweatherwarnings.weather;
 
+import androidx.compose.runtime.Immutable;
+
 import com.loohp.hkweatherwarnings.cache.JSONSerializable;
 
 import org.json.JSONException;
@@ -27,6 +29,7 @@ import org.json.JSONObject;
 
 import java.util.Objects;
 
+@Immutable
 public class DisplayableInfo implements JSONSerializable {
 
     public static final DisplayableInfo EMPTY = new DisplayableInfo(false, "");
