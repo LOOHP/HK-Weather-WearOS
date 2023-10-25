@@ -162,7 +162,7 @@ public class Registry {
                 pw.write(PREFERENCES.toString());
                 pw.flush();
             }
-            updateTileServices(context);
+            Shared.Companion.startBackgroundService(context);
         } catch (IOException | JSONException e) {
             throw new RuntimeException(e);
         }

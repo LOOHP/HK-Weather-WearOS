@@ -21,22 +21,27 @@
 package com.loohp.hkweatherwarnings.background
 
 import android.content.Context
-import androidx.work.Worker
+import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import com.loohp.hkweatherwarnings.shared.Shared
+import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
 
-class PeriodicUpdateWorker(private val context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) {
+class PeriodicUpdateWorker(private val context: Context, workerParams: WorkerParameters) : ListenableWorker(context, workerParams) {
 
-    override fun doWork(): Result {
-        return try {
-            Shared.currentWeatherInfo.getLatestValue(context, ForkJoinPool.commonPool(), true)
-            Shared.currentWarnings.getLatestValue(context, ForkJoinPool.commonPool(), true)
-            Shared.currentTips.getLatestValue(context, ForkJoinPool.commonPool(), true)
+    override fun startWork(): ListenableFuture<Result> {
+        @Suppress("UnstableApiUsage")
+        return Futures.submit(Callable {
+            val futures = listOf(
+                Shared.currentWeatherInfo.getLatestValue(context, ForkJoinPool.commonPool(), true),
+                Shared.currentWarnings.getLatestValue(context, ForkJoinPool.commonPool(), true),
+                Shared.currentTips.getLatestValue(context, ForkJoinPool.commonPool(), true)
+            )
+            futures.forEach { try { it.get() } catch (e: Exception) { e.printStackTrace() } }
             Result.success()
-        } catch (e: Exception) {
-            Result.failure()
-        }
+        }, ForkJoinPool.commonPool())
     }
 
 }
