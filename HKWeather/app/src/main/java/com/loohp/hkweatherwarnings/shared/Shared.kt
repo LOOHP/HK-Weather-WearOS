@@ -164,6 +164,7 @@ class Shared {
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->
             TileService.getUpdater(context).requestUpdate(WeatherWarningsTile::class.java)
+            TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java)
             ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, WeatherAlertsComplication::class.java)).requestUpdateAll()
             PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(WARNINGS_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
                 try {
@@ -186,6 +187,7 @@ class Shared {
             }
         }, { context, _ ->
             TileService.getUpdater(context).requestUpdate(WeatherWarningsTile::class.java)
+            TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java)
         })
 
         val currentTips: DataState<List<Pair<String, Long>>> = DataState(emptyList(), {
@@ -218,6 +220,7 @@ class Shared {
             if (result == null) UpdateResult.failed() else UpdateResult.success(result)
         }, { context, self, value ->
             TileService.getUpdater(context).requestUpdate(WeatherTipsTile::class.java)
+            TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java)
             ComplicationDataSourceUpdateRequester.create(context, ComponentName(context, WeatherAlertsComplication::class.java)).requestUpdateAll()
             PrintWriter(OutputStreamWriter(context.applicationContext.openFileOutput(TIPS_CACHE_FILE, Context.MODE_PRIVATE), StandardCharsets.UTF_8)).use {
                 try {
@@ -240,6 +243,7 @@ class Shared {
             }
         }, { context, _ ->
             TileService.getUpdater(context).requestUpdate(WeatherTipsTile::class.java)
+            TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java)
         })
 
         val convertedLunarDates: MapValueState<LocalDate, LunarDate> = MapValueState(ConcurrentHashMap(), ConcurrentHashMap()) { key, context, _ ->
