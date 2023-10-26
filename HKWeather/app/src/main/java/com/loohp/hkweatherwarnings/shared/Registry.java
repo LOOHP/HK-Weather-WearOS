@@ -479,7 +479,7 @@ public class Registry {
                 currentWeatherInfoBuilder.setWeatherStation(tempWeatherStationName);
                 future.addProgress(1 / totalStages);
 
-                ExecutorService service = Executors.newFixedThreadPool(8);
+                ExecutorService service = Executors.newFixedThreadPool(12);
                 List<Future<?>> subTasks = new ArrayList<>((int) totalStages - 3);
                 try {
                     subTasks.add(service.submit(() -> {

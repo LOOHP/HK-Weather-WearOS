@@ -130,6 +130,8 @@ class Shared {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }, { context, _ ->
+            TileService.getUpdater(context).requestUpdate(WeatherOverviewTile::class.java)
         })
 
         val currentWarnings: DataState<Map<WeatherWarningsType, String?>> = DataState(emptyMap(), {
@@ -182,6 +184,8 @@ class Shared {
                     e.printStackTrace()
                 }
             }
+        }, { context, _ ->
+            TileService.getUpdater(context).requestUpdate(WeatherWarningsTile::class.java)
         })
 
         val currentTips: DataState<List<Pair<String, Long>>> = DataState(emptyList(), {
@@ -234,6 +238,8 @@ class Shared {
                     e.printStackTrace()
                 }
             }
+        }, { context, _ ->
+            TileService.getUpdater(context).requestUpdate(WeatherTipsTile::class.java)
         })
 
         val convertedLunarDates: MapValueState<LocalDate, LunarDate> = MapValueState(ConcurrentHashMap(), ConcurrentHashMap()) { key, context, _ ->

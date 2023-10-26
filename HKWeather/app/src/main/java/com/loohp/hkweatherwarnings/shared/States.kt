@@ -139,7 +139,8 @@ class DataState<T>(
     private val resetCallback: (Context) -> Unit,
     private val freshness: (Context) -> Long,
     private val updateFunction: (Context, DataState<T>, MutableState<Float>) -> UpdateResult<T>,
-    private val updateSuccessCallback: (Context, DataState<T>, T) -> Unit = { _, _, _ -> }
+    private val updateSuccessCallback: (Context, DataState<T>, T) -> Unit = { _, _, _ -> },
+    private val updateFailedCallback: (Context, DataState<T>) -> Unit = { _, _ -> }
 ) {
 
     private var state: MutableState<T>? = null
@@ -191,6 +192,7 @@ class DataState<T>(
                     updateSuccessCallback.invoke(context, this, result.value)
                 } else {
                     isLastUpdateSuccessful!!.value = false
+                    updateFailedCallback.invoke(context, this)
                 }
                 future.complete(state!!.value)
             } finally {

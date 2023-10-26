@@ -176,7 +176,7 @@ class WeatherWarningsTile : TileService() {
         var lastUpdateText = (if (Registry.getInstance(this).language == "en") "Updated: " else "更新時間: ").plus(
             DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date(updateTime)))
         if (!updateSuccess) {
-            lastUpdateText = lastUpdateText.plus(if (Registry.getInstance(this).language == "en") " (Update Failed)" else " (無法更新)")
+            lastUpdateText = lastUpdateText.plus(if (Registry.getInstance(this).language == "en") " (Failed)" else " (無法更新)")
         }
         return LayoutElementBuilders.Box.Builder()
             .setWidth(DimensionBuilders.wrap())
