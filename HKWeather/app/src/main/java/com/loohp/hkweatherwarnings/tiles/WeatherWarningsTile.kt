@@ -63,7 +63,7 @@ class WeatherWarningsTile : TileService() {
         if (tileUpdatedTime < currentWarnings.getLastSuccessfulUpdateTime(this)) {
             getUpdater(this).requestUpdate(javaClass)
         }
-        Shared.startBackgroundService(this);
+        Shared.startBackgroundService(this)
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
