@@ -31,7 +31,7 @@ android {
         applicationId = "com.loohp.hkweatherwarnings"
         minSdk = 30
         targetSdk = 33
-        versionCode = 99
+        versionCode = 101
         versionName = "1.3.6"
     }
 
@@ -90,6 +90,7 @@ dependencies {
     implementation("androidx.wear.compose:compose-foundation:1.0.0")
     implementation("androidx.wear:wear:1.3.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.5.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
     implementation("androidx.activity:activity-compose:1.5.1")
     implementation("androidx.wear.tiles:tiles:1.2.0-alpha07")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")

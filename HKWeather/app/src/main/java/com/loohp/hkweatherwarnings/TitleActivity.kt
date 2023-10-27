@@ -85,6 +85,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
@@ -195,19 +196,19 @@ class TitleActivity : ComponentActivity() {
 @Composable
 fun MainElements(todayState: State<LocalDate>, launchSection: Section? = null, instance: TitleActivity) {
     val today = todayState.value
-    val weatherInfo by remember { Shared.currentWeatherInfo.getState(instance) }
-    val weatherWarnings by remember { Shared.currentWarnings.getState(instance) }
-    val weatherTips by remember { Shared.currentTips.getState(instance) }
-    val lunarDate by remember { Shared.convertedLunarDates.getValueState(today) }
+    val weatherInfo by remember { Shared.currentWeatherInfo.getState(instance) }.collectAsStateWithLifecycle()
+    val weatherWarnings by remember { Shared.currentWarnings.getState(instance) }.collectAsStateWithLifecycle()
+    val weatherTips by remember { Shared.currentTips.getState(instance) }.collectAsStateWithLifecycle()
+    val lunarDate by remember { Shared.convertedLunarDates.getValueState(today) }.collectAsStateWithLifecycle()
 
-    val weatherInfoUpdating by remember { Shared.currentWeatherInfo.getCurrentlyUpdatingState(instance) }
-    val weatherWarningsUpdating by remember { Shared.currentWarnings.getCurrentlyUpdatingState(instance) }
-    val weatherTipsUpdating by remember { Shared.currentTips.getCurrentlyUpdatingState(instance) }
+    val weatherInfoUpdating by remember { Shared.currentWeatherInfo.getCurrentlyUpdatingState(instance) }.collectAsStateWithLifecycle()
+    val weatherWarningsUpdating by remember { Shared.currentWarnings.getCurrentlyUpdatingState(instance) }.collectAsStateWithLifecycle()
+    val weatherTipsUpdating by remember { Shared.currentTips.getCurrentlyUpdatingState(instance) }.collectAsStateWithLifecycle()
     val combinedUpdating by remember { derivedStateOf { weatherInfoUpdating || weatherWarningsUpdating || weatherTipsUpdating } }
 
-    val weatherInfoUpdateSuccessful by remember { Shared.currentWeatherInfo.getLastUpdateSuccessState(instance) }
-    val weatherWarningsUpdateSuccessful by remember { Shared.currentWarnings.getLastUpdateSuccessState(instance) }
-    val weatherTipsUpdateSuccessful by remember { Shared.currentTips.getLastUpdateSuccessState(instance) }
+    val weatherInfoUpdateSuccessful by remember { Shared.currentWeatherInfo.getLastUpdateSuccessState(instance) }.collectAsStateWithLifecycle()
+    val weatherWarningsUpdateSuccessful by remember { Shared.currentWarnings.getLastUpdateSuccessState(instance) }.collectAsStateWithLifecycle()
+    val weatherTipsUpdateSuccessful by remember { Shared.currentTips.getLastUpdateSuccessState(instance) }.collectAsStateWithLifecycle()
     val updateSuccessful by remember { derivedStateOf { weatherInfoUpdateSuccessful && weatherWarningsUpdateSuccessful && weatherTipsUpdateSuccessful } }
 
     LaunchedEffect (Unit) {
@@ -350,7 +351,7 @@ fun MainElements(todayState: State<LocalDate>, launchSection: Section? = null, i
 
 @Composable
 fun UpdatingElements(instance: TitleActivity) {
-    val currentProgress by remember { Shared.currentWeatherInfo.getCurrentProgressState(instance) }
+    val currentProgress by remember { Shared.currentWeatherInfo.getCurrentProgressState(instance) }.collectAsStateWithLifecycle()
     val progressAnimation by animateFloatAsState(
         targetValue = currentProgress,
         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),

@@ -21,11 +21,10 @@
 package com.loohp.hkweatherwarnings.shared
 
 import android.content.Context
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import com.loohp.hkweatherwarnings.utils.CompletableFutureWithIntermediateValue
 import com.loohp.hkweatherwarnings.utils.FutureWithIntermediateValue
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
@@ -52,18 +51,18 @@ class UpdateResult<T> private constructor(
 
 class MapValueState<K, V>(
     private val map: MutableMap<K, V>,
-    private val stateMap: MutableMap<K, MutableState<V?>>,
+    private val stateMap: MutableMap<K, MutableStateFlow<V?>>,
     private val fetchFunction: (K, Context, MapValueState<K, V>) -> UpdateResult<V>
 ) {
 
-    constructor(map: MutableMap<K, V>, stateMap: MutableMap<K, MutableState<V?>>, fetchFunction: (K, Context, MapValueState<K, V>, Nothing?) -> UpdateResult<Map<K, V>>): this(map, stateMap, { key, context, state ->
+    constructor(map: MutableMap<K, V>, stateMap: MutableMap<K, MutableStateFlow<V?>>, fetchFunction: (K, Context, MapValueState<K, V>, Nothing?) -> UpdateResult<Map<K, V>>): this(map, stateMap, { key, context, state ->
         val result = fetchFunction.invoke(key, context, state, null)
         if (result.isSuccessful) {
             for ((k, v) in result.value!!) {
                 state.map[k] = v
                 stateMap.compute(k) { _, s ->
                     if (s == null) {
-                        mutableStateOf(v)
+                        MutableStateFlow(v)
                     } else {
                         s.value = v
                         s
@@ -82,7 +81,7 @@ class MapValueState<K, V>(
     })
 
     fun getValue(key: K, context: Context, executor: ExecutorService): Future<V> {
-        val state = stateMap.computeIfAbsent(key) { mutableStateOf(map[key]) }
+        val state = stateMap.computeIfAbsent(key) { MutableStateFlow(map[key]) }
         val value = map[key]
         return if (value == null) {
             executor.submit(Callable {
@@ -105,8 +104,8 @@ class MapValueState<K, V>(
         }
     }
 
-    fun getValueState(key: K): State<V?> {
-        return stateMap.computeIfAbsent(key) { mutableStateOf(map[key]) }
+    fun getValueState(key: K): StateFlow<V?> {
+        return stateMap.computeIfAbsent(key) { MutableStateFlow(map[key]) }
     }
 
 }
@@ -138,28 +137,28 @@ class DataState<T>(
     private val initializer: (Context) -> DataStateInitializeResult<T>,
     private val resetCallback: (Context) -> Unit,
     private val freshness: (Context) -> Long,
-    private val updateFunction: (Context, DataState<T>, MutableState<Float>) -> UpdateResult<T>,
+    private val updateFunction: (Context, DataState<T>, MutableStateFlow<Float>) -> UpdateResult<T>,
     private val updateSuccessCallback: (Context, DataState<T>, T) -> Unit = { _, _, _ -> },
     private val updateFailedCallback: (Context, DataState<T>) -> Unit = { _, _ -> }
 ) {
 
-    private var state: MutableState<T>? = null
-    private var lastSuccessfulUpdateTime: MutableState<Long>? = null
-    private var isLastUpdateSuccessful: MutableState<Boolean>? = null
-    private var isCurrentlyUpdating: MutableState<Boolean>? = null
+    private var state: MutableStateFlow<T>? = null
+    private var lastSuccessfulUpdateTime: MutableStateFlow<Long>? = null
+    private var isLastUpdateSuccessful: MutableStateFlow<Boolean>? = null
+    private var isCurrentlyUpdating: MutableStateFlow<Boolean>? = null
 
-    private var updateProgress: MutableState<Float>? = null
+    private var updateProgress: MutableStateFlow<Float>? = null
     private var latestFuture: FutureWithIntermediateValue<T>? = null
 
     private fun initializeStateIfNotAlready(context: Context) {
         synchronized (this) {
             if (state == null) {
                 val (v, t, s, c) = initializer.invoke(context)
-                state = mutableStateOf(v)
-                lastSuccessfulUpdateTime = mutableStateOf(t)
-                isLastUpdateSuccessful = mutableStateOf(s)
-                isCurrentlyUpdating = mutableStateOf(c)
-                updateProgress = mutableStateOf(if (s) 1F else 0F)
+                state = MutableStateFlow(v)
+                lastSuccessfulUpdateTime = MutableStateFlow(t)
+                isLastUpdateSuccessful = MutableStateFlow(s)
+                isCurrentlyUpdating = MutableStateFlow(c)
+                updateProgress = MutableStateFlow(if (s) 1F else 0F)
             }
         }
     }
@@ -217,7 +216,7 @@ class DataState<T>(
         return updateProgress!!.value
     }
 
-    fun getCurrentProgressState(context: Context): State<Float> {
+    fun getCurrentProgressState(context: Context): StateFlow<Float> {
         initializeStateIfNotAlready(context)
         return updateProgress!!
     }
@@ -242,22 +241,22 @@ class DataState<T>(
         return isCurrentlyUpdating!!.value
     }
 
-    fun getLastSuccessfulUpdateTimeState(context: Context): State<Long> {
+    fun getLastSuccessfulUpdateTimeState(context: Context): StateFlow<Long> {
         initializeStateIfNotAlready(context)
         return lastSuccessfulUpdateTime!!
     }
 
-    fun getLastUpdateSuccessState(context: Context): State<Boolean> {
+    fun getLastUpdateSuccessState(context: Context): StateFlow<Boolean> {
         initializeStateIfNotAlready(context)
         return isLastUpdateSuccessful!!
     }
 
-    fun getCurrentlyUpdatingState(context: Context): State<Boolean> {
+    fun getCurrentlyUpdatingState(context: Context): StateFlow<Boolean> {
         initializeStateIfNotAlready(context)
         return isCurrentlyUpdating!!
     }
 
-    fun getState(context: Context): State<T> {
+    fun getState(context: Context): StateFlow<T> {
         initializeStateIfNotAlready(context)
         return state!!
     }
