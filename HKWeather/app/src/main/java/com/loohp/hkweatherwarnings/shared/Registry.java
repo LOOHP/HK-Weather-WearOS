@@ -309,9 +309,6 @@ public class Registry {
     }
 
     public FutureWithProgress<RainfallMapsInfo> getRainfallMaps(Context context) {
-        if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
-            return CompletableFutureWithProgress.completedFuture(null);
-        }
         CompletableFutureWithProgress<RainfallMapsInfo> future = new CompletableFutureWithProgress<>();
         new Thread(() -> {
             try {
@@ -362,9 +359,6 @@ public class Registry {
     }
 
     public Future<List<TropicalCycloneInfo>> getTropicalCycloneInfo(Context context) {
-        if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
-            return CompletableFuture.completedFuture(null);
-        }
         CompletableFuture<List<TropicalCycloneInfo>> future = new CompletableFuture<>();
         new Thread(() -> {
             try {
@@ -398,9 +392,6 @@ public class Registry {
     }
 
     public Future<LunarDate> getLunarDate(Context context, LocalDate date) {
-        if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
-            return CompletableFuture.completedFuture(null);
-        }
         CompletableFuture<LunarDate> future = new CompletableFuture<>();
         new Thread(() -> {
             try {
@@ -428,9 +419,6 @@ public class Registry {
     }
 
     public FutureWithProgress<CurrentWeatherInfo> getCurrentWeatherInfo(Context context, LocationUtils.LocationResult locationResult) {
-        if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
-            return CompletableFutureWithProgress.completedFuture(null);
-        }
         CompletableFutureWithProgress<CurrentWeatherInfo> future = new CompletableFutureWithProgress<>();
         float totalStages = 16F;
         new Thread(() -> {
@@ -780,9 +768,6 @@ public class Registry {
     }
 
     public Future<Map<WeatherWarningsType, String>> getActiveWarnings(Context context) {
-        if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
-            return CompletableFuture.completedFuture(null);
-        }
         CompletableFuture<Map<WeatherWarningsType, String>> future = new CompletableFuture<>();
         new Thread(() -> {
             try {
@@ -834,9 +819,6 @@ public class Registry {
     }
 
     public Future<List<Pair<String, Long>>> getWeatherTips(Context context) {
-        if (!ConnectionUtils.getConnectionType(context).hasConnection()) {
-            return CompletableFuture.completedFuture(null);
-        }
         CompletableFuture<List<Pair<String, Long>>> future = new CompletableFuture<>();
         new Thread(() -> {
             try {

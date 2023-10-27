@@ -24,6 +24,7 @@ import android.graphics.Bitmap
 import android.graphics.Paint
 import android.os.Bundle
 import android.text.format.DateFormat
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -97,6 +98,7 @@ import me.saket.telephoto.zoomable.zoomable
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ForkJoinPool
+import java.util.concurrent.TimeUnit
 
 enum class RainfallMapMode(val nameZh: String, val nameEn: String) {
 
@@ -163,8 +165,15 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
         }
         LaunchedEffect (Unit) {
             ForkJoinPool.commonPool().execute {
-                rainfallMapsFuture = Registry.getInstance(instance).getRainfallMaps(instance)
-                rainfallMapsInfo = rainfallMapsFuture!!.get()
+                try {
+                    rainfallMapsFuture = Registry.getInstance(instance).getRainfallMaps(instance)
+                    rainfallMapsInfo = rainfallMapsFuture!!.get(60, TimeUnit.SECONDS)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    instance.runOnUiThread {
+                        Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Unable to download data" else "無法下載資料", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
 

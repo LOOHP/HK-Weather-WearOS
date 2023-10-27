@@ -23,6 +23,7 @@ package com.loohp.hkweatherwarnings
 import android.graphics.Bitmap
 import android.graphics.Paint
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -69,8 +70,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
@@ -101,6 +100,7 @@ import kotlinx.coroutines.sync.withLock
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
 import java.util.concurrent.ForkJoinPool
+import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -167,14 +167,21 @@ fun TCTrackElement(instance: TCTrackActivity) {
 
     LaunchedEffect (Unit) {
         ForkJoinPool.commonPool().execute {
-            val data = Registry.getInstance(instance).getTropicalCycloneInfo(instance).get()
-                .filter { it.trackStaticImageUrl != null }
-                .sortedBy { it.displayOrder }
-            tropicalCyclones = data
-            for (cyclone in data) {
-                launch { instance.imageLoader.execute(ImageRequest.Builder(instance).data(cyclone.trackStaticImageUrl).transformations(TrackImageTransformation(), RoundedCornersTransformation(10F)).build()) }
-                if (cyclone.trackStaticZoomImageUrl != null) {
-                    launch { instance.imageLoader.execute(ImageRequest.Builder(instance).data(cyclone.trackStaticZoomImageUrl).transformations(ZoomedTrackImageTransformation(), RoundedCornersTransformation(10F)).build()) }
+            try {
+                val data = Registry.getInstance(instance).getTropicalCycloneInfo(instance).get(60, TimeUnit.SECONDS)
+                    .filter { it.trackStaticImageUrl != null }
+                    .sortedBy { it.displayOrder }
+                tropicalCyclones = data
+                for (cyclone in data) {
+                    launch { instance.imageLoader.execute(ImageRequest.Builder(instance).data(cyclone.trackStaticImageUrl).transformations(TrackImageTransformation(), RoundedCornersTransformation(10F)).build()) }
+                    if (cyclone.trackStaticZoomImageUrl != null) {
+                        launch { instance.imageLoader.execute(ImageRequest.Builder(instance).data(cyclone.trackStaticZoomImageUrl).transformations(ZoomedTrackImageTransformation(), RoundedCornersTransformation(10F)).build()) }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                instance.runOnUiThread {
+                    Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Unable to download data" else "無法下載資料", Toast.LENGTH_SHORT).show()
                 }
             }
         }
