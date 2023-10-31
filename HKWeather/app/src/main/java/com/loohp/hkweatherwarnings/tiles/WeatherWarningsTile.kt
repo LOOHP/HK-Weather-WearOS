@@ -21,9 +21,14 @@
 package com.loohp.hkweatherwarnings.tiles
 
 import android.text.format.DateFormat
+import androidx.annotation.OptIn
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.wear.protolayout.ActionBuilders
+import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
+import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_MARQUEE
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.StateBuilders
@@ -31,6 +36,7 @@ import androidx.wear.protolayout.TimelineBuilders
 import androidx.wear.protolayout.expression.AppDataKey
 import androidx.wear.protolayout.expression.DynamicBuilders
 import androidx.wear.protolayout.expression.DynamicDataBuilders
+import androidx.wear.protolayout.expression.ProtoLayoutExperimental
 import androidx.wear.tiles.EventBuilders
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
@@ -44,6 +50,8 @@ import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.FRESHNESS_TIME
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWarnings
+import com.loohp.hkweatherwarnings.utils.ConnectionUtils
+import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.timeZone
@@ -51,7 +59,7 @@ import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
 import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
-import kotlin.streams.toList
+import java.util.stream.Collectors
 
 private const val RESOURCES_VERSION = "0"
 private var tileUpdatedTime: Long = 0
@@ -172,6 +180,7 @@ class WeatherWarningsTile : TileService() {
         return Futures.immediateFuture(bundle.build())
     }
 
+    @OptIn(ProtoLayoutExperimental::class)
     private fun buildTitle(updateTime: Long, updateSuccess: Boolean, updating: Boolean): LayoutElementBuilders.LayoutElement {
         var lastUpdateText = (if (Registry.getInstance(this).language == "en") "Updated: " else "更新時間: ").plus(
             DateFormat.getTimeFormat(this).timeZone(Shared.HK_TIMEZONE).format(Date(updateTime)))
@@ -269,6 +278,45 @@ class WeatherWarningsTile : TileService() {
                                     .setResourceId(if (updating) "reloading" else "reload")
                                     .build()
                             )
+                            .addContent(
+                                LayoutElementBuilders.Box.Builder()
+                                    .setWidth(DimensionBuilders.dp(UnitUtils.pixelsToDp(this, ScreenSizeUtils.getScreenWidth(this).toFloat() * 0.75F)))
+                                    .setHeight(DimensionBuilders.wrap())
+                                    .addContent(
+                                        LayoutElementBuilders.Text.Builder()
+                                            .setText(if (!updateSuccess) {
+                                                when (ConnectionUtils.isBackgroundRestricted(this)) {
+                                                    ConnectionUtils.BackgroundRestrictionType.RESTRICT_BACKGROUND_STATUS -> {
+                                                        if (Registry.getInstance(this).language == "en") "Background Internet Restricted - Data Saver" else "背景網絡存取被限制 - 數據節省器"
+                                                    }
+                                                    ConnectionUtils.BackgroundRestrictionType.POWER_SAVE_MODE -> {
+                                                        if (Registry.getInstance(this).language == "en") "Background Internet Restricted - Power Saving" else "背景網絡存取被限制 - 省電模式"
+                                                    }
+                                                    ConnectionUtils.BackgroundRestrictionType.LOW_POWER_STANDBY -> {
+                                                        if (Registry.getInstance(this).language == "en") "Background Internet Restricted - Low Power Standby" else "背景網絡存取被限制 - 低耗電待機"
+                                                    }
+                                                    else -> {
+                                                        ""
+                                                    }
+                                                }
+                                            } else {
+                                                ""
+                                            })
+                                            .setFontStyle(
+                                                LayoutElementBuilders.FontStyle.Builder()
+                                                    .setSize(
+                                                        DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                                    )
+                                                    .setColor(
+                                                        ColorBuilders.ColorProp.Builder(Color(0xFFFF6A6A).toArgb()).build()
+                                                    )
+                                                    .build()
+                                            )
+                                            .setOverflow(TEXT_OVERFLOW_MARQUEE)
+                                            .setMarqueeIterations(-1)
+                                            .build()
+                                    ).build()
+                            )
                             .build()
                     )
                     .build()
@@ -340,7 +388,7 @@ class WeatherWarningsTile : TileService() {
                             .setContentScaleMode(LayoutElementBuilders.CONTENT_SCALE_MODE_CROP)
                             .setModifiers(modifiers.build())
                             .setResourceId(it.key.iconName)
-                    }.toList()
+                    }.collect(Collectors.toList())
                     val element = LayoutElementBuilders.Column.Builder()
                         .setWidth(DimensionBuilders.wrap())
                         .setHeight(DimensionBuilders.wrap())

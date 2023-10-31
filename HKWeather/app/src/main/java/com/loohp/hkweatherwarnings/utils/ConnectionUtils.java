@@ -24,6 +24,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
+import android.os.Build;
+import android.os.PowerManager;
 
 public class ConnectionUtils {
 
@@ -69,6 +71,27 @@ public class ConnectionUtils {
         public boolean hasConnection() {
             return transportType >= 0;
         }
+    }
+
+    public static BackgroundRestrictionType isBackgroundRestricted(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm.isActiveNetworkMetered() && cm.getRestrictBackgroundStatus() == ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED) {
+            return BackgroundRestrictionType.RESTRICT_BACKGROUND_STATUS;
+        }
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        if (pm.isPowerSaveMode() && !pm.isIgnoringBatteryOptimizations(context.getPackageName())) {
+            return BackgroundRestrictionType.POWER_SAVE_MODE;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && (pm.isLowPowerStandbyEnabled() && (Build.VERSION.SDK_INT < 34 || !pm.isExemptFromLowPowerStandby()))) {
+            return BackgroundRestrictionType.LOW_POWER_STANDBY;
+        }
+        return BackgroundRestrictionType.NONE;
+    }
+
+    public enum BackgroundRestrictionType {
+
+        NONE, RESTRICT_BACKGROUND_STATUS, POWER_SAVE_MODE, LOW_POWER_STANDBY
+
     }
 
 }

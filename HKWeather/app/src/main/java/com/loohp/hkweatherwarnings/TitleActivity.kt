@@ -36,6 +36,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
@@ -52,6 +53,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -103,12 +105,14 @@ import com.loohp.hkweatherwarnings.compose.fullPageVerticalLazyScrollbar
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
+import com.loohp.hkweatherwarnings.utils.ConnectionUtils
 import com.loohp.hkweatherwarnings.utils.RemoteActivityUtils
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.clamp
 import com.loohp.hkweatherwarnings.utils.dp
+import com.loohp.hkweatherwarnings.utils.equivalentDp
 import com.loohp.hkweatherwarnings.utils.sp
 import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
@@ -569,7 +573,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                     Row (
                         modifier = Modifier
                             .fillMaxWidth(0.65F)
-                            .padding(0.dp, 25.dp, 0.dp, 0.dp)
+                            .padding(0.dp, 22.dp, 0.dp, 0.dp)
                             .combinedClickable(
                                 onClick = {
                                     instance.startActivity(Intent(instance, ChangeLocationActivity::class.java))
@@ -656,6 +660,36 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                             contentDescription = if (Registry.getInstance(instance).language == "en") "Reload" else "重新載入"
                         )
                     }
+                    Box (
+                        modifier = Modifier.widthIn(
+                            max = (ScreenSizeUtils.getScreenWidth(instance).toFloat() * 0.75F).equivalentDp
+                        )
+                    ) {
+                        Text(
+                            modifier = Modifier.basicMarquee(Int.MAX_VALUE),
+                            textAlign = TextAlign.Center,
+                            color = Color(0xFFFF6A6A),
+                            fontSize = 9F.dp.sp.value.sp,
+                            text = if (!lastUpdateSuccessful && !combinedUpdating) {
+                                when (ConnectionUtils.isBackgroundRestricted(instance)) {
+                                    ConnectionUtils.BackgroundRestrictionType.RESTRICT_BACKGROUND_STATUS -> {
+                                        if (Registry.getInstance(instance).language == "en") "Background Internet Restricted - Data Saver" else "背景網絡存取被限制 - 數據節省器"
+                                    }
+                                    ConnectionUtils.BackgroundRestrictionType.POWER_SAVE_MODE -> {
+                                        if (Registry.getInstance(instance).language == "en") "Background Internet Restricted - Power Saving" else "背景網絡存取被限制 - 省電模式"
+                                    }
+                                    ConnectionUtils.BackgroundRestrictionType.LOW_POWER_STANDBY -> {
+                                        if (Registry.getInstance(instance).language == "en") "Background Internet Restricted - Low Power Standby" else "背景網絡存取被限制 - 低耗電待機"
+                                    }
+                                    else -> {
+                                        ""
+                                    }
+                                }
+                            } else {
+                                ""
+                            }
+                        )
+                    }
                 }
                 Row (
                     modifier = Modifier
@@ -674,13 +708,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                             .combinedClickable(
                                 onClick = {
                                     instance.runOnUiThread {
-                                        Toast
-                                            .makeText(
-                                                instance,
-                                                weatherDescription,
-                                                Toast.LENGTH_LONG
-                                            )
-                                            .show()
+                                        Toast.makeText(instance, weatherDescription, Toast.LENGTH_LONG).show()
                                     }
                                 }
                             ),
