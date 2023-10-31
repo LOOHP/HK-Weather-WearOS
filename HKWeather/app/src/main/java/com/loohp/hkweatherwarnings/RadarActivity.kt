@@ -45,6 +45,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -95,13 +97,13 @@ class RadarActivity : ComponentActivity() {
 fun RadarElement(instance: RadarActivity) {
     HKWeatherTheme {
         val focusRequester = remember { FocusRequester() }
-        var currentPosition by remember { mutableStateOf(1) }
+        var currentPosition by remember { mutableIntStateOf(1) }
         var playback by remember { mutableStateOf(true) }
         var zoom by remember { mutableStateOf(false) }
         var showLegend by remember { mutableStateOf(false) }
         val ready: MutableMap<Int, Boolean> = remember { mutableStateMapOf() }
 
-        var currentProgress by remember { mutableStateOf(0F) }
+        var currentProgress by remember { mutableFloatStateOf(0F) }
         val progressAnimation by animateFloatAsState(
             targetValue = currentProgress,
             animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),

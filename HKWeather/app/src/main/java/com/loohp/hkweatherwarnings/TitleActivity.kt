@@ -63,6 +63,9 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -227,14 +230,14 @@ fun MainElements(todayState: State<LocalDate>, launchSection: Section? = null, i
         val scroll = rememberLazyListState()
         val scope = rememberCoroutineScope()
         val haptic = LocalHapticFeedback.current
-        var scrollCounter by remember { mutableStateOf(0) }
+        var scrollCounter by remember { mutableIntStateOf(0) }
         val scrollInProgress by remember { derivedStateOf { scroll.isScrollInProgress } }
         val scrollReachedEnd by remember { derivedStateOf { scroll.canScrollBackward != scroll.canScrollForward } }
-        var scrollMoved by remember { mutableStateOf(0) }
+        var scrollMoved by remember { mutableIntStateOf(0) }
 
         val mutex by remember { mutableStateOf(Mutex()) }
         val animatedScrollValue = remember { Animatable(0F) }
-        var previousScrollValue by remember { mutableStateOf(0F) }
+        var previousScrollValue by remember { mutableFloatStateOf(0F) }
         LaunchedEffect (animatedScrollValue.value) {
             val diff = previousScrollValue - animatedScrollValue.value
             scroll.scrollBy(diff)
@@ -2124,7 +2127,7 @@ fun ChangeLocationButton(instance: TitleActivity, enabled: Boolean) {
 
 @Composable
 fun SetRefreshRateButton(instance: TitleActivity) {
-    var refreshRate by remember { mutableStateOf(Shared.REFRESH_INTERVAL.invoke(instance)) }
+    var refreshRate by remember { mutableLongStateOf(Shared.REFRESH_INTERVAL.invoke(instance)) }
     Button(
         onClick = {
             if (refreshRate <= 900000) {

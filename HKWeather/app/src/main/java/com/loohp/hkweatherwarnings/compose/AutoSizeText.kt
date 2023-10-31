@@ -23,6 +23,7 @@ package com.loohp.hkweatherwarnings.compose
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -60,7 +61,7 @@ fun AutoResizeText(
     onFontSizeChange: (TextUnit, Boolean) -> Unit = { _, _ -> }
 ) {
     var previousText by remember { mutableStateOf(text) }
-    var fontSizeValue by remember { mutableStateOf(fontSizeRange.max.value) }
+    var fontSizeValue by remember { mutableFloatStateOf(fontSizeRange.max.value) }
     var readyToDraw by remember { mutableStateOf(false) }
 
     Text(

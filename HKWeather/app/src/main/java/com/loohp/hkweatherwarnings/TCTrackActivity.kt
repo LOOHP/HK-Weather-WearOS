@@ -49,6 +49,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -188,7 +189,8 @@ fun TCTrackElement(instance: TCTrackActivity) {
     }
 
     HKWeatherTheme {
-        if (tropicalCyclones == null) {
+        val cyclones = tropicalCyclones
+        if (cyclones == null) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -204,7 +206,7 @@ fun TCTrackElement(instance: TCTrackActivity) {
                     text = if (Registry.getInstance(instance).language == "en") "Loading storm tracks..." else "正在載入風暴路徑..."
                 )
             }
-        } else if (tropicalCyclones!!.isEmpty()) {
+        } else if (cyclones.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -222,14 +224,14 @@ fun TCTrackElement(instance: TCTrackActivity) {
             }
         } else {
             val focusRequester = remember { FocusRequester() }
-            val state = rememberPagerState()
+            val state = rememberPagerState { cyclones.size + 1 }
             val scope = rememberCoroutineScope()
             val haptic = LocalHapticFeedback.current
             val scrollInProgress by remember { derivedStateOf { state.isScrollInProgress } }
             val scrollReachedEnd by remember { derivedStateOf { state.canScrollBackward != state.canScrollForward } }
             val mutex by remember { mutableStateOf(Mutex()) }
             val zoomInImage: MutableMap<Int, Boolean> = remember { mutableMapOf() }
-            var refresher by remember { mutableStateOf(0F) }
+            var refresher by remember { mutableFloatStateOf(0F) }
 
             LaunchedEffect (scrollInProgress, scrollReachedEnd) {
                 if (scrollReachedEnd) {
@@ -247,7 +249,6 @@ fun TCTrackElement(instance: TCTrackActivity) {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.TopCenter
             ) {
-                val cyclones = tropicalCyclones!!
                 HorizontalPager (
                     modifier = Modifier
                         .fillMaxSize()
@@ -267,8 +268,7 @@ fun TCTrackElement(instance: TCTrackActivity) {
                         }
                         .focusRequester(focusRequester)
                         .focusable(),
-                    state = state,
-                    pageCount = cyclones.size + 1
+                    state = state
                 ) {
                     if (it >= cyclones.size) {
                         AsyncImage(

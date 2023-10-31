@@ -55,6 +55,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -151,11 +153,11 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
         var rainfallMapsInfo: RainfallMapsInfo? by remember { mutableStateOf(null) }
 
         var rainfallMapsFuture: FutureWithProgress<RainfallMapsInfo>? by remember { mutableStateOf(null) }
-        var currentProgress by remember { mutableStateOf(0F) }
+        var currentProgress by remember { mutableFloatStateOf(0F) }
 
         val focusRequester = remember { FocusRequester() }
         var currentMode by remember { mutableStateOf(RainfallMapMode.PAST_ONE_HOUR) }
-        var currentPosition by remember { mutableStateOf(0) }
+        var currentPosition by remember { mutableIntStateOf(0) }
         var zoom by remember { mutableStateOf(false) }
 
         val haptic = LocalHapticFeedback.current

@@ -26,6 +26,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,7 +38,7 @@ fun Modifier.fadeIn(
     targetAlpha: Float = 1F,
     animationSpec: AnimationSpec<Float> = tween(durationMillis = 750, easing = LinearEasing)
 ): Modifier = composed {
-    var alpha by remember { mutableStateOf(0F) }
+    var alpha by remember { mutableFloatStateOf(0F) }
     val animatedAlpha by animateFloatAsState(
         targetValue = alpha,
         animationSpec = animationSpec,
