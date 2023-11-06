@@ -302,8 +302,7 @@ fun OpenHKOAppButton(instance: DisplayInfoTextActivity) {
             openHKOApp(instance)
         },
         modifier = Modifier
-            .padding(20.dp, 0.dp)
-            .width(StringUtils.scaledSize(220, instance).dp)
+            .width(StringUtils.scaledSize(180, instance).dp)
             .height(StringUtils.scaledSize(45, instance).dp),
         colors = ButtonDefaults.buttonColors(
             backgroundColor = MaterialTheme.colors.secondary,
