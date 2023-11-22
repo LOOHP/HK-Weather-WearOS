@@ -23,9 +23,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
-        android:icon="@mipmap/icon"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/icon"
+        android:icon="@mipmap/icon_launcher"
+        android:roundIcon="@mipmap/icon_launcher"
         android:supportsRtl="true"
         tools:targetApi="31">
         <activity
