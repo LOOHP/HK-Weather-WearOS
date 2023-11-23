@@ -349,6 +349,10 @@ public class Registry {
                 }
                 service.shutdown();
 
+                if (past1HourUrls.isEmpty()) {
+                    throw new IllegalStateException("There are no past 1 hour urls");
+                }
+
                 future.complete(new RainfallMapsInfo(past1HourUrls, past24HoursUrl, todayUrl, yesterdayUrl));
             } catch (Throwable e) {
                 e.printStackTrace();

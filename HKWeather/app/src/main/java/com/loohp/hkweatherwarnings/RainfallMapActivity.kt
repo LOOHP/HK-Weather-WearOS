@@ -167,13 +167,23 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
         }
         LaunchedEffect (Unit) {
             ForkJoinPool.commonPool().execute {
+                var error = false
                 try {
                     rainfallMapsFuture = Registry.getInstance(instance).getRainfallMaps(instance)
-                    rainfallMapsInfo = rainfallMapsFuture!!.get(60, TimeUnit.SECONDS)
+                    val info = rainfallMapsFuture!!.get(60, TimeUnit.SECONDS)
+                    if (info == null) {
+                        error = true
+                    } else {
+                        rainfallMapsInfo = info
+                    }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    error = true
+                }
+                if (error) {
                     instance.runOnUiThread {
                         Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Unable to download data" else "無法下載資料", Toast.LENGTH_SHORT).show()
+                        instance.finish()
                     }
                 }
             }
