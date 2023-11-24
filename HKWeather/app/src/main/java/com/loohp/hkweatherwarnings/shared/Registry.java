@@ -22,11 +22,13 @@ package com.loohp.hkweatherwarnings.shared;
 
 import android.content.Context;
 import android.location.Location;
+import android.os.Bundle;
 import android.util.Pair;
 
 import androidx.wear.tiles.TileService;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.loohp.hkweatherwarnings.R;
 import com.loohp.hkweatherwarnings.tiles.WeatherOverviewTile;
 import com.loohp.hkweatherwarnings.tiles.WeatherTipsTile;
@@ -310,6 +312,7 @@ public class Registry {
 
     public FutureWithProgress<RainfallMapsInfo> getRainfallMaps(Context context) {
         CompletableFutureWithProgress<RainfallMapsInfo> future = new CompletableFutureWithProgress<>();
+        long start = System.currentTimeMillis();
         new Thread(() -> {
             try {
                 String lang = getLanguage().equals("en") ? "e" : "c";
@@ -357,6 +360,11 @@ public class Registry {
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);
+            } finally {
+                long end = System.currentTimeMillis();
+                Bundle bundle = new Bundle();
+                bundle.putLong("value", end - start);
+                FirebaseAnalytics.getInstance(context).logEvent("fetch_rainfall_maps_ms", bundle);
             }
         }).start();
         return future;
@@ -364,6 +372,7 @@ public class Registry {
 
     public Future<List<TropicalCycloneInfo>> getTropicalCycloneInfo(Context context) {
         CompletableFuture<List<TropicalCycloneInfo>> future = new CompletableFuture<>();
+        long start = System.currentTimeMillis();
         new Thread(() -> {
             try {
                 JSONObject data = HTTPRequestUtils.getJSONResponse("https://pda.weather.gov.hk/locspc/android_data/TCTrackData/TC/tcFront.json");
@@ -390,6 +399,11 @@ public class Registry {
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);
+            } finally {
+                long end = System.currentTimeMillis();
+                Bundle bundle = new Bundle();
+                bundle.putLong("value", end - start);
+                FirebaseAnalytics.getInstance(context).logEvent("fetch_tropical_cyclone_info_ms", bundle);
             }
         }).start();
         return future;
@@ -397,6 +411,7 @@ public class Registry {
 
     public Future<LunarDate> getLunarDate(Context context, LocalDate date) {
         CompletableFuture<LunarDate> future = new CompletableFuture<>();
+        long start = System.currentTimeMillis();
         new Thread(() -> {
             try {
                 String climatology = null;
@@ -417,6 +432,11 @@ public class Registry {
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);
+            } finally {
+                long end = System.currentTimeMillis();
+                Bundle bundle = new Bundle();
+                bundle.putLong("value", end - start);
+                FirebaseAnalytics.getInstance(context).logEvent("fetch_lunar_date_ms", bundle);
             }
         }).start();
         return future;
@@ -425,6 +445,7 @@ public class Registry {
     public FutureWithProgress<CurrentWeatherInfo> getCurrentWeatherInfo(Context context, LocationUtils.LocationResult locationResult) {
         CompletableFutureWithProgress<CurrentWeatherInfo> future = new CompletableFutureWithProgress<>();
         float totalStages = 16F;
+        long start = System.currentTimeMillis();
         new Thread(() -> {
             try {
                 CurrentWeatherInfo.Builder currentWeatherInfoBuilder = new CurrentWeatherInfo.Builder();
@@ -766,6 +787,11 @@ public class Registry {
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);
+            } finally {
+                long end = System.currentTimeMillis();
+                Bundle bundle = new Bundle();
+                bundle.putLong("value", end - start);
+                FirebaseAnalytics.getInstance(context).logEvent("fetch_current_weather_info_ms", bundle);
             }
         }).start();
         return future;
@@ -773,6 +799,7 @@ public class Registry {
 
     public Future<Map<WeatherWarningsType, String>> getActiveWarnings(Context context) {
         CompletableFuture<Map<WeatherWarningsType, String>> future = new CompletableFuture<>();
+        long start = System.currentTimeMillis();
         new Thread(() -> {
             try {
                 String lang = getLanguage().equals("en") ? "en" : "tc";
@@ -817,6 +844,11 @@ public class Registry {
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);
+            } finally {
+                long end = System.currentTimeMillis();
+                Bundle bundle = new Bundle();
+                bundle.putLong("value", end - start);
+                FirebaseAnalytics.getInstance(context).logEvent("fetch_active_warnings_ms", bundle);
             }
         }).start();
         return future;
@@ -824,6 +856,7 @@ public class Registry {
 
     public Future<List<Pair<String, Long>>> getWeatherTips(Context context) {
         CompletableFuture<List<Pair<String, Long>>> future = new CompletableFuture<>();
+        long start = System.currentTimeMillis();
         new Thread(() -> {
             try {
                 TimeUnit.SECONDS.sleep(5);
@@ -847,6 +880,11 @@ public class Registry {
             } catch (Throwable e) {
                 e.printStackTrace();
                 future.complete(null);
+            } finally {
+                long end = System.currentTimeMillis();
+                Bundle bundle = new Bundle();
+                bundle.putLong("value", end - start);
+                FirebaseAnalytics.getInstance(context).logEvent("fetch_weather_tips_ms", bundle);
             }
         }).start();
         return future;

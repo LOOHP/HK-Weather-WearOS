@@ -73,6 +73,8 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
+import com.google.firebase.Firebase
+import com.google.firebase.analytics.analytics
 import com.loohp.hkweatherwarnings.compose.AutoResizeText
 import com.loohp.hkweatherwarnings.compose.FontSizeRange
 import com.loohp.hkweatherwarnings.compose.fullPageVerticalLazyScrollbar
@@ -140,26 +142,22 @@ fun MainElements(instance: ChangeLocationActivity) {
                     Spacer(modifier = Modifier.size(StringUtils.scaledSize(7, instance).dp))
                     Button(
                         onClick = {
-                            if (LocationUtils.checkLocationPermission(instance) {
-                                    if (it) {
-                                        Registry.getInstance(instance).setLocationGPS(instance)
-                                        Shared.currentWeatherInfo.reset(instance)
-                                        Shared.currentWarnings.reset(instance)
-                                        Shared.currentTips.reset(instance)
-                                        instance.startActivity(Intent(instance, TitleActivity::class.java))
-                                        instance.finishAffinity()
-                                    } else {
-                                        instance.runOnUiThread {
-                                            Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Location Access Permission Denied" else "位置存取權限被拒絕", Toast.LENGTH_SHORT).show()
-                                        }
+                            LocationUtils.checkLocationPermission(instance) {
+                                if (it) {
+                                    Firebase.analytics.logEvent("set_weather_location", Bundle().apply {
+                                        putString("value", "GPS")
+                                    })
+                                    Registry.getInstance(instance).setLocationGPS(instance)
+                                    Shared.currentWeatherInfo.reset(instance)
+                                    Shared.currentWarnings.reset(instance)
+                                    Shared.currentTips.reset(instance)
+                                    instance.startActivity(Intent(instance, TitleActivity::class.java))
+                                    instance.finishAffinity()
+                                } else {
+                                    instance.runOnUiThread {
+                                        Toast.makeText(instance, if (Registry.getInstance(instance).language == "en") "Location Access Permission Denied" else "位置存取權限被拒絕", Toast.LENGTH_SHORT).show()
                                     }
-                                }) {
-                                Registry.getInstance(instance).setLocationGPS(instance)
-                                Shared.currentWeatherInfo.reset(instance)
-                                Shared.currentWarnings.reset(instance)
-                                Shared.currentTips.reset(instance)
-                                instance.startActivity(Intent(instance, TitleActivity::class.java))
-                                instance.finishAffinity()
+                                }
                             }
                             requestingLocation = false
                         },
@@ -350,6 +348,9 @@ fun MainElements(instance: ChangeLocationActivity) {
                         item {
                             Button(
                                 onClick = {
+                                    Firebase.analytics.logEvent("set_weather_location", Bundle().apply {
+                                        putString("value", properties.optString("AutomaticWeatherStation_en"))
+                                    })
                                     Registry.getInstance(instance).setLocation(location, instance)
                                     Shared.currentWeatherInfo.reset(instance)
                                     Shared.currentWarnings.reset(instance)

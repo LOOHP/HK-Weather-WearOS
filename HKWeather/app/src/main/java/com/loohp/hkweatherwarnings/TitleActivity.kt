@@ -98,6 +98,8 @@ import androidx.wear.compose.material.Text
 import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
+import com.google.firebase.Firebase
+import com.google.firebase.analytics.analytics
 import com.loohp.hkweatherwarnings.compose.AutoResizeText
 import com.loohp.hkweatherwarnings.compose.FontSizeRange
 import com.loohp.hkweatherwarnings.compose.fadeIn
@@ -1773,6 +1775,9 @@ fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivi
 fun LocalForecastButton(weatherIcon: WeatherStatusIcon, nextWeatherIcon: WeatherStatusIcon?, localForecastInfo: LocalForecastInfo, instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
     Button(
         onClick = {
+            Firebase.analytics.logEvent("title_action", Bundle().apply {
+                putString("value", "local_forecast")
+            })
             var weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
             if (nextWeatherIcon != null) {
                 weatherDescription = weatherDescription.plus(if (Registry.getInstance(instance).language == "en") " to ".plus(nextWeatherIcon.descriptionEn) else " 至 ".plus(nextWeatherIcon.descriptionZh))
@@ -1831,6 +1836,9 @@ fun LocalForecastButton(weatherIcon: WeatherStatusIcon, nextWeatherIcon: Weather
 fun StormLatestButton(instance: TitleActivity, specialTyphoonInfo: SpecialTyphoonInfo, backgroundColor: Color = MaterialTheme.colors.secondary) {
     Button(
         onClick = {
+            Firebase.analytics.logEvent("title_action", Bundle().apply {
+                putString("value", "storm_latest")
+            })
             val intent = Intent(instance, DisplayInfoTextActivity::class.java)
             specialTyphoonInfo.signalType?.let {
                 intent.putExtra("imageDrawable", it.iconId)
@@ -1881,6 +1889,9 @@ fun StormLatestButton(instance: TitleActivity, specialTyphoonInfo: SpecialTyphoo
 fun ForecastGeneralButton(forecastGeneralSituation: String, instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
     Button(
         onClick = {
+            Firebase.analytics.logEvent("title_action", Bundle().apply {
+                putString("value", "forecast_general")
+            })
             val intent = Intent(instance, DisplayInfoTextActivity::class.java)
             intent.putExtra("text", (if (Registry.getInstance(instance).language == "en") "9-Day General Forecast" else "展望未來九天天氣概況").plus("\n").plus(forecastGeneralSituation))
             instance.startActivity(intent)
@@ -1926,6 +1937,9 @@ fun ForecastGeneralButton(forecastGeneralSituation: String, instance: TitleActiv
 fun RadarButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
     Button(
         onClick = {
+            Firebase.analytics.logEvent("title_action", Bundle().apply {
+                putString("value", "radar")
+            })
             instance.startActivity(Intent(instance, RadarActivity::class.java))
         },
         modifier = Modifier
@@ -1969,6 +1983,9 @@ fun RadarButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.
 fun RainfallMapButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
     Button(
         onClick = {
+            Firebase.analytics.logEvent("title_action", Bundle().apply {
+                putString("value", "rainfall_map")
+            })
             instance.startActivity(Intent(instance, RainfallMapActivity::class.java))
         },
         modifier = Modifier
@@ -2012,6 +2029,9 @@ fun RainfallMapButton(instance: TitleActivity, backgroundColor: Color = Material
 fun StormTrackButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.colors.secondary) {
     Button(
         onClick = {
+            Firebase.analytics.logEvent("title_action", Bundle().apply {
+                putString("value", "storm_track")
+            })
             instance.startActivity(Intent(instance, TCTrackActivity::class.java))
         },
         modifier = Modifier
@@ -2167,6 +2187,9 @@ fun SetRefreshRateButton(instance: TitleActivity) {
             }
             refreshRate = Shared.REFRESH_INTERVAL.invoke(instance)
             Shared.startBackgroundService(instance)
+            Firebase.analytics.logEvent("set_refresh_rate", Bundle().apply {
+                putLong("value", refreshRate)
+            })
         },
         modifier = Modifier
             .width(StringUtils.scaledSize(180, instance).dp)
