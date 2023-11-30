@@ -79,7 +79,6 @@ class WeatherTipsTile : TileService() {
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
-        @Suppress("UnstableApiUsage")
         return Futures.submit(Callable {
             if (requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicString>("next"))) {
                 currentIndex++
@@ -292,7 +291,7 @@ class WeatherTipsTile : TileService() {
                                                             .setRequestState(
                                                                 StateBuilders.State.Builder()
                                                                     .addKeyToValueMapping(
-                                                                        AppDataKey<DynamicString>("reload"),
+                                                                        AppDataKey("reload"),
                                                                         DynamicDataBuilders.DynamicDataValue.fromString("")
                                                                     )
                                                                     .build()

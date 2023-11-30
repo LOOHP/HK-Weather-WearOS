@@ -28,7 +28,6 @@ import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
-import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_MARQUEE
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.StateBuilders
@@ -75,7 +74,6 @@ class WeatherWarningsTile : TileService() {
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
-        @Suppress("UnstableApiUsage")
         return Futures.submit(Callable {
             val isReload = requestParams.currentState.keyToValueMapping.containsKey(AppDataKey<DynamicBuilders.DynamicString>("reload"))
             val future = currentWarnings.getLatestValue(this, ForkJoinPool.commonPool(), isReload)
@@ -264,7 +262,7 @@ class WeatherWarningsTile : TileService() {
                                                             .setRequestState(
                                                                 StateBuilders.State.Builder()
                                                                     .addKeyToValueMapping(
-                                                                        AppDataKey<DynamicBuilders.DynamicString>("reload"),
+                                                                        AppDataKey("reload"),
                                                                         DynamicDataBuilders.DynamicDataValue.fromString("")
                                                                     )
                                                                     .build()
@@ -278,46 +276,46 @@ class WeatherWarningsTile : TileService() {
                                     .setResourceId(if (updating) "reloading" else "reload")
                                     .build()
                             )
-                            .addContent(
-                                LayoutElementBuilders.Box.Builder()
-                                    .setWidth(DimensionBuilders.dp(UnitUtils.pixelsToDp(this, ScreenSizeUtils.getScreenWidth(this).toFloat() * 0.75F)))
-                                    .setHeight(DimensionBuilders.wrap())
-                                    .addContent(
-                                        LayoutElementBuilders.Text.Builder()
-                                            .setText(if (!updateSuccess) {
-                                                when (ConnectionUtils.isBackgroundRestricted(this)) {
-                                                    ConnectionUtils.BackgroundRestrictionType.RESTRICT_BACKGROUND_STATUS -> {
-                                                        if (Registry.getInstance(this).language == "en") "Background Internet Restricted - Data Saver" else "背景網絡存取被限制 - 數據節省器"
-                                                    }
-                                                    ConnectionUtils.BackgroundRestrictionType.POWER_SAVE_MODE -> {
-                                                        if (Registry.getInstance(this).language == "en") "Background Internet Restricted - Power Saving" else "背景網絡存取被限制 - 省電模式"
-                                                    }
-                                                    ConnectionUtils.BackgroundRestrictionType.LOW_POWER_STANDBY -> {
-                                                        if (Registry.getInstance(this).language == "en") "Background Internet Restricted - Low Power Standby" else "背景網絡存取被限制 - 低耗電待機"
-                                                    }
-                                                    else -> {
-                                                        ""
-                                                    }
-                                                }
-                                            } else {
-                                                ""
-                                            })
-                                            .setFontStyle(
-                                                LayoutElementBuilders.FontStyle.Builder()
-                                                    .setSize(
-                                                        DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
-                                                    )
-                                                    .setColor(
-                                                        ColorBuilders.ColorProp.Builder(Color(0xFFFF6A6A).toArgb()).build()
-                                                    )
-                                                    .build()
-                                            )
-                                            .setOverflow(TEXT_OVERFLOW_MARQUEE)
-                                            .setMarqueeIterations(-1)
-                                            .build()
-                                    ).build()
-                            )
                             .build()
+                    )
+                    .addContent(
+                        LayoutElementBuilders.Box.Builder()
+                            .setWidth(DimensionBuilders.dp(UnitUtils.pixelsToDp(this, ScreenSizeUtils.getScreenWidth(this).toFloat() * 0.75F)))
+                            .setHeight(DimensionBuilders.wrap())
+                            .addContent(
+                                LayoutElementBuilders.Text.Builder()
+                                    .setText(if (!updateSuccess) {
+                                        when (ConnectionUtils.isBackgroundRestricted(this)) {
+                                            ConnectionUtils.BackgroundRestrictionType.RESTRICT_BACKGROUND_STATUS -> {
+                                                if (Registry.getInstance(this).language == "en") "Background Internet Restricted - Data Saver" else "背景網絡存取被限制 - 數據節省器"
+                                            }
+                                            ConnectionUtils.BackgroundRestrictionType.POWER_SAVE_MODE -> {
+                                                if (Registry.getInstance(this).language == "en") "Background Internet Restricted - Power Saving" else "背景網絡存取被限制 - 省電模式"
+                                            }
+                                            ConnectionUtils.BackgroundRestrictionType.LOW_POWER_STANDBY -> {
+                                                if (Registry.getInstance(this).language == "en") "Background Internet Restricted - Low Power Standby" else "背景網絡存取被限制 - 低耗電待機"
+                                            }
+                                            else -> {
+                                                ""
+                                            }
+                                        }
+                                    } else {
+                                        ""
+                                    })
+                                    .setFontStyle(
+                                        LayoutElementBuilders.FontStyle.Builder()
+                                            .setSize(
+                                                DimensionBuilders.SpProp.Builder().setValue(UnitUtils.dpToSp(this, 9F)).build()
+                                            )
+                                            .setColor(
+                                                ColorBuilders.ColorProp.Builder(Color(0xFFFF6A6A).toArgb()).build()
+                                            )
+                                            .build()
+                                    )
+                                    .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_MARQUEE)
+                                    .setMarqueeIterations(-1)
+                                    .build()
+                            ).build()
                     )
                     .build()
             )
