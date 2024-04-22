@@ -1,4 +1,4 @@
-# HK Weather (WearOS)
+# HK Weather 香港天氣 (WearOS)
 A weather app for checking the current weather overview, current active weather warnings, special weather tips, radar images and more provided by the Hong Kong Observatory for Wear OS, designed as an unofficial watch companion app for the official MyOverservtory app in WearOS smartwatches for users in Hong Kong.<br>
 香港天氣是 WearOS 平台的天氣資訊應用程式，為香港用戶在 WearOS 手錶上提供更多即時天氣資訊，同時為我的天文台官方應用程式提供一個非官方手錶配套應用程式
 
