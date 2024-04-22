@@ -392,7 +392,7 @@ fun UpdatingElements(instance: TitleActivity) {
                     .padding(25.dp, 0.dp),
                 color = Color(0xFFF9DE09),
                 trackColor = Color(0xFF797979),
-                progress = progressAnimation
+                progress = { progressAnimation }
             )
         }
     }

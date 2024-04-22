@@ -46,8 +46,8 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
@@ -122,7 +122,7 @@ class RainfallMapImageTransformation : Transformation {
 
     override suspend fun transform(input: Bitmap, size: Size): Bitmap {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-        val output = createBitmap(input.width, input.width, input.config?: Bitmap.Config.ARGB_8888)
+        val output = createBitmap(input.width, input.width, input.config)
         output.applyCanvas {
             drawBitmap(input, 0F, 0F, paint)
         }
@@ -227,7 +227,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                             .padding(25.dp, 0.dp),
                         color = Color(0xFF42D3FF),
                         trackColor = Color(0xFF797979),
-                        progress = progressAnimation
+                        progress = { progressAnimation }
                     )
                 }
             } else {
@@ -402,7 +402,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                                 ) {
                                     Icon(
                                         modifier = Modifier.size(StringUtils.scaledSize(13, instance).dp),
-                                        imageVector = Icons.Filled.ArrowForward,
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                         contentDescription = if (Registry.getInstance(instance).language == "en") currentMode.next().nameEn else currentMode.next().nameZh,
                                         tint = Color(0xFFFFFFFF)
                                     )
@@ -441,7 +441,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                             content = {
                                 Icon(
                                     modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
-                                    imageVector = Icons.Filled.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = if (Registry.getInstance(instance).language == "en") "Previous" else "上一頁",
                                     tint = Color(0xFFFFFFFF)
                                 )
@@ -466,7 +466,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                             content = {
                                 Icon(
                                     modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
-                                    imageVector = Icons.Filled.ArrowForward,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = if (Registry.getInstance(instance).language == "en") "Next" else "下一頁",
                                     tint = Color(0xFFFFFFFF)
                                 )

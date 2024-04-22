@@ -400,7 +400,7 @@ class WeatherTipsTile : TileService() {
                 .addContent(
                     LayoutElementBuilders.Text.Builder()
                         .setText(tipText)
-                        .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END)
+                        .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE)
                         .setFontStyle(
                             LayoutElementBuilders.FontStyle.Builder()
                                 .setSize(

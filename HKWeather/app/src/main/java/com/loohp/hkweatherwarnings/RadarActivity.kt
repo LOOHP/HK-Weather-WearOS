@@ -164,7 +164,7 @@ fun RadarElement(instance: RadarActivity) {
                 Image(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(0.dp, 10.dp),
+                        .padding(10.dp, 20.dp),
                     painter = painterResource(R.mipmap.radar_legend),
                     contentDescription = if (Registry.getInstance(instance).language == "en") "Legend" else "圖例"
                 )
@@ -226,7 +226,7 @@ fun RadarElement(instance: RadarActivity) {
                                 .fillMaxWidth(),
                             color = Color(0xFFF9DE09),
                             trackColor = Color(0xFF797979),
-                            progress = progressAnimation
+                            progress = { progressAnimation }
                         )
                     }
                 }
