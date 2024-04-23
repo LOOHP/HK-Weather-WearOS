@@ -27,6 +27,7 @@ import android.text.format.DateFormat
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -36,7 +37,6 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,6 +48,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
@@ -109,11 +110,7 @@ enum class RainfallMapMode(val nameZh: String, val nameEn: String) {
     TODAY("今天", "Today"),
     YESTERDAY("昨天", "Yesterday");
 
-    companion object {
-        private val values = values()
-    }
-
-    fun next(): RainfallMapMode = values[(ordinal + 1) % values.size]
+    fun next(): RainfallMapMode = entries[(ordinal + 1) % entries.size]
 }
 
 class RainfallMapImageTransformation : Transformation {
@@ -157,6 +154,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
 
         val focusRequester = remember { FocusRequester() }
         var currentMode by remember { mutableStateOf(RainfallMapMode.PAST_ONE_HOUR) }
+        var choosingCurrentMode by remember { mutableStateOf(false) }
         var currentPosition by remember { mutableIntStateOf(0) }
         var zoom by remember { mutableStateOf(false) }
 
@@ -192,289 +190,311 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            if (rainfallMapsInfo == null) {
-                val progressAnimation by animateFloatAsState(
-                    targetValue = currentProgress,
-                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
-                    label = "LoadingProgressAnimation"
-                )
-                LaunchedEffect (Unit) {
-                    while (true) {
-                        currentProgress = rainfallMapsFuture?.progress?: 0F
-                        delay(500)
-                    }
-                }
-
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    AutoResizeText(
-                        modifier = Modifier.fillMaxWidth(0.8F),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colors.primary,
-                        fontSizeRange = FontSizeRange(
-                            min = 1F.sp,
-                            max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
-                        ),
-                        text = if (Registry.getInstance(instance).language == "en") "Loading Isohyet Charts..." else "正在載入等雨量線圖..."
-                    )
-                    Spacer(modifier = Modifier.size(StringUtils.scaledSize(15, instance).dp))
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth(0.7F)
-                            .padding(25.dp, 0.dp),
-                        color = Color(0xFF42D3FF),
-                        trackColor = Color(0xFF797979),
-                        progress = { progressAnimation }
-                    )
-                }
-            } else {
-                LaunchedEffect (Unit) {
-                    focusRequester.requestFocus()
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .onRotaryScrollEvent {
-                            if (it.verticalScrollPixels > 0) {
-                                if (currentPosition < rainfallMapsInfo!!.past1HourUrls.size - 1) {
-                                    currentPosition++
-                                } else {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                }
-                            } else {
-                                if (currentPosition > 0) {
-                                    currentPosition--
-                                } else {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                }
-                            }
-                            true
-                        }
-                        .focusRequester(focusRequester)
-                        .focusable()
-                ) {
-                    val zoomPadding by remember { derivedStateOf { if (zoom) 0F else UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getMinScreenSize(instance) * 0.15F) } }
-                    val animatedZoomPadding by animateFloatAsState(
-                        targetValue = zoomPadding,
-                        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                        label = "AnimatedZoomPadding"
-                    )
-                    var modifier = Modifier
-                        .fillMaxSize()
-                        .padding(animatedZoomPadding.dp)
-                    if (zoom) {
-                        modifier = modifier.zoomable(
-                            state = rememberZoomableState(),
-                            onClick = {
-                                zoom = !zoom
-                            }
-                        )
-                    } else {
-                        modifier = modifier.combinedClickable(
-                            onClick = {
-                                zoom = !zoom
-                            }
-                        )
-                    }
-
-                    Box(
-                        modifier = modifier
+            AnimatedContent(
+                targetState = choosingCurrentMode,
+                label = "ChoosingCurrentMode"
+            ) {
+                if (it) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(StringUtils.scaledSize(5F, instance).dp, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        when (currentMode) {
-                            RainfallMapMode.PAST_ONE_HOUR -> {
-                                SubcomposeAsyncImage(
-                                    modifier = Modifier.fillMaxSize(),
-                                    loading = {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .requiredSize(25.dp),
-                                            color = Color.LightGray,
-                                            strokeWidth = 3.dp,
-                                            trackColor = Color.DarkGray,
-                                            strokeCap = StrokeCap.Round,
-                                        )
-                                    },
-                                    model = ImageRequest.Builder(instance).size(545, 550).data(rainfallMapsInfo!!.past1HourUrls.values.elementAt(currentPosition)).transformations(RainfallMapImageTransformation()).build(),
-                                    contentDescription = if (Registry.getInstance(instance).language == "en") "Isohyet Chart for Last Hour" else "過去一小時等雨量線圖"
-                                )
-                            }
-                            RainfallMapMode.PAST_TWENTY_FOUR_HOUR -> {
-                                SubcomposeAsyncImage(
-                                    modifier = Modifier.fillMaxSize(),
-                                    loading = {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .requiredSize(25.dp),
-                                            color = Color.LightGray,
-                                            strokeWidth = 3.dp,
-                                            trackColor = Color.DarkGray,
-                                            strokeCap = StrokeCap.Round,
-                                        )
-                                    },
-                                    model = ImageRequest.Builder(instance).data(rainfallMapsInfo!!.past24HoursUrl).transformations(RainfallMapImageTransformation()).build(),
-                                    contentDescription = if (Registry.getInstance(instance).language == "en") "Isohyet Chart for Past 24-hour" else "過去二十四小時等雨量線圖"
-                                )
-                            }
-                            RainfallMapMode.TODAY -> {
-                                SubcomposeAsyncImage(
-                                    modifier = Modifier.fillMaxSize(),
-                                    loading = {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .requiredSize(25.dp),
-                                            color = Color.LightGray,
-                                            strokeWidth = 3.dp,
-                                            trackColor = Color.DarkGray,
-                                            strokeCap = StrokeCap.Round,
-                                        )
-                                    },
-                                    model = ImageRequest.Builder(instance).data(rainfallMapsInfo!!.todayUrl).transformations(RainfallMapImageTransformation()).build(),
-                                    contentDescription = if (Registry.getInstance(instance).language == "en") "Isohyet Chart for Today" else "今天等雨量線圖"
-                                )
-                            }
-                            RainfallMapMode.YESTERDAY -> {
-                                SubcomposeAsyncImage(
-                                    modifier = Modifier.fillMaxSize(),
-                                    loading = {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .requiredSize(25.dp),
-                                            color = Color.LightGray,
-                                            strokeWidth = 3.dp,
-                                            trackColor = Color.DarkGray,
-                                            strokeCap = StrokeCap.Round,
-                                        )
-                                    },
-                                    model = ImageRequest.Builder(instance).data(rainfallMapsInfo!!.yesterdayUrl).transformations(RainfallMapImageTransformation()).build(),
-                                    contentDescription = if (Registry.getInstance(instance).language == "en") "Isohyet Chart for Yesterday" else "昨天等雨量線圖"
-                                )
-                            }
-                        }
-                    }
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(if (zoom) Alignment.BottomCenter else Alignment.TopCenter)
-                            .padding(0.dp, 6.dp),
-                        textAlign = TextAlign.Center,
-                        color = if (zoom) MaterialTheme.colors.secondary else MaterialTheme.colors.primary,
-                        fontWeight = if (zoom) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 14F.sp.clamp(max = 14.dp),
-                        text = when (currentMode) {
-                            RainfallMapMode.PAST_ONE_HOUR -> {
-                                val dateFormat = DateFormat.getTimeFormat(instance)
-                                val timeFormat = DateTimeFormatter.ofPattern(if (dateFormat is SimpleDateFormat) dateFormat.toPattern() else "HH:mm")
-                                "@".plus(rainfallMapsInfo!!.past1HourUrls.keys.elementAt(currentPosition).format(timeFormat))
-                            }
-                            else -> {
-                                if (Registry.getInstance(instance).language == "en") currentMode.nameEn else currentMode.nameZh
-                            }
-                        }
-                    )
-                    if (!zoom) {
-                        Button(
-                            onClick = {
-                                currentMode = currentMode.next()
-                            },
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(0.dp, 0.dp, 0.dp, 1.dp)
-                                .width(StringUtils.scaledSize(90, instance).dp)
-                                .height(StringUtils.scaledSize(30, instance).dp),
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = MaterialTheme.colors.secondary,
-                                contentColor = Color(0xFFFFFFFF)
-                            ),
-                            content = {
-                                Row (
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.925F)
-                                        .align(Alignment.Center),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        modifier = Modifier.size(StringUtils.scaledSize(13, instance).dp),
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                        contentDescription = if (Registry.getInstance(instance).language == "en") currentMode.next().nameEn else currentMode.next().nameZh,
-                                        tint = Color(0xFFFFFFFF)
-                                    )
+                        for (mode in RainfallMapMode.entries) {
+                            Button(
+                                onClick = {
+                                    choosingCurrentMode = false
+                                    currentMode = mode
+                                },
+                                modifier = Modifier
+                                    .width(StringUtils.scaledSize(120, instance).dp)
+                                    .height(StringUtils.scaledSize(35, instance).dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = MaterialTheme.colors.secondary,
+                                    contentColor = MaterialTheme.colors.primary
+                                ),
+                                content = {
                                     AutoResizeText(
-                                        modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.Center,
                                         color = MaterialTheme.colors.primary,
                                         fontSizeRange = FontSizeRange(
                                             min = 1F.sp,
                                             max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                                         ),
+                                        fontWeight = FontWeight.Bold.takeIf { currentMode == mode },
                                         maxLines = 1,
-                                        text = if (Registry.getInstance(instance).language == "en") currentMode.next().nameEn else currentMode.next().nameZh
+                                        text = if (Registry.getInstance(instance).language == "en") mode.nameEn else mode.nameZh
                                     )
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
-                    if (currentMode == RainfallMapMode.PAST_ONE_HOUR) {
-                        Button(
-                            onClick = {
-                                if (currentPosition > 0) {
-                                    currentPosition--
-                                }
-                            },
-                            enabled = currentPosition > 0,
+                } else {
+                    if (rainfallMapsInfo == null) {
+                        val progressAnimation by animateFloatAsState(
+                            targetValue = currentProgress,
+                            animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+                            label = "LoadingProgressAnimation"
+                        )
+                        LaunchedEffect (Unit) {
+                            while (true) {
+                                currentProgress = rainfallMapsFuture?.progress?: 0F
+                                delay(500)
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            AutoResizeText(
+                                modifier = Modifier.fillMaxWidth(0.8F),
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colors.primary,
+                                fontSizeRange = FontSizeRange(
+                                    min = 1F.sp,
+                                    max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
+                                ),
+                                text = if (Registry.getInstance(instance).language == "en") "Loading Isohyet Charts..." else "正在載入等雨量線圖..."
+                            )
+                            Spacer(modifier = Modifier.size(StringUtils.scaledSize(15, instance).dp))
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.7F)
+                                    .padding(25.dp, 0.dp),
+                                color = Color(0xFF42D3FF),
+                                trackColor = Color(0xFF797979),
+                                progress = { progressAnimation }
+                            )
+                        }
+                    } else {
+                        LaunchedEffect (Unit) {
+                            focusRequester.requestFocus()
+                        }
+                        Box(
                             modifier = Modifier
-                                .align(Alignment.CenterStart)
-                                .padding(0.dp, 0.dp, 1.dp, 0.dp)
-                                .width(StringUtils.scaledSize(30, instance).dp)
-                                .height(StringUtils.scaledSize(30, instance).dp),
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = MaterialTheme.colors.secondary,
-                                contentColor = Color(0xFFFFFFFF)
-                            ),
-                            content = {
-                                Icon(
-                                    modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = if (Registry.getInstance(instance).language == "en") "Previous" else "上一頁",
-                                    tint = Color(0xFFFFFFFF)
+                                .fillMaxSize()
+                                .onRotaryScrollEvent {
+                                    if (it.verticalScrollPixels > 0) {
+                                        if (currentPosition < rainfallMapsInfo!!.past1HourUrls.size - 1) {
+                                            currentPosition++
+                                        } else {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
+                                    } else {
+                                        if (currentPosition > 0) {
+                                            currentPosition--
+                                        } else {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
+                                    }
+                                    true
+                                }
+                                .focusRequester(focusRequester)
+                                .focusable()
+                        ) {
+                            val zoomPadding by remember { derivedStateOf { if (zoom) 0F else UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getMinScreenSize(instance) * 0.15F) } }
+                            val animatedZoomPadding by animateFloatAsState(
+                                targetValue = zoomPadding,
+                                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                                label = "AnimatedZoomPadding"
+                            )
+                            var modifier = Modifier
+                                .fillMaxSize()
+                                .padding(animatedZoomPadding.dp)
+                            if (zoom) {
+                                modifier = modifier.zoomable(
+                                    state = rememberZoomableState(),
+                                    onClick = {
+                                        zoom = !zoom
+                                    }
+                                )
+                            } else {
+                                modifier = modifier.combinedClickable(
+                                    onClick = {
+                                        zoom = !zoom
+                                    }
                                 )
                             }
-                        )
-                        Button(
-                            onClick = {
-                                if (currentPosition < rainfallMapsInfo!!.past1HourUrls.size - 1) {
-                                    currentPosition++
+
+                            Box(
+                                modifier = modifier
+                            ) {
+                                when (currentMode) {
+                                    RainfallMapMode.PAST_ONE_HOUR -> {
+                                        SubcomposeAsyncImage(
+                                            modifier = Modifier.fillMaxSize(),
+                                            loading = {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier
+                                                        .align(Alignment.Center)
+                                                        .requiredSize(25.dp),
+                                                    color = Color.LightGray,
+                                                    strokeWidth = 3.dp,
+                                                    trackColor = Color.DarkGray,
+                                                    strokeCap = StrokeCap.Round,
+                                                )
+                                            },
+                                            model = ImageRequest.Builder(instance).size(545, 550).data(rainfallMapsInfo!!.past1HourUrls.values.elementAt(currentPosition)).transformations(RainfallMapImageTransformation()).build(),
+                                            contentDescription = if (Registry.getInstance(instance).language == "en") "Isohyet Chart for Last Hour" else "過去一小時等雨量線圖"
+                                        )
+                                    }
+                                    RainfallMapMode.PAST_TWENTY_FOUR_HOUR -> {
+                                        SubcomposeAsyncImage(
+                                            modifier = Modifier.fillMaxSize(),
+                                            loading = {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier
+                                                        .align(Alignment.Center)
+                                                        .requiredSize(25.dp),
+                                                    color = Color.LightGray,
+                                                    strokeWidth = 3.dp,
+                                                    trackColor = Color.DarkGray,
+                                                    strokeCap = StrokeCap.Round,
+                                                )
+                                            },
+                                            model = ImageRequest.Builder(instance).data(rainfallMapsInfo!!.past24HoursUrl).transformations(RainfallMapImageTransformation()).build(),
+                                            contentDescription = if (Registry.getInstance(instance).language == "en") "Isohyet Chart for Past 24-hour" else "過去二十四小時等雨量線圖"
+                                        )
+                                    }
+                                    RainfallMapMode.TODAY -> {
+                                        SubcomposeAsyncImage(
+                                            modifier = Modifier.fillMaxSize(),
+                                            loading = {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier
+                                                        .align(Alignment.Center)
+                                                        .requiredSize(25.dp),
+                                                    color = Color.LightGray,
+                                                    strokeWidth = 3.dp,
+                                                    trackColor = Color.DarkGray,
+                                                    strokeCap = StrokeCap.Round,
+                                                )
+                                            },
+                                            model = ImageRequest.Builder(instance).data(rainfallMapsInfo!!.todayUrl).transformations(RainfallMapImageTransformation()).build(),
+                                            contentDescription = if (Registry.getInstance(instance).language == "en") "Isohyet Chart for Today" else "今天等雨量線圖"
+                                        )
+                                    }
+                                    RainfallMapMode.YESTERDAY -> {
+                                        SubcomposeAsyncImage(
+                                            modifier = Modifier.fillMaxSize(),
+                                            loading = {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier
+                                                        .align(Alignment.Center)
+                                                        .requiredSize(25.dp),
+                                                    color = Color.LightGray,
+                                                    strokeWidth = 3.dp,
+                                                    trackColor = Color.DarkGray,
+                                                    strokeCap = StrokeCap.Round,
+                                                )
+                                            },
+                                            model = ImageRequest.Builder(instance).data(rainfallMapsInfo!!.yesterdayUrl).transformations(RainfallMapImageTransformation()).build(),
+                                            contentDescription = if (Registry.getInstance(instance).language == "en") "Isohyet Chart for Yesterday" else "昨天等雨量線圖"
+                                        )
+                                    }
                                 }
-                            },
-                            enabled = currentPosition < rainfallMapsInfo!!.past1HourUrls.size - 1,
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .padding(1.dp, 0.dp, 0.dp, 0.dp)
-                                .width(StringUtils.scaledSize(30, instance).dp)
-                                .height(StringUtils.scaledSize(30, instance).dp),
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = MaterialTheme.colors.secondary,
-                                contentColor = Color(0xFFFFFFFF)
-                            ),
-                            content = {
-                                Icon(
-                                    modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = if (Registry.getInstance(instance).language == "en") "Next" else "下一頁",
-                                    tint = Color(0xFFFFFFFF)
+                            }
+                            Text(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(if (zoom) Alignment.BottomCenter else Alignment.TopCenter)
+                                    .padding(0.dp, 6.dp),
+                                textAlign = TextAlign.Center,
+                                color = if (zoom) MaterialTheme.colors.secondary else MaterialTheme.colors.primary,
+                                fontWeight = if (zoom) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 14F.sp.clamp(max = 14.dp),
+                                text = when (currentMode) {
+                                    RainfallMapMode.PAST_ONE_HOUR -> {
+                                        val dateFormat = DateFormat.getTimeFormat(instance)
+                                        val timeFormat = DateTimeFormatter.ofPattern(if (dateFormat is SimpleDateFormat) dateFormat.toPattern() else "HH:mm")
+                                        "@".plus(rainfallMapsInfo!!.past1HourUrls.keys.elementAt(currentPosition).format(timeFormat))
+                                    }
+                                    else -> {
+                                        if (Registry.getInstance(instance).language == "en") currentMode.nameEn else currentMode.nameZh
+                                    }
+                                }
+                            )
+                            if (!zoom) {
+                                Button(
+                                    onClick = { choosingCurrentMode = true },
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(0.dp, 0.dp, 1.dp, 0.dp)
+                                        .width(StringUtils.scaledSize(30, instance).dp)
+                                        .height(StringUtils.scaledSize(30, instance).dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        backgroundColor = MaterialTheme.colors.secondary,
+                                        contentColor = Color(0xFFFFFFFF)
+                                    ),
+                                    content = {
+                                        Icon(
+                                            modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
+                                            imageVector = Icons.AutoMirrored.Filled.List,
+                                            contentDescription = if (Registry.getInstance(instance).language == "en") "Choose Rainfall Dist. Map Mode" else "選擇雨量分佈圖模式",
+                                            tint = Color(0xFFFFFFFF)
+                                        )
+                                    }
                                 )
                             }
-                        )
+                            if (currentMode == RainfallMapMode.PAST_ONE_HOUR) {
+                                Button(
+                                    onClick = {
+                                        if (currentPosition > 0) {
+                                            currentPosition--
+                                        }
+                                    },
+                                    enabled = currentPosition > 0,
+                                    modifier = Modifier
+                                        .align(Alignment.CenterStart)
+                                        .padding(0.dp, 0.dp, 1.dp, 0.dp)
+                                        .width(StringUtils.scaledSize(30, instance).dp)
+                                        .height(StringUtils.scaledSize(30, instance).dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        backgroundColor = MaterialTheme.colors.secondary,
+                                        contentColor = Color(0xFFFFFFFF)
+                                    ),
+                                    content = {
+                                        Icon(
+                                            modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = if (Registry.getInstance(instance).language == "en") "Previous" else "上一頁",
+                                            tint = Color(0xFFFFFFFF)
+                                        )
+                                    }
+                                )
+                                Button(
+                                    onClick = {
+                                        if (currentPosition < rainfallMapsInfo!!.past1HourUrls.size - 1) {
+                                            currentPosition++
+                                        }
+                                    },
+                                    enabled = currentPosition < rainfallMapsInfo!!.past1HourUrls.size - 1,
+                                    modifier = Modifier
+                                        .align(Alignment.CenterEnd)
+                                        .padding(1.dp, 0.dp, 0.dp, 0.dp)
+                                        .width(StringUtils.scaledSize(30, instance).dp)
+                                        .height(StringUtils.scaledSize(30, instance).dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        backgroundColor = MaterialTheme.colors.secondary,
+                                        contentColor = Color(0xFFFFFFFF)
+                                    ),
+                                    content = {
+                                        Icon(
+                                            modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                            contentDescription = if (Registry.getInstance(instance).language == "en") "Next" else "下一頁",
+                                            tint = Color(0xFFFFFFFF)
+                                        )
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
+
         }
     }
 }
