@@ -30,8 +30,8 @@ android {
     defaultConfig {
         applicationId = "com.loohp.hkweatherwarnings"
         minSdk = 24
-        targetSdk = 33
-        versionCode = 107
+        targetSdk = 34
+        versionCode = 116
         versionName = "1.3.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
