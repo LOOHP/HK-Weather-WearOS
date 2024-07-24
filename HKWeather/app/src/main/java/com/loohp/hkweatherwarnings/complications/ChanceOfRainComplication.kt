@@ -48,8 +48,8 @@ class ChanceOfRainComplication : ComplicationDataSourceService() {
         return when (type) {
             ComplicationType.SHORT_TEXT -> {
                 ShortTextComplicationData.Builder(
-                    text = PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build(),
-                    contentDescription = PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build(),
+                    text = PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build(),
+                    contentDescription = PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build(),
                 )
                     .setTapAction(null)
                     .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -57,8 +57,8 @@ class ChanceOfRainComplication : ComplicationDataSourceService() {
             }
             ComplicationType.LONG_TEXT -> {
                 LongTextComplicationData.Builder(
-                    text = PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build(),
-                    contentDescription = PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build(),
+                    text = PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build(),
+                    contentDescription = PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build(),
                 )
                     .setTapAction(null)
                     .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -69,10 +69,11 @@ class ChanceOfRainComplication : ComplicationDataSourceService() {
                     value = chanceOfRain,
                     min = 0F,
                     max = 100F,
-                    contentDescription = PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build(),
+                    contentDescription = PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build(),
                 )
-                    .setTapAction(null)
+                    .setText(PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build())
                     .setValueType(TYPE_PERCENTAGE)
+                    .setTapAction(null)
                     .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
                     .build()
             }
@@ -97,8 +98,8 @@ class ChanceOfRainComplication : ComplicationDataSourceService() {
                 when (request.complicationType) {
                     ComplicationType.SHORT_TEXT -> {
                         ShortTextComplicationData.Builder(
-                            text = PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build(),
-                            contentDescription = PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build(),
+                            text = PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build(),
+                            contentDescription = PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build(),
                         )
                             .setTapAction(pendingIntent)
                             .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -106,8 +107,8 @@ class ChanceOfRainComplication : ComplicationDataSourceService() {
                     }
                     ComplicationType.LONG_TEXT -> {
                         LongTextComplicationData.Builder(
-                            text = PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build(),
-                            contentDescription = PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build(),
+                            text = PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build(),
+                            contentDescription = PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build(),
                         )
                             .setTapAction(pendingIntent)
                             .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -118,11 +119,11 @@ class ChanceOfRainComplication : ComplicationDataSourceService() {
                             value = chanceOfRain,
                             min = 0F,
                             max = 100F,
-                            contentDescription = PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build(),
+                            contentDescription = PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build(),
                         )
-                            .setTitle(PlainComplicationText.Builder(String.format("%.0f", chanceOfRain).plus("%")).build())
-                            .setTapAction(pendingIntent)
+                            .setText(PlainComplicationText.Builder("%.0f".format(chanceOfRain) + "%").build())
                             .setValueType(TYPE_PERCENTAGE)
+                            .setTapAction(pendingIntent)
                             .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
                             .build()
                     }

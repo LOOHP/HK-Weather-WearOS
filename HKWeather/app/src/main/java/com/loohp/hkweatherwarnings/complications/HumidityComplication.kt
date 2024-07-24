@@ -48,8 +48,8 @@ class HumidityComplication : ComplicationDataSourceService() {
         return when (type) {
             ComplicationType.SHORT_TEXT -> {
                 ShortTextComplicationData.Builder(
-                    text = PlainComplicationText.Builder(String.format("%.0f", humidity).plus("%")).build(),
-                    contentDescription = PlainComplicationText.Builder(String.format("%.0f", humidity).plus("%")).build()
+                    text = PlainComplicationText.Builder("%.0f".format(humidity) + "%").build(),
+                    contentDescription = PlainComplicationText.Builder("%.0f".format(humidity) + "%").build()
                 )
                     .setTapAction(null)
                     .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -57,8 +57,8 @@ class HumidityComplication : ComplicationDataSourceService() {
             }
             ComplicationType.LONG_TEXT -> {
                 LongTextComplicationData.Builder(
-                    text = PlainComplicationText.Builder(String.format("%.0f", humidity).plus("%")).build(),
-                    contentDescription = PlainComplicationText.Builder(String.format("%.0f", humidity).plus("%")).build()
+                    text = PlainComplicationText.Builder("%.0f".format(humidity) + "%").build(),
+                    contentDescription = PlainComplicationText.Builder("%.0f".format(humidity) + "%").build()
                 )
                     .setTapAction(null)
                     .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -69,8 +69,9 @@ class HumidityComplication : ComplicationDataSourceService() {
                     value = humidity,
                     min = 0F,
                     max = 100F,
-                    contentDescription = PlainComplicationText.Builder(String.format("%.0f", humidity).plus("%")).build()
+                    contentDescription = PlainComplicationText.Builder("%.0f".format(humidity) + "%").build()
                 )
+                    .setText(PlainComplicationText.Builder("%.0f".format(humidity) + "%").build())
                     .setValueType(TYPE_PERCENTAGE)
                     .setTapAction(null)
                     .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -97,8 +98,8 @@ class HumidityComplication : ComplicationDataSourceService() {
                 when (request.complicationType) {
                     ComplicationType.SHORT_TEXT -> {
                         ShortTextComplicationData.Builder(
-                            text = PlainComplicationText.Builder(String.format("%.0f", humidity).plus("%")).build(),
-                            contentDescription = PlainComplicationText.Builder(String.format("%.0f", humidity).plus("%")).build()
+                            text = PlainComplicationText.Builder("%.0f".format(humidity) + "%").build(),
+                            contentDescription = PlainComplicationText.Builder("%.0f".format(humidity) + "%").build()
                         )
                             .setTapAction(pendingIntent)
                             .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -106,8 +107,8 @@ class HumidityComplication : ComplicationDataSourceService() {
                     }
                     ComplicationType.LONG_TEXT -> {
                         LongTextComplicationData.Builder(
-                            text = PlainComplicationText.Builder(String.format("%.0f", humidity).plus("%")).build(),
-                            contentDescription = PlainComplicationText.Builder(String.format("%.0f", humidity).plus("%")).build()
+                            text = PlainComplicationText.Builder("%.0f".format(humidity) + "%").build(),
+                            contentDescription = PlainComplicationText.Builder("%.0f".format(humidity) + "%").build()
                         )
                             .setTapAction(pendingIntent)
                             .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
@@ -118,8 +119,9 @@ class HumidityComplication : ComplicationDataSourceService() {
                             value = humidity,
                             min = 0F,
                             max = 100F,
-                            contentDescription = PlainComplicationText.Builder(String.format("%.0f", humidity).plus("%")).build()
+                            contentDescription = PlainComplicationText.Builder("%.0f".format(humidity) + "%").build()
                         )
+                            .setText(PlainComplicationText.Builder("%.0f".format(humidity) + "%").build())
                             .setValueType(TYPE_PERCENTAGE)
                             .setTapAction(pendingIntent)
                             .setMonochromaticImage(MonochromaticImage.Builder(icon).setAmbientImage(icon).build())
