@@ -1730,10 +1730,7 @@ fun generateForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivi
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colors.primary,
                         fontSize = 9F.sp.clamp(max = 9.dp),
-                        text = if (dayInfo.chanceOfRain >= 0) String.format(
-                            "%.0f",
-                            dayInfo.chanceOfRain
-                        ).plus("%") else "??%"
+                        text = if (dayInfo.chanceOfRain >= 0) String.format("%.0f", dayInfo.chanceOfRain).plus("%") else "??%"
                     )
                     Image(
                         modifier = Modifier

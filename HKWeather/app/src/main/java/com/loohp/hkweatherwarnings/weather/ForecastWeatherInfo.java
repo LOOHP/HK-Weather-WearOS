@@ -45,17 +45,18 @@ public class ForecastWeatherInfo extends WeatherInfo {
         float maxRelativeHumidity = (float) jsonObject.optDouble("maxRelativeHumidity");
         float minRelativeHumidity = (float) jsonObject.optDouble("minRelativeHumidity");
         float chanceOfRain = (float) jsonObject.optDouble("chanceOfRain");
+        boolean isChanceOfRainOver = jsonObject.optBoolean("isChanceOfRainOver");
         WeatherStatusIcon weatherIcon = WeatherStatusIcon.valueOf(jsonObject.optString("weatherIcon"));
         String forecastWind = jsonObject.optString("forecastWind");
         String forecastWeather = jsonObject.optString("forecastWeather");
-        return new ForecastWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, forecastWind, forecastWeather);
+        return new ForecastWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, isChanceOfRainOver, weatherIcon, forecastWind, forecastWeather);
     }
 
     private final String forecastWind;
     private final String forecastWeather;
 
-    public ForecastWeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, WeatherStatusIcon weatherIcon, String forecastWind, String forecastWeather) {
-        super(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon);
+    public ForecastWeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, boolean isChanceOfRainOver, WeatherStatusIcon weatherIcon, String forecastWind, String forecastWeather) {
+        super(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, isChanceOfRainOver, weatherIcon);
         this.forecastWind = forecastWind;
         this.forecastWeather = forecastWeather;
     }
@@ -70,7 +71,7 @@ public class ForecastWeatherInfo extends WeatherInfo {
                     .append(String.format(Locale.ENGLISH, "%.0f", getHighestTemperature())).append("°C\n")
                     .append("Relative Humidity: ").append(String.format(Locale.ENGLISH, "%.0f", getMinRelativeHumidity())).append(" - ")
                     .append(String.format(Locale.ENGLISH, "%.0f", getMaxRelativeHumidity())).append("%\n")
-                    .append("Chance of Rain: ").append(String.format(Locale.ENGLISH, "%.0f", getMinRelativeHumidity())).append("%\n")
+                    .append("Chance of Rain: ").append(isChanceOfRainOver() ? "> " : "").append(String.format(Locale.ENGLISH, "%.0f", getChanceOfRain())).append("%\n")
                     .append(forecastWind).append("\n")
                     .append(forecastWeather);
         } else {
@@ -81,7 +82,7 @@ public class ForecastWeatherInfo extends WeatherInfo {
                     .append(String.format(Locale.TRADITIONAL_CHINESE, "%.0f", getHighestTemperature())).append("°C\n")
                     .append("相對濕度: ").append(String.format(Locale.TRADITIONAL_CHINESE, "%.0f", getMinRelativeHumidity())).append(" - ")
                     .append(String.format(Locale.TRADITIONAL_CHINESE, "%.0f", getMaxRelativeHumidity())).append("%\n")
-                    .append("降雨概率: ").append(String.format(Locale.TRADITIONAL_CHINESE, "%.0f", getMinRelativeHumidity())).append("%\n")
+                    .append("降雨概率: ").append(isChanceOfRainOver() ? "> " : "").append(String.format(Locale.TRADITIONAL_CHINESE, "%.0f", getChanceOfRain())).append("%\n")
                     .append(forecastWind).append("\n")
                     .append(forecastWeather);
         }

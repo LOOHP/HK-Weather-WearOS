@@ -213,7 +213,7 @@ class WeatherOverviewTile : TileService() {
                         .build()
                 ).build()
             )
-        for (type in WeatherStatusIcon.values()) {
+        for (type in WeatherStatusIcon.entries) {
             bundle.addIdToImageMapping(type.iconName, ResourceBuilders.ImageResource.Builder()
                 .setAndroidResourceByResId(
                     ResourceBuilders.AndroidImageResourceByResId.Builder()
@@ -587,7 +587,7 @@ class WeatherOverviewTile : TileService() {
                         )
                         .addContent(
                             LayoutElementBuilders.Text.Builder()
-                                .setText(String.format("%.1f", weatherInfo.currentTemperature).plus("°"))
+                                .setText("%.1f".format(weatherInfo.currentTemperature) + "°")
                                 .setFontStyle(
                                     LayoutElementBuilders.FontStyle.Builder()
                                         .setSize(
@@ -637,7 +637,7 @@ class WeatherOverviewTile : TileService() {
                                         )
                                         .addContent(
                                             LayoutElementBuilders.Text.Builder()
-                                                .setText(String.format("%.1f", weatherInfo.highestTemperature).plus("°  "))
+                                                .setText("%.1f".format(weatherInfo.highestTemperature) + "°  ")
                                                 .setFontStyle(
                                                     LayoutElementBuilders.FontStyle.Builder()
                                                         .setSize(
@@ -657,7 +657,7 @@ class WeatherOverviewTile : TileService() {
                                         )
                                         .addContent(
                                             LayoutElementBuilders.Text.Builder()
-                                                .setText(String.format("%.1f", weatherInfo.lowestTemperature).plus("°  "))
+                                                .setText("%.1f".format(weatherInfo.lowestTemperature) + "°  ")
                                                 .setFontStyle(
                                                     LayoutElementBuilders.FontStyle.Builder()
                                                         .setSize(
@@ -677,7 +677,7 @@ class WeatherOverviewTile : TileService() {
                                         )
                                         .addContent(
                                             LayoutElementBuilders.Text.Builder()
-                                                .setText(String.format("%.0f", weatherInfo.chanceOfRain).plus("%"))
+                                                .setText("%.0f".format(weatherInfo.chanceOfRain) + "%")
                                                 .setFontStyle(
                                                     LayoutElementBuilders.FontStyle.Builder()
                                                         .setSize(
@@ -755,7 +755,7 @@ class WeatherOverviewTile : TileService() {
                                                 )
                                                 .addContent(
                                                     LayoutElementBuilders.Text.Builder()
-                                                        .setText(String.format("%.0f", weatherInfo.forecastInfo[forecastIndex + 0].lowestTemperature).plus("-").plus(String.format("%.0f", weatherInfo.forecastInfo[0].highestTemperature)))
+                                                        .setText("%.0f".format(weatherInfo.forecastInfo[forecastIndex + 0].lowestTemperature) + "-" + "%.0f".format(weatherInfo.forecastInfo[0].highestTemperature))
                                                         .setFontStyle(
                                                             LayoutElementBuilders.FontStyle.Builder()
                                                                 .setSize(
@@ -804,7 +804,7 @@ class WeatherOverviewTile : TileService() {
                                                 )
                                                 .addContent(
                                                     LayoutElementBuilders.Text.Builder()
-                                                        .setText(String.format("%.0f", weatherInfo.forecastInfo[forecastIndex + 1].lowestTemperature).plus("-").plus(String.format("%.0f", weatherInfo.forecastInfo[1].highestTemperature)))
+                                                        .setText("%.0f".format(weatherInfo.forecastInfo[forecastIndex + 1].lowestTemperature) + "-" + "%.0f".format(weatherInfo.forecastInfo[1].highestTemperature))
                                                         .setFontStyle(
                                                             LayoutElementBuilders.FontStyle.Builder()
                                                                 .setSize(
@@ -853,7 +853,7 @@ class WeatherOverviewTile : TileService() {
                                                 )
                                                 .addContent(
                                                     LayoutElementBuilders.Text.Builder()
-                                                        .setText(String.format("%.0f", weatherInfo.forecastInfo[forecastIndex + 2].lowestTemperature).plus("-").plus(String.format("%.0f", weatherInfo.forecastInfo[2].highestTemperature)))
+                                                        .setText("%.0f".format(weatherInfo.forecastInfo[forecastIndex + 2].lowestTemperature) + "-" + "%.0f".format(weatherInfo.forecastInfo[2].highestTemperature))
                                                         .setFontStyle(
                                                             LayoutElementBuilders.FontStyle.Builder()
                                                                 .setSize(

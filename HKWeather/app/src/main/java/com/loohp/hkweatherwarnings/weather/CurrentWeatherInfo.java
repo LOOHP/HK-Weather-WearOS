@@ -46,6 +46,7 @@ public class CurrentWeatherInfo extends WeatherInfo {
         float maxRelativeHumidity = (float) jsonObject.optDouble("maxRelativeHumidity");
         float minRelativeHumidity = (float) jsonObject.optDouble("minRelativeHumidity");
         float chanceOfRain = (float) jsonObject.optDouble("chanceOfRain");
+        boolean isChanceOfRainOver = jsonObject.optBoolean("isChanceOfRainOver");
         WeatherStatusIcon weatherIcon = WeatherStatusIcon.valueOf(jsonObject.optString("weatherIcon"));
         String weatherStation = jsonObject.optString("weatherStation");
         WeatherStatusIcon nextWeatherIcon = jsonObject.has("nextWeatherIcon") ? WeatherStatusIcon.valueOf(jsonObject.optString("nextWeatherIcon")) : null;
@@ -75,7 +76,7 @@ public class CurrentWeatherInfo extends WeatherInfo {
         }
         HeatStressAtWorkInfo heatStressAtWorkInfo = jsonObject.has("heatStressAtWorkInfo") ? HeatStressAtWorkInfo.deserialize(jsonObject.optJSONObject("heatStressAtWorkInfo")) : null;
         SpecialTyphoonInfo specialTyphoonInfo = jsonObject.has("specialTyphoonInfo") ? SpecialTyphoonInfo.deserialize(jsonObject.optJSONObject("specialTyphoonInfo")) : null;
-        return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo, specialTyphoonInfo);
+        return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, isChanceOfRainOver, weatherIcon, weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo, specialTyphoonInfo);
     }
 
     private final String weatherStation;
@@ -99,8 +100,8 @@ public class CurrentWeatherInfo extends WeatherInfo {
     private final HeatStressAtWorkInfo heatStressAtWorkInfo;
     private final SpecialTyphoonInfo specialTyphoonInfo;
 
-    public CurrentWeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, WeatherStatusIcon weatherIcon, String weatherStation, WeatherStatusIcon nextWeatherIcon, float currentTemperature, float currentHumidity, float uvIndex, String windDirection, float windSpeed, float gust, LocalTime sunriseTime, LocalTime sunTransitTime, LocalTime sunsetTime, LocalTime moonriseTime, LocalTime moonTransitTime, LocalTime moonsetTime, LocalForecastInfo localForecastInfo, String forecastGeneralSituation, List<ForecastWeatherInfo> forecastInfo, List<HourlyWeatherInfo> hourlyWeatherInfo, HeatStressAtWorkInfo heatStressAtWorkInfo, SpecialTyphoonInfo specialTyphoonInfo) {
-        super(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon);
+    public CurrentWeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, boolean isChanceOfRainOver, WeatherStatusIcon weatherIcon, String weatherStation, WeatherStatusIcon nextWeatherIcon, float currentTemperature, float currentHumidity, float uvIndex, String windDirection, float windSpeed, float gust, LocalTime sunriseTime, LocalTime sunTransitTime, LocalTime sunsetTime, LocalTime moonriseTime, LocalTime moonTransitTime, LocalTime moonsetTime, LocalForecastInfo localForecastInfo, String forecastGeneralSituation, List<ForecastWeatherInfo> forecastInfo, List<HourlyWeatherInfo> hourlyWeatherInfo, HeatStressAtWorkInfo heatStressAtWorkInfo, SpecialTyphoonInfo specialTyphoonInfo) {
+        super(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, isChanceOfRainOver, weatherIcon);
         this.weatherStation = weatherStation;
         this.nextWeatherIcon = nextWeatherIcon;
         this.currentTemperature = currentTemperature;
@@ -265,6 +266,7 @@ public class CurrentWeatherInfo extends WeatherInfo {
         private float maxRelativeHumidity;
         private float minRelativeHumidity;
         private float chanceOfRain;
+        private boolean isChanceOfRainOver;
         private WeatherStatusIcon weatherIcon;
         private String weatherStation;
         private WeatherStatusIcon nextWeatherIcon;
@@ -319,6 +321,11 @@ public class CurrentWeatherInfo extends WeatherInfo {
 
         public Builder setWeatherIcon(WeatherStatusIcon weatherIcon) {
             this.weatherIcon = weatherIcon;
+            return this;
+        }
+
+        public Builder setIsChanceOfRainOver(boolean isChanceOfRainOver) {
+            this.isChanceOfRainOver = isChanceOfRainOver;
             return this;
         }
 
@@ -423,7 +430,7 @@ public class CurrentWeatherInfo extends WeatherInfo {
         }
 
         public CurrentWeatherInfo build() {
-            return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon, weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo, specialTyphoonInfo);
+            return new CurrentWeatherInfo(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, isChanceOfRainOver, weatherIcon, weatherStation, nextWeatherIcon, currentTemperature, currentHumidity, uvIndex, windDirection, windSpeed, gust, sunriseTime, sunTransitTime, sunsetTime, moonriseTime, moonTransitTime, moonsetTime, localForecastInfo, forecastGeneralSituation, forecastInfo, hourlyWeatherInfo, heatStressAtWorkInfo, specialTyphoonInfo);
         }
 
     }

@@ -34,7 +34,6 @@ import com.loohp.hkweatherwarnings.tiles.WeatherOverviewTile;
 import com.loohp.hkweatherwarnings.tiles.WeatherTipsTile;
 import com.loohp.hkweatherwarnings.tiles.WeatherWarningsTile;
 import com.loohp.hkweatherwarnings.utils.CompletableFutureWithProgress;
-import com.loohp.hkweatherwarnings.utils.ConnectionUtils;
 import com.loohp.hkweatherwarnings.utils.FutureWithProgress;
 import com.loohp.hkweatherwarnings.utils.HTTPRequestUtils;
 import com.loohp.hkweatherwarnings.utils.JsonUtils;
@@ -588,14 +587,17 @@ public class Registry {
                             String forecastWeather = forecastDayObj.optString("forecastWeather");
 
                             float forecastChanceOfRain;
+                            boolean isChanceOfRainOver;
                             if (forecastStationDayObj == null) {
                                 forecastChanceOfRain = -1F;
+                                isChanceOfRainOver = false;
                             } else {
                                 String forecastChanceOfRainStr = forecastStationDayObj.optString("ForecastChanceOfRain");
-                                forecastChanceOfRain = Float.parseFloat(forecastChanceOfRainStr.substring(0, forecastChanceOfRainStr.length() - 1).replace("< ", ""));
+                                isChanceOfRainOver = forecastChanceOfRainStr.startsWith(">");
+                                forecastChanceOfRain = Float.parseFloat(forecastChanceOfRainStr.substring(isChanceOfRainOver ? 2 : 0, forecastChanceOfRainStr.length() - 1).replace("< ", ""));
                             }
 
-                            forecastInfo.add(new ForecastWeatherInfo(forecastDate, forecastHighestTemperature, forecastLowestTemperature, forecastMaxRelativeHumidity, forecastMinRelativeHumidity, forecastChanceOfRain, forecastWeatherIcon, forecastWind, forecastWeather));
+                            forecastInfo.add(new ForecastWeatherInfo(forecastDate, forecastHighestTemperature, forecastLowestTemperature, forecastMaxRelativeHumidity, forecastMinRelativeHumidity, forecastChanceOfRain, isChanceOfRainOver, forecastWeatherIcon, forecastWind, forecastWeather));
                         }
                         currentWeatherInfoBuilder.setForecastInfo(forecastInfo);
                         future.addProgress(1 / totalStages);

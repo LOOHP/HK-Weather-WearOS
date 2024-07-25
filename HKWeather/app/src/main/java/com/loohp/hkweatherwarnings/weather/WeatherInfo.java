@@ -43,15 +43,17 @@ public abstract class WeatherInfo implements JSONSerializable {
     private final float maxRelativeHumidity;
     private final float minRelativeHumidity;
     private final float chanceOfRain;
+    private final boolean isChanceOfRainOver;
     private final WeatherStatusIcon weatherIcon;
 
-    public WeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, WeatherStatusIcon weatherIcon) {
+    public WeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, boolean isChanceOfRainOver, WeatherStatusIcon weatherIcon) {
         this.date = date;
         this.highestTemperature = highestTemperature;
         this.lowestTemperature = lowestTemperature;
         this.maxRelativeHumidity = maxRelativeHumidity;
         this.minRelativeHumidity = minRelativeHumidity;
         this.chanceOfRain = chanceOfRain;
+        this.isChanceOfRainOver = isChanceOfRainOver;
         this.weatherIcon = weatherIcon;
     }
 
@@ -83,6 +85,10 @@ public abstract class WeatherInfo implements JSONSerializable {
         return chanceOfRain;
     }
 
+    public boolean isChanceOfRainOver() {
+        return isChanceOfRainOver;
+    }
+
     public WeatherStatusIcon getWeatherIcon() {
         return weatherIcon;
     }
@@ -96,6 +102,7 @@ public abstract class WeatherInfo implements JSONSerializable {
         jsonObject.put("maxRelativeHumidity", maxRelativeHumidity);
         jsonObject.put("minRelativeHumidity", minRelativeHumidity);
         jsonObject.put("chanceOfRain", chanceOfRain);
+        jsonObject.put("isChanceOfRainOver", isChanceOfRainOver);
         jsonObject.put("weatherIcon", weatherIcon.name());
         return jsonObject;
     }
@@ -105,11 +112,11 @@ public abstract class WeatherInfo implements JSONSerializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         WeatherInfo that = (WeatherInfo) o;
-        return Float.compare(that.highestTemperature, highestTemperature) == 0 && Float.compare(that.lowestTemperature, lowestTemperature) == 0 && Float.compare(that.maxRelativeHumidity, maxRelativeHumidity) == 0 && Float.compare(that.minRelativeHumidity, minRelativeHumidity) == 0 && Float.compare(that.chanceOfRain, chanceOfRain) == 0 && Objects.equals(date, that.date) && weatherIcon == that.weatherIcon;
+        return Float.compare(highestTemperature, that.highestTemperature) == 0 && Float.compare(lowestTemperature, that.lowestTemperature) == 0 && Float.compare(maxRelativeHumidity, that.maxRelativeHumidity) == 0 && Float.compare(minRelativeHumidity, that.minRelativeHumidity) == 0 && Float.compare(chanceOfRain, that.chanceOfRain) == 0 && isChanceOfRainOver == that.isChanceOfRainOver && Objects.equals(date, that.date) && weatherIcon == that.weatherIcon;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, weatherIcon);
+        return Objects.hash(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, isChanceOfRainOver, weatherIcon);
     }
 }
