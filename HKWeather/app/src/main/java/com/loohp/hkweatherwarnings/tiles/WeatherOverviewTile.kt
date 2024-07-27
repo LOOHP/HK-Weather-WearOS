@@ -677,7 +677,7 @@ class WeatherOverviewTile : TileService() {
                                         )
                                         .addContent(
                                             LayoutElementBuilders.Text.Builder()
-                                                .setText("%.0f".format(weatherInfo.chanceOfRain) + "%")
+                                                .setText(weatherInfo.chanceOfRainRangeSign.symbolWithSpace + "%.0f".format(weatherInfo.chanceOfRain) + "%")
                                                 .setFontStyle(
                                                     LayoutElementBuilders.FontStyle.Builder()
                                                         .setSize(

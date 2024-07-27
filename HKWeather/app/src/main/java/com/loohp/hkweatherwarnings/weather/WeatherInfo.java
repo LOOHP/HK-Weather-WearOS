@@ -31,6 +31,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import java.util.UUID;
 
 @Immutable
 public abstract class WeatherInfo implements JSONSerializable {
@@ -43,17 +44,17 @@ public abstract class WeatherInfo implements JSONSerializable {
     private final float maxRelativeHumidity;
     private final float minRelativeHumidity;
     private final float chanceOfRain;
-    private final boolean isChanceOfRainOver;
+    private final RangeSign chanceOfRainRangeSign;
     private final WeatherStatusIcon weatherIcon;
 
-    public WeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, boolean isChanceOfRainOver, WeatherStatusIcon weatherIcon) {
+    public WeatherInfo(LocalDate date, float highestTemperature, float lowestTemperature, float maxRelativeHumidity, float minRelativeHumidity, float chanceOfRain, RangeSign chanceOfRainRangeSign, WeatherStatusIcon weatherIcon) {
         this.date = date;
         this.highestTemperature = highestTemperature;
         this.lowestTemperature = lowestTemperature;
         this.maxRelativeHumidity = maxRelativeHumidity;
         this.minRelativeHumidity = minRelativeHumidity;
         this.chanceOfRain = chanceOfRain;
-        this.isChanceOfRainOver = isChanceOfRainOver;
+        this.chanceOfRainRangeSign = chanceOfRainRangeSign;
         this.weatherIcon = weatherIcon;
     }
 
@@ -85,8 +86,8 @@ public abstract class WeatherInfo implements JSONSerializable {
         return chanceOfRain;
     }
 
-    public boolean isChanceOfRainOver() {
-        return isChanceOfRainOver;
+    public RangeSign getChanceOfRainRangeSign() {
+        return chanceOfRainRangeSign;
     }
 
     public WeatherStatusIcon getWeatherIcon() {
@@ -102,7 +103,7 @@ public abstract class WeatherInfo implements JSONSerializable {
         jsonObject.put("maxRelativeHumidity", maxRelativeHumidity);
         jsonObject.put("minRelativeHumidity", minRelativeHumidity);
         jsonObject.put("chanceOfRain", chanceOfRain);
-        jsonObject.put("isChanceOfRainOver", isChanceOfRainOver);
+        jsonObject.put("chanceOfRainRangeSign", chanceOfRainRangeSign.name());
         jsonObject.put("weatherIcon", weatherIcon.name());
         return jsonObject;
     }
@@ -112,11 +113,30 @@ public abstract class WeatherInfo implements JSONSerializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         WeatherInfo that = (WeatherInfo) o;
-        return Float.compare(highestTemperature, that.highestTemperature) == 0 && Float.compare(lowestTemperature, that.lowestTemperature) == 0 && Float.compare(maxRelativeHumidity, that.maxRelativeHumidity) == 0 && Float.compare(minRelativeHumidity, that.minRelativeHumidity) == 0 && Float.compare(chanceOfRain, that.chanceOfRain) == 0 && isChanceOfRainOver == that.isChanceOfRainOver && Objects.equals(date, that.date) && weatherIcon == that.weatherIcon;
+        return Float.compare(highestTemperature, that.highestTemperature) == 0 && Float.compare(lowestTemperature, that.lowestTemperature) == 0 && Float.compare(maxRelativeHumidity, that.maxRelativeHumidity) == 0 && Float.compare(minRelativeHumidity, that.minRelativeHumidity) == 0 && Float.compare(chanceOfRain, that.chanceOfRain) == 0 && chanceOfRainRangeSign == that.chanceOfRainRangeSign && Objects.equals(date, that.date) && weatherIcon == that.weatherIcon;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, isChanceOfRainOver, weatherIcon);
+        return Objects.hash(date, highestTemperature, lowestTemperature, maxRelativeHumidity, minRelativeHumidity, chanceOfRain, chanceOfRainRangeSign, weatherIcon);
+    }
+
+    public enum RangeSign {
+        NONE(null), LARGER_THAN(">"), SMALLER_THAN("<");
+
+        private final String IMPOSSIBLE_MATCH = UUID.randomUUID().toString();
+        private final String symbol;
+
+        RangeSign(String symbol) {
+            this.symbol = symbol;
+        }
+
+        public String getSymbol() {
+            return symbol == null ? IMPOSSIBLE_MATCH : symbol;
+        }
+
+        public String getSymbolWithSpace() {
+            return symbol == null ? "" : (symbol + " ");
+        }
     }
 }

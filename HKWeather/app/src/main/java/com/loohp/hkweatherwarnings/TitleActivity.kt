@@ -806,7 +806,9 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                             color = MaterialTheme.colors.primary,
                             fontSize = StringUtils.scaledSize(13, instance).dp.sp,
                             text = (if (Registry.getInstance(instance).language == "en") "Chance of Rain" else "降雨概率")
-                                .plus(String.format(" %.0f", weatherInfo.chanceOfRain).plus("%"))
+                                    + " "
+                                    + weatherInfo.chanceOfRainRangeSign.symbolWithSpace
+                                    + String.format("%.0f", weatherInfo.chanceOfRain).plus("%")
                         )
                     }
                 }

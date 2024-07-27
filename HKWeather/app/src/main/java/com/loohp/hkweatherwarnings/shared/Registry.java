@@ -51,6 +51,7 @@ import com.loohp.hkweatherwarnings.weather.LunarDate;
 import com.loohp.hkweatherwarnings.weather.RainfallMapsInfo;
 import com.loohp.hkweatherwarnings.weather.SpecialTyphoonInfo;
 import com.loohp.hkweatherwarnings.weather.TropicalCycloneInfo;
+import com.loohp.hkweatherwarnings.weather.WeatherInfo;
 import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon;
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType;
 
@@ -551,7 +552,14 @@ public class Registry {
                         List<JSONObject> dailyForecastArray = JsonUtils.toList(forecastDailyData, JSONObject.class);
 
                         String chanceOfRainStr = dailyForecastArray.get(0).optString("ForecastChanceOfRain");
-                        currentWeatherInfoBuilder.setChanceOfRain(Float.parseFloat(chanceOfRainStr.substring(0, chanceOfRainStr.length() - 1).replace("< ", "")));
+                        WeatherInfo.RangeSign chanceOfRainRangeSign = WeatherInfo.RangeSign.NONE;
+                        for (WeatherInfo.RangeSign rangeSign : WeatherInfo.RangeSign.values()) {
+                            if (chanceOfRainStr.contains(rangeSign.getSymbol())) {
+                                currentWeatherInfoBuilder.setChanceOfRainRangeSign(chanceOfRainRangeSign = rangeSign);
+                                break;
+                            }
+                        }
+                        currentWeatherInfoBuilder.setChanceOfRain(Float.parseFloat(chanceOfRainStr.substring(chanceOfRainRangeSign.getSymbolWithSpace().length(), chanceOfRainStr.length() - 1)));
                         future.addProgress(1 / totalStages);
 
                         JSONObject forecastData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=" + lang);
@@ -587,17 +595,21 @@ public class Registry {
                             String forecastWeather = forecastDayObj.optString("forecastWeather");
 
                             float forecastChanceOfRain;
-                            boolean isChanceOfRainOver;
+                            WeatherInfo.RangeSign forecastChanceOfRainRangeSign = WeatherInfo.RangeSign.NONE;
                             if (forecastStationDayObj == null) {
                                 forecastChanceOfRain = -1F;
-                                isChanceOfRainOver = false;
                             } else {
                                 String forecastChanceOfRainStr = forecastStationDayObj.optString("ForecastChanceOfRain");
-                                isChanceOfRainOver = forecastChanceOfRainStr.startsWith(">");
-                                forecastChanceOfRain = Float.parseFloat(forecastChanceOfRainStr.substring(isChanceOfRainOver ? 2 : 0, forecastChanceOfRainStr.length() - 1).replace("< ", ""));
+                                for (WeatherInfo.RangeSign rangeSign : WeatherInfo.RangeSign.values()) {
+                                    if (forecastChanceOfRainStr.contains(rangeSign.getSymbol())) {
+                                        forecastChanceOfRainRangeSign = rangeSign;
+                                        break;
+                                    }
+                                }
+                                forecastChanceOfRain = Float.parseFloat(forecastChanceOfRainStr.substring(forecastChanceOfRainRangeSign.getSymbolWithSpace().length(), forecastChanceOfRainStr.length() - 1));
                             }
 
-                            forecastInfo.add(new ForecastWeatherInfo(forecastDate, forecastHighestTemperature, forecastLowestTemperature, forecastMaxRelativeHumidity, forecastMinRelativeHumidity, forecastChanceOfRain, isChanceOfRainOver, forecastWeatherIcon, forecastWind, forecastWeather));
+                            forecastInfo.add(new ForecastWeatherInfo(forecastDate, forecastHighestTemperature, forecastLowestTemperature, forecastMaxRelativeHumidity, forecastMinRelativeHumidity, forecastChanceOfRain, forecastChanceOfRainRangeSign, forecastWeatherIcon, forecastWind, forecastWeather));
                         }
                         currentWeatherInfoBuilder.setForecastInfo(forecastInfo);
                         future.addProgress(1 / totalStages);
