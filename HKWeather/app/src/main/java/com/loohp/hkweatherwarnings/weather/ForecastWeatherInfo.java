@@ -45,7 +45,7 @@ public class ForecastWeatherInfo extends WeatherInfo {
         float maxRelativeHumidity = (float) jsonObject.optDouble("maxRelativeHumidity");
         float minRelativeHumidity = (float) jsonObject.optDouble("minRelativeHumidity");
         float chanceOfRain = (float) jsonObject.optDouble("chanceOfRain");
-        RangeSign chanceOfRainRangeSign = RangeSign.valueOf(jsonObject.optString("isChanceOfRainOver", RangeSign.NONE.name()));
+        RangeSign chanceOfRainRangeSign = RangeSign.valueOf(jsonObject.optString("chanceOfRainRangeSign", RangeSign.NONE.name()));
         WeatherStatusIcon weatherIcon = WeatherStatusIcon.valueOf(jsonObject.optString("weatherIcon"));
         String forecastWind = jsonObject.optString("forecastWind");
         String forecastWeather = jsonObject.optString("forecastWeather");

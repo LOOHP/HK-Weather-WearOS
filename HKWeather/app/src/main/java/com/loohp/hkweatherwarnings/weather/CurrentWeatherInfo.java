@@ -46,7 +46,7 @@ public class CurrentWeatherInfo extends WeatherInfo {
         float maxRelativeHumidity = (float) jsonObject.optDouble("maxRelativeHumidity");
         float minRelativeHumidity = (float) jsonObject.optDouble("minRelativeHumidity");
         float chanceOfRain = (float) jsonObject.optDouble("chanceOfRain");
-        RangeSign chanceOfRainRangeSign = RangeSign.valueOf(jsonObject.optString("isChanceOfRainOver", RangeSign.NONE.name()));
+        RangeSign chanceOfRainRangeSign = RangeSign.valueOf(jsonObject.optString("chanceOfRainRangeSign", RangeSign.NONE.name()));
         WeatherStatusIcon weatherIcon = WeatherStatusIcon.valueOf(jsonObject.optString("weatherIcon"));
         String weatherStation = jsonObject.optString("weatherStation");
         WeatherStatusIcon nextWeatherIcon = jsonObject.has("nextWeatherIcon") ? WeatherStatusIcon.valueOf(jsonObject.optString("nextWeatherIcon")) : null;
@@ -316,16 +316,19 @@ public class CurrentWeatherInfo extends WeatherInfo {
 
         public Builder setChanceOfRain(float chanceOfRain) {
             this.chanceOfRain = chanceOfRain;
-            return this;
-        }
-
-        public Builder setWeatherIcon(WeatherStatusIcon weatherIcon) {
-            this.weatherIcon = weatherIcon;
+            if (this.chanceOfRainRangeSign == null) {
+                this.chanceOfRainRangeSign = RangeSign.NONE;
+            }
             return this;
         }
 
         public Builder setChanceOfRainRangeSign(RangeSign chanceOfRainRangeSign) {
             this.chanceOfRainRangeSign = chanceOfRainRangeSign;
+            return this;
+        }
+
+        public Builder setWeatherIcon(WeatherStatusIcon weatherIcon) {
+            this.weatherIcon = weatherIcon;
             return this;
         }
 
