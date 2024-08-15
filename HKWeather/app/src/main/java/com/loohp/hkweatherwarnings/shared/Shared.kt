@@ -196,12 +196,13 @@ class Shared {
                     BufferedReader(InputStreamReader(it.applicationContext.openFileInput(TIPS_CACHE_FILE), StandardCharsets.UTF_8)).use { reader ->
                         val json = JSONObject(reader.lines().collect(Collectors.joining()))
                         val entries = json.optJSONArray("tips")!!
-                        val list: MutableList<Pair<String, Long>> = ArrayList()
-                        for (i in 0 until entries.length()) {
-                            val entry = entries.optJSONObject(i)!!
-                            val tip = entry.optString("tip")
-                            val time = entry.optLong("time")
-                            list.add(Pair.create(tip, time))
+                        val list = buildList<Pair<String, Long>> {
+                            for (i in 0 until entries.length()) {
+                                val entry = entries.optJSONObject(i)!!
+                                val tip = entry.optString("tip")
+                                val time = entry.optLong("time")
+                                add(Pair.create(tip, time))
+                            }
                         }
                         val updateTime = json.optLong("updateTime")
                         val updateSuccessful = json.optBoolean("updateSuccessful")

@@ -759,9 +759,8 @@ public class Registry {
                         JSONObject specialTyphoonInfoData = HTTPRequestUtils.getJSONResponse("https://pda.weather.gov.hk/locspc/android_data/tc_part2" + specialTyphoonInfoLang + ".json");
                         SpecialTyphoonInfo specialTyphoonInfo;
                         if (specialTyphoonInfoData == null) {
-                            throw new RuntimeException();
-                        }
-                        if (specialTyphoonInfoData.has("WTCB") && specialTyphoonInfoData.optJSONObject("WTCB").optBoolean("isTCPart2Display", false)) {
+                            specialTyphoonInfo = null;
+                        } else if (specialTyphoonInfoData.has("WTCB") && specialTyphoonInfoData.optJSONObject("WTCB").optBoolean("isTCPart2Display", false)) {
                             JSONObject wtcb = specialTyphoonInfoData.optJSONObject("WTCB");
                             JSONObject typhoonData = wtcb.optJSONObject("part2Content");
 
@@ -840,6 +839,9 @@ public class Registry {
                                     lines.add(0, warningName);
                                 }
                                 contents = String.join("\n", lines);
+                                if (contents.contains("取消") || contents.toLowerCase().contains("cancelled")) {
+                                    continue;
+                                }
                                 OffsetDateTime time = OffsetDateTime.parse(details.optString("updateTime"));
                                 if (getLanguage().equals("en")) {
                                     contents += "\nDispatched by the Hong Kong Observatory at " + DateTimeFormatter.ofPattern("HH:mm' HKT on 'dd.MM.yyyy", Locale.ENGLISH).format(time);
