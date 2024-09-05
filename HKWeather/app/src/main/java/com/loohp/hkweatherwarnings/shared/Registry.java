@@ -78,6 +78,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -817,41 +819,51 @@ public class Registry {
             try {
                 String lang = getLanguage().equals("en") ? "en" : "tc";
 
-                JSONObject data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warningInfo&lang=" + lang);
-                if (data == null) {
+                JSONObject sumData = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=" + lang);
+                if (sumData == null) {
                     throw new RuntimeException();
                 }
                 Map<WeatherWarningsType, String> warnings = new EnumMap<>(WeatherWarningsType.class);
-                JSONArray array = data.optJSONArray("details");
-                if (array != null) {
-                    for (int i = 0; i < array.length(); i++) {
-                        JSONObject details = array.optJSONObject(i);
-                        try {
-                            WeatherWarningsType warningType = WeatherWarningsType.valueOf((details.has("subtype") ? details.optString("subtype") : details.optString("warningStatementCode")).toUpperCase());
-                            String warningName = getLanguage().equals("en") ? warningType.getNameEn() : warningType.getNameZh();
-                            JSONArray contentsArray = details.optJSONArray("contents");
-                            String contents;
-                            if (contentsArray == null || contentsArray.length() == 0) {
-                                contents = null;
-                            } else {
-                                List<String> lines = JsonUtils.toList(contentsArray, String.class);
-                                if (!lines.get(0).trim().equalsIgnoreCase(warningName)) {
-                                    lines.add(0, warningName);
+                for (Iterator<String> itr = sumData.keys(); itr.hasNext();) {
+                    String key = itr.next();
+                    JSONObject obj = sumData.optJSONObject(key);
+                    if (obj != null && !obj.optString("actionCode").equals("CANCEL")) {
+                        warnings.put(WeatherWarningsType.valueOf(obj.optString("code").toUpperCase()), null);
+                    }
+                }
+
+                JSONObject data = HTTPRequestUtils.getJSONResponse("https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warningInfo&lang=" + lang);
+                if (data != null) {
+                    JSONArray array = data.optJSONArray("details");
+                    if (array != null) {
+                        for (int i = 0; i < array.length(); i++) {
+                            JSONObject details = array.optJSONObject(i);
+                            try {
+                                WeatherWarningsType warningType = WeatherWarningsType.valueOf((details.has("subtype") ? details.optString("subtype") : details.optString("warningStatementCode")).toUpperCase());
+                                if (warnings.containsKey(warningType)) {
+                                    String warningName = getLanguage().equals("en") ? warningType.getNameEn() : warningType.getNameZh();
+                                    JSONArray contentsArray = details.optJSONArray("contents");
+                                    String contents;
+                                    if (contentsArray == null || contentsArray.length() == 0) {
+                                        contents = null;
+                                    } else {
+                                        List<String> lines = JsonUtils.toList(contentsArray, String.class);
+                                        if (!lines.get(0).trim().equalsIgnoreCase(warningName)) {
+                                            lines.add(0, warningName);
+                                        }
+                                        contents = String.join("\n", lines);
+                                        OffsetDateTime time = OffsetDateTime.parse(details.optString("updateTime"));
+                                        if (getLanguage().equals("en")) {
+                                            contents += "\nDispatched by the Hong Kong Observatory at " + DateTimeFormatter.ofPattern("HH:mm' HKT on 'dd.MM.yyyy", Locale.ENGLISH).format(time);
+                                        } else {
+                                            contents += "\n以上天氣稿由天文台於" + DateTimeFormatter.ofPattern("yyyy年MM月dd日HH時mm分", Locale.TRADITIONAL_CHINESE).format(time) + "發出";
+                                        }
+                                    }
+                                    warnings.put(warningType, contents);
                                 }
-                                contents = String.join("\n", lines);
-                                if (contents.contains("取消") || contents.toLowerCase().contains("cancelled")) {
-                                    continue;
-                                }
-                                OffsetDateTime time = OffsetDateTime.parse(details.optString("updateTime"));
-                                if (getLanguage().equals("en")) {
-                                    contents += "\nDispatched by the Hong Kong Observatory at " + DateTimeFormatter.ofPattern("HH:mm' HKT on 'dd.MM.yyyy", Locale.ENGLISH).format(time);
-                                } else {
-                                    contents += "\n以上天氣稿由天文台於" + DateTimeFormatter.ofPattern("yyyy年MM月dd日HH時mm分", Locale.TRADITIONAL_CHINESE).format(time) + "發出";
-                                }
+                            } catch (Throwable e) {
+                                e.printStackTrace();
                             }
-                            warnings.put(warningType, contents);
-                        } catch (Throwable e) {
-                            e.printStackTrace();
                         }
                     }
                 }
