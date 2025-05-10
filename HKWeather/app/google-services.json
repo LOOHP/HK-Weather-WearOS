@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "252086859095",
+    "project_id": "hkweather-wearos",
+    "storage_bucket": "hkweather-wearos.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:252086859095:android:78f37939113dbe12fcba12",
+        "android_client_info": {
+          "package_name": "com.loohp.hkweatherwarnings"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC90ZghKp5mOIFLZD3xvO2KNKXGcRyDJNk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
