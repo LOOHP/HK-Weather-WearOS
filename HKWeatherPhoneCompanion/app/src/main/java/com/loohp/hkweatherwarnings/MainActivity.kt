@@ -21,7 +21,6 @@
 package com.loohp.hkweatherwarnings
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -50,6 +49,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import com.loohp.hkweatherwarnings.ui.theme.HKWeatherWarningsTheme
+import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,14 +70,14 @@ class MainActivity : ComponentActivity() {
 fun openLoohpJames(instance: MainActivity) {
     val intent = Intent(Intent.ACTION_VIEW)
         .addCategory(Intent.CATEGORY_BROWSABLE)
-        .setData(Uri.parse("https://loohpjames.com"))
+        .setData("https://loohpjames.com".toUri())
     instance.startActivity(intent)
 }
 
 fun openGooglePlay(instance: MainActivity) {
     val intent = Intent(Intent.ACTION_VIEW)
         .addCategory(Intent.CATEGORY_BROWSABLE)
-        .setData(Uri.parse("https://play.google.com/store/apps/details?id=com.loohp.hkweatherwarnings"))
+        .setData("https://play.google.com/store/apps/details?id=com.loohp.hkweatherwarnings".toUri())
     instance.startActivity(intent)
 }
 

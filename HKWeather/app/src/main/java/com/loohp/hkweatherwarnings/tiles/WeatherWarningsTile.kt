@@ -49,12 +49,15 @@ import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.FRESHNESS_TIME
 import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWarnings
+import com.loohp.hkweatherwarnings.shared.Shared.Companion.currentWeatherInfo
 import com.loohp.hkweatherwarnings.utils.ConnectionUtils
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
 import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
@@ -66,11 +69,14 @@ private var state = false
 
 class WeatherWarningsTile : TileService() {
 
-    override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
-        if (tileUpdatedTime < currentWarnings.getLastSuccessfulUpdateTime(this)) {
-            getUpdater(this).requestUpdate(javaClass)
-        }
-        Shared.startBackgroundService(this)
+    override fun onRecentInteractionEventsAsync(events: MutableList<EventBuilders.TileInteractionEvent>): ListenableFuture<Void?> {
+        return Futures.submit(Callable {
+            if (tileUpdatedTime < currentWarnings.getLastSuccessfulUpdateTime(this)) {
+                getUpdater(this).requestUpdate(javaClass)
+            }
+            Shared.startBackgroundService(this)
+            null
+        }, Dispatchers.IO.asExecutor())
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {

@@ -9,3 +9,5 @@
 local.properties
 */build
 */release
+*.apk
+*.aab

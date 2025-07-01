@@ -58,6 +58,8 @@ import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.floorToInt
 import com.loohp.hkweatherwarnings.utils.timeZone
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
@@ -71,11 +73,14 @@ private var state = false
 
 class WeatherTipsTile : TileService() {
 
-    override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
-        if (tileUpdatedTime < currentTips.getLastSuccessfulUpdateTime(this)) {
-            getUpdater(this).requestUpdate(javaClass)
-        }
-        Shared.startBackgroundService(this)
+    override fun onRecentInteractionEventsAsync(events: MutableList<EventBuilders.TileInteractionEvent>): ListenableFuture<Void?> {
+        return Futures.submit(Callable {
+            if (tileUpdatedTime < currentTips.getLastSuccessfulUpdateTime(this)) {
+                getUpdater(this).requestUpdate(javaClass)
+            }
+            Shared.startBackgroundService(this)
+            null
+        }, Dispatchers.IO.asExecutor())
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {

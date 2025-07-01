@@ -119,7 +119,7 @@ class RainfallMapImageTransformation : Transformation {
 
     override suspend fun transform(input: Bitmap, size: Size): Bitmap {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-        val output = createBitmap(input.width, input.width, input.config)
+        val output = createBitmap(input.width, input.width, input.config?: Bitmap.Config.ARGB_8888)
         output.applyCanvas {
             drawBitmap(input, 0F, 0F, paint)
         }
