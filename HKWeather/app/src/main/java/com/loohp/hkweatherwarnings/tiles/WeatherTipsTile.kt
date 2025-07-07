@@ -58,14 +58,12 @@ import com.loohp.hkweatherwarnings.utils.StringUtils
 import com.loohp.hkweatherwarnings.utils.UnitUtils
 import com.loohp.hkweatherwarnings.utils.floorToInt
 import com.loohp.hkweatherwarnings.utils.timeZone
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asExecutor
 import java.util.Date
 import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
 import kotlin.math.roundToInt
 
-private const val RESOURCES_VERSION = "0"
+private const val RESOURCES_VERSION = "1"
 private var tileUpdatedTime: Long = 0
 private var currentIndex: Int = 0
 private var state = false
@@ -75,12 +73,16 @@ class WeatherTipsTile : TileService() {
 
     override fun onRecentInteractionEventsAsync(events: MutableList<EventBuilders.TileInteractionEvent>): ListenableFuture<Void?> {
         return Futures.submit(Callable {
-            if (tileUpdatedTime < currentTips.getLastSuccessfulUpdateTime(this)) {
-                getUpdater(this).requestUpdate(javaClass)
+            for (event in events) {
+                if (event.eventType == EventBuilders.TileInteractionEvent.ENTER) {
+                    if (tileUpdatedTime < currentTips.getLastSuccessfulUpdateTime(this)) {
+                        getUpdater(this).requestUpdate(javaClass)
+                    }
+                    Shared.startBackgroundService(this)
+                }
             }
-            Shared.startBackgroundService(this)
             null
-        }, Dispatchers.IO.asExecutor())
+        }, ForkJoinPool.commonPool())
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
@@ -194,7 +196,7 @@ class WeatherTipsTile : TileService() {
     }
 
     override fun onTileResourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ListenableFuture<ResourceBuilders.Resources> {
-        return Futures.immediateFuture(
+        return Futures.submit(Callable {
             ResourceBuilders.Resources.Builder().setVersion(RESOURCES_VERSION)
                 .addIdToImageMapping("reload", ResourceBuilders.ImageResource.Builder()
                     .setAndroidResourceByResId(
@@ -209,7 +211,8 @@ class WeatherTipsTile : TileService() {
                             .setResourceId(R.mipmap.reloading)
                             .build()
                     ).build()
-                ).build())
+                ).build()
+        }, ForkJoinPool.commonPool())
     }
 
     @OptIn(ProtoLayoutExperimental::class)

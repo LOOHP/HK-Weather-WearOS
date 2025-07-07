@@ -36,7 +36,7 @@ android {
         applicationId = "com.loohp.hkweatherwarnings"
         minSdk = 30
         targetSdk = 35
-        versionCode = 139
+        versionCode = 146
         versionName = "1.3.8"
     }
 
@@ -96,6 +96,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
     implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.wear.protolayout:protolayout-expression:1.3.0")
+    implementation("androidx.wear.protolayout:protolayout:1.3.0")
+    implementation("androidx.wear.protolayout:protolayout-material:1.3.0")
     implementation("androidx.wear.tiles:tiles:1.5.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
     implementation("com.google.android.gms:play-services-wearable:19.0.0")

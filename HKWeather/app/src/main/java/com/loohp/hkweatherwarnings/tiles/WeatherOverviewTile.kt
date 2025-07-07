@@ -64,8 +64,6 @@ import com.loohp.hkweatherwarnings.utils.timeZone
 import com.loohp.hkweatherwarnings.weather.CurrentWeatherInfo
 import com.loohp.hkweatherwarnings.weather.WeatherStatusIcon
 import com.loohp.hkweatherwarnings.weather.WeatherWarningsType
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asExecutor
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Date
@@ -73,7 +71,7 @@ import java.util.Locale
 import java.util.concurrent.Callable
 import java.util.concurrent.ForkJoinPool
 
-private const val RESOURCES_VERSION = "0"
+private const val RESOURCES_VERSION = "1"
 private var tileUpdatedTime: Long = 0
 private var state = false
 
@@ -81,12 +79,16 @@ class WeatherOverviewTile : TileService() {
 
     override fun onRecentInteractionEventsAsync(events: MutableList<EventBuilders.TileInteractionEvent>): ListenableFuture<Void?> {
         return Futures.submit(Callable {
-            if (tileUpdatedTime < currentWeatherInfo.getLastSuccessfulUpdateTime(this)) {
-                getUpdater(this).requestUpdate(javaClass)
+            for (event in events) {
+                if (event.eventType == EventBuilders.TileInteractionEvent.ENTER) {
+                    if (tileUpdatedTime < currentWeatherInfo.getLastSuccessfulUpdateTime(this)) {
+                        getUpdater(this).requestUpdate(javaClass)
+                    }
+                    Shared.startBackgroundService(this)
+                }
             }
-            Shared.startBackgroundService(this)
             null
-        }, Dispatchers.IO.asExecutor())
+        }, ForkJoinPool.commonPool())
     }
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<TileBuilders.Tile> {
@@ -161,73 +163,75 @@ class WeatherOverviewTile : TileService() {
     }
 
     override fun onTileResourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ListenableFuture<ResourceBuilders.Resources> {
-        val bundle = ResourceBuilders.Resources.Builder().setVersion(RESOURCES_VERSION)
-            .addIdToImageMapping("reload", ResourceBuilders.ImageResource.Builder()
-                .setAndroidResourceByResId(
-                    ResourceBuilders.AndroidImageResourceByResId.Builder()
-                        .setResourceId(R.mipmap.reload)
-                        .build()
-                ).build()
-            )
-            .addIdToImageMapping("reloading", ResourceBuilders.ImageResource.Builder()
-                .setAndroidResourceByResId(
-                    ResourceBuilders.AndroidImageResourceByResId.Builder()
-                        .setResourceId(R.mipmap.reloading)
-                        .build()
-                ).build()
-            )
-            .addIdToImageMapping("humidity", ResourceBuilders.ImageResource.Builder()
-                .setAndroidResourceByResId(
-                    ResourceBuilders.AndroidImageResourceByResId.Builder()
-                        .setResourceId(R.mipmap.humidity)
-                        .build()
-                ).build()
-            )
-            .addIdToImageMapping("uvindex", ResourceBuilders.ImageResource.Builder()
-                .setAndroidResourceByResId(
-                    ResourceBuilders.AndroidImageResourceByResId.Builder()
-                        .setResourceId(R.mipmap.uvindex)
-                        .build()
-                ).build()
-            )
-            .addIdToImageMapping("highest", ResourceBuilders.ImageResource.Builder()
-                .setAndroidResourceByResId(
-                    ResourceBuilders.AndroidImageResourceByResId.Builder()
-                        .setResourceId(R.mipmap.highest)
-                        .build()
-                ).build()
-            )
-            .addIdToImageMapping("lowest", ResourceBuilders.ImageResource.Builder()
-                .setAndroidResourceByResId(
-                    ResourceBuilders.AndroidImageResourceByResId.Builder()
-                        .setResourceId(R.mipmap.lowest)
-                        .build()
-                ).build()
-            )
-            .addIdToImageMapping("umbrella", ResourceBuilders.ImageResource.Builder()
-                .setAndroidResourceByResId(
-                    ResourceBuilders.AndroidImageResourceByResId.Builder()
-                        .setResourceId(R.mipmap.umbrella)
-                        .build()
-                ).build()
-            )
-            .addIdToImageMapping("gps", ResourceBuilders.ImageResource.Builder()
-                .setAndroidResourceByResId(
-                    ResourceBuilders.AndroidImageResourceByResId.Builder()
-                        .setResourceId(R.mipmap.gps)
-                        .build()
-                ).build()
-            )
-        for (type in WeatherStatusIcon.entries) {
-            bundle.addIdToImageMapping(type.iconName, ResourceBuilders.ImageResource.Builder()
-                .setAndroidResourceByResId(
-                    ResourceBuilders.AndroidImageResourceByResId.Builder()
-                        .setResourceId(type.iconId)
-                        .build()
-                ).build()
-            )
-        }
-        return Futures.immediateFuture(bundle.build())
+        return Futures.submit(Callable {
+            val bundle = ResourceBuilders.Resources.Builder().setVersion(RESOURCES_VERSION)
+                .addIdToImageMapping("reload", ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.mipmap.reload)
+                            .build()
+                    ).build()
+                )
+                .addIdToImageMapping("reloading", ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.mipmap.reloading)
+                            .build()
+                    ).build()
+                )
+                .addIdToImageMapping("humidity", ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.mipmap.humidity)
+                            .build()
+                    ).build()
+                )
+                .addIdToImageMapping("uvindex", ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.mipmap.uvindex)
+                            .build()
+                    ).build()
+                )
+                .addIdToImageMapping("highest", ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.mipmap.highest)
+                            .build()
+                    ).build()
+                )
+                .addIdToImageMapping("lowest", ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.mipmap.lowest)
+                            .build()
+                    ).build()
+                )
+                .addIdToImageMapping("umbrella", ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.mipmap.umbrella)
+                            .build()
+                    ).build()
+                )
+                .addIdToImageMapping("gps", ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.mipmap.gps)
+                            .build()
+                    ).build()
+                )
+            for (type in WeatherStatusIcon.entries) {
+                bundle.addIdToImageMapping(type.iconName, ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(type.iconId)
+                            .build()
+                    ).build()
+                )
+            }
+            bundle.build()
+        }, ForkJoinPool.commonPool())
     }
 
     @OptIn(ProtoLayoutExperimental::class)
