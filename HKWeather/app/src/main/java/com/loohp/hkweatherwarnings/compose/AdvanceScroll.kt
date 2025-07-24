@@ -1,8 +1,8 @@
 /*
  * This file is part of HKWeather.
  *
- * Copyright (C) 2023. LoohpJames <jamesloohp@gmail.com>
- * Copyright (C) 2023. Contributors
+ * Copyright (C) 2025. LoohpJames <jamesloohp@gmail.com>
+ * Copyright (C) 2025. Contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 package com.loohp.hkweatherwarnings.compose
 
-import android.content.res.Configuration
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.TweenSpec
@@ -36,9 +35,12 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -51,24 +53,51 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 
 
 fun Modifier.fullPageVerticalScrollbar(
     state: ScrollState,
-    indicatorThickness: Dp = 8.dp,
-    indicatorColor: Color = Color.LightGray,
-    alpha: Float = 0.8f
+    indicatorThickness: Dp = 4.dp,
+    indicatorColor: Color = Color.White,
+    alpha: Float = 0.8f,
 ): Modifier = composed {
     val configuration = LocalConfiguration.current
+    val window = LocalWindowInfo.current.containerSize
     var scrollOffsetViewPort by remember { mutableFloatStateOf(0F) }
     val animatedScrollOffsetViewPort by animateFloatAsState(
         targetValue = scrollOffsetViewPort,
         animationSpec = TweenSpec(durationMillis = 100, easing = LinearEasing),
         label = ""
     )
+    var indicatorAlphaInit by remember { mutableStateOf(true) }
+    var scrollValue by remember { mutableIntStateOf(state.value) }
+    var scrollValueChanged by remember { mutableStateOf(false) }
+    val animatedIndicatorAlpha by animateFloatAsState(
+        targetValue = if (scrollValueChanged || indicatorAlphaInit || (state.isScrollInProgress && (state.canScrollForward || state.canScrollBackward))) 1F else 0F,
+        animationSpec = tween(
+            delayMillis = if (scrollValueChanged || indicatorAlphaInit || state.isScrollInProgress) 0 else 1500,
+            durationMillis = if (scrollValueChanged || indicatorAlphaInit || state.isScrollInProgress) 150 else 500
+        ),
+        label = ""
+    )
+
+    LaunchedEffect (Unit) {
+        delay(3000)
+        indicatorAlphaInit = false
+    }
+    LaunchedEffect (state.value) {
+        if (scrollValue != state.value) {
+            scrollValueChanged = true
+            scrollValue = state.value
+            delay(50)
+            scrollValueChanged = false
+        }
+    }
 
     drawWithContent {
         drawContent()
@@ -83,9 +112,9 @@ fun Modifier.fullPageVerticalScrollbar(
             val halfIndicatorThicknessPx = (indicatorThickness.value / 2F).dp.toPx()
             scrollOffsetViewPort = contentOffset / contentLength
 
-            if (configuration.screenLayout and Configuration.SCREENLAYOUT_ROUND_MASK == Configuration.SCREENLAYOUT_ROUND_YES) {
+            if (configuration.isScreenRound) {
                 val topLeft = Offset(halfIndicatorThicknessPx, halfIndicatorThicknessPx)
-                val size = Size(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, configuration.screenHeightDp.dp.toPx() - indicatorThicknessPx)
+                val size = Size(window.width - indicatorThicknessPx, window.height - indicatorThicknessPx)
                 val style = Stroke(width = indicatorThicknessPx, cap = StrokeCap.Round)
                 drawArc(
                     startAngle = -30F,
@@ -94,7 +123,7 @@ fun Modifier.fullPageVerticalScrollbar(
                     color = Color.DarkGray,
                     topLeft = topLeft,
                     size = size,
-                    alpha = alpha,
+                    alpha = alpha * animatedIndicatorAlpha,
                     style = style
                 )
                 drawArc(
@@ -104,23 +133,25 @@ fun Modifier.fullPageVerticalScrollbar(
                     color = indicatorColor,
                     topLeft = topLeft,
                     size = size,
-                    alpha = alpha,
+                    alpha = animatedIndicatorAlpha,
                     style = style
                 )
             } else {
                 val cornerRadius = CornerRadius(indicatorThicknessPx / 2F)
-                val topLeft = Offset(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, viewPortLength * 0.125F)
+                val topLeft = Offset(window.width - indicatorThicknessPx, viewPortLength * 0.125F)
                 val size = Size(indicatorThicknessPx, viewPortLength * 0.75F)
                 drawRoundRect(
                     color = Color.DarkGray,
                     topLeft = topLeft,
                     size = size,
+                    alpha = alpha * animatedIndicatorAlpha,
                     cornerRadius = cornerRadius
                 )
                 drawRoundRect(
                     color = indicatorColor,
                     topLeft = Offset(topLeft.x, topLeft.y + animatedScrollOffsetViewPort * size.height),
                     size = Size(size.width, size.height * indicatorLength),
+                    alpha = animatedIndicatorAlpha,
                     cornerRadius = cornerRadius
                 )
             }
@@ -130,11 +161,13 @@ fun Modifier.fullPageVerticalScrollbar(
 
 fun Modifier.fullPageVerticalScrollbar(
     state: LazyListState,
-    indicatorThickness: Dp = 8.dp,
-    indicatorColor: Color = Color.LightGray,
+    indicatorThickness: Dp = 4.dp,
+    indicatorColor: Color = Color.White,
     alpha: Float = 0.8f
 ): Modifier = composed {
     val configuration = LocalConfiguration.current
+    val window = LocalWindowInfo.current.containerSize
+
     val actualItemLength: MutableMap<Int, Int> = remember { mutableMapOf() }
     var totalItemCount by remember { mutableIntStateOf(0) }
     var indicatorLength by remember { mutableFloatStateOf(0F) }
@@ -149,6 +182,33 @@ fun Modifier.fullPageVerticalScrollbar(
         animationSpec = TweenSpec(durationMillis = 100, easing = LinearEasing),
         label = ""
     )
+    var indicatorAlphaInit by remember { mutableStateOf(true) }
+    var scrollValue by remember { mutableStateOf(state.firstVisibleItemIndex to state.firstVisibleItemScrollOffset) }
+    var scrollValueChanged by remember { mutableStateOf(false) }
+    val animatedIndicatorAlpha by animateFloatAsState(
+        targetValue = if (scrollValueChanged || indicatorAlphaInit || (state.isScrollInProgress && (state.canScrollForward || state.canScrollBackward))) 1F else 0F,
+        animationSpec = tween(
+            delayMillis = if (scrollValueChanged || indicatorAlphaInit || state.isScrollInProgress) 0 else 1500,
+            durationMillis = if (scrollValueChanged || indicatorAlphaInit || state.isScrollInProgress) 150 else 500
+        ),
+        label = ""
+    )
+
+    LaunchedEffect (Unit) {
+        delay(3000)
+        indicatorAlphaInit = false
+    }
+    val firstVisibleItemIndex by remember { derivedStateOf { state.firstVisibleItemIndex } }
+    val firstVisibleItemScrollOffset by remember { derivedStateOf { state.firstVisibleItemScrollOffset } }
+    LaunchedEffect (firstVisibleItemIndex, firstVisibleItemScrollOffset) {
+        val pair = firstVisibleItemIndex to firstVisibleItemScrollOffset
+        if (scrollValue != pair) {
+            scrollValueChanged = true
+            scrollValue = pair
+            delay(50)
+            scrollValueChanged = false
+        }
+    }
 
     drawWithContent {
         drawContent()
@@ -172,7 +232,7 @@ fun Modifier.fullPageVerticalScrollbar(
             val halfIndicatorThicknessPx = (indicatorThickness.value / 2F).dp.toPx()
             scrollOffsetViewPort = contentOffset / contentLength
 
-            if (configuration.screenLayout and Configuration.SCREENLAYOUT_ROUND_MASK == Configuration.SCREENLAYOUT_ROUND_YES) {
+            if (configuration.isScreenRound) {
                 val topLeft = Offset(halfIndicatorThicknessPx, halfIndicatorThicknessPx)
                 val size = Size(viewPortWidth - indicatorThicknessPx, viewPortLength - indicatorThicknessPx)
                 val style = Stroke(width = indicatorThicknessPx, cap = StrokeCap.Round)
@@ -184,7 +244,7 @@ fun Modifier.fullPageVerticalScrollbar(
                     color = Color.DarkGray,
                     topLeft = topLeft,
                     size = size,
-                    alpha = alpha,
+                    alpha = alpha * animatedIndicatorAlpha,
                     style = style
                 )
                 drawArc(
@@ -194,22 +254,24 @@ fun Modifier.fullPageVerticalScrollbar(
                     color = indicatorColor,
                     topLeft = topLeft,
                     size = size,
-                    alpha = alpha,
+                    alpha = animatedIndicatorAlpha,
                     style = style
                 )
             } else {
                 val cornerRadius = CornerRadius(indicatorThicknessPx / 2F)
-                val topLeft = Offset(configuration.screenWidthDp.dp.toPx() - indicatorThicknessPx, viewPortLength * 0.125F)
+                val topLeft = Offset(window.width - indicatorThicknessPx, viewPortLength * 0.125F)
                 val size = Size(indicatorThicknessPx, viewPortLength * 0.75F)
                 val startHeight = (topLeft.y + animatedScrollOffsetViewPort * size.height).coerceIn(topLeft.y, topLeft.y + size.height)
                 drawRoundRect(
                     color = Color.DarkGray,
                     topLeft = topLeft,
                     size = size,
+                    alpha = alpha * animatedIndicatorAlpha,
                     cornerRadius = cornerRadius
                 )
                 drawRoundRect(
                     color = indicatorColor,
+                    alpha = animatedIndicatorAlpha,
                     topLeft = Offset(topLeft.x, startHeight),
                     size = Size(size.width, (size.height * animatedIndicatorLength).coerceAtMost(size.height - (startHeight - topLeft.y))),
                     cornerRadius = cornerRadius
@@ -222,8 +284,8 @@ fun Modifier.fullPageVerticalScrollbar(
 
 @Immutable
 data class FullPageScrollBarConfig(
-    val indicatorThickness: Dp = 8.dp,
-    val indicatorColor: Color = Color.LightGray,
+    val indicatorThickness: Dp = 4.dp,
+    val indicatorColor: Color = Color.White,
     val alpha: Float? = null,
     val alphaAnimationSpec: AnimationSpec<Float>? = null
 )
@@ -234,7 +296,7 @@ fun Modifier.fullPageVerticalLazyScrollbar(
     scrollbarConfigFullPage: FullPageScrollBarConfig = FullPageScrollBarConfig()
 ) = this
     .fullPageVerticalScrollbar(
-        state,
+        state = state,
         indicatorThickness = scrollbarConfigFullPage.indicatorThickness,
         indicatorColor = scrollbarConfigFullPage.indicatorColor,
         alpha = scrollbarConfigFullPage.alpha ?: 0.8f
@@ -249,7 +311,7 @@ fun Modifier.fullPageVerticalScrollWithScrollbar(
     scrollbarConfigFullPage: FullPageScrollBarConfig = FullPageScrollBarConfig()
 ) = this
     .fullPageVerticalScrollbar(
-        state,
+        state = state,
         indicatorThickness = scrollbarConfigFullPage.indicatorThickness,
         indicatorColor = scrollbarConfigFullPage.indicatorColor,
         alpha = scrollbarConfigFullPage.alpha ?: 0.8f
@@ -260,8 +322,8 @@ fun Modifier.fullPageVerticalScrollWithScrollbar(
 fun Modifier.scrollbar(
     state: ScrollState,
     direction: Orientation,
-    indicatorThickness: Dp = 8.dp,
-    indicatorColor: Color = Color.LightGray,
+    indicatorThickness: Dp = 4.dp,
+    indicatorColor: Color = Color.White,
     alpha: Float = if (state.isScrollInProgress) 0.8f else 0f,
     alphaAnimationSpec: AnimationSpec<Float> = tween(
         delayMillis = if (state.isScrollInProgress) 0 else 1500,
@@ -336,8 +398,8 @@ fun Modifier.scrollbar(
 
 @Immutable
 data class ScrollBarConfig(
-    val indicatorThickness: Dp = 8.dp,
-    val indicatorColor: Color = Color.LightGray,
+    val indicatorThickness: Dp = 4.dp,
+    val indicatorColor: Color = Color.White,
     val alpha: Float? = null,
     val alphaAnimationSpec: AnimationSpec<Float>? = null,
     val padding: PaddingValues = PaddingValues(all = 0.dp)

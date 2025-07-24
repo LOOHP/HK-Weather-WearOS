@@ -1,8 +1,8 @@
 /*
  * This file is part of HKWeather.
  *
- * Copyright (C) 2023. LoohpJames <jamesloohp@gmail.com>
- * Copyright (C) 2023. Contributors
+ * Copyright (C) 2025. LoohpJames <jamesloohp@gmail.com>
+ * Copyright (C) 2025. Contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 package com.loohp.hkweatherwarnings
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.text.format.DateFormat
 import android.util.Pair
@@ -90,6 +89,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
@@ -103,11 +103,12 @@ import com.google.firebase.Firebase
 import com.google.firebase.analytics.analytics
 import com.loohp.hkweatherwarnings.compose.AutoResizeText
 import com.loohp.hkweatherwarnings.compose.FontSizeRange
+import com.loohp.hkweatherwarnings.compose.Table
+import com.loohp.hkweatherwarnings.compose.TableColumn
+import com.loohp.hkweatherwarnings.compose.TableColumnWidth
+import com.loohp.hkweatherwarnings.compose.TableRow
 import com.loohp.hkweatherwarnings.compose.fadeIn
 import com.loohp.hkweatherwarnings.compose.fullPageVerticalLazyScrollbar
-import com.loohp.hkweatherwarnings.compose.table.DataColumn
-import com.loohp.hkweatherwarnings.compose.table.DataTable
-import com.loohp.hkweatherwarnings.compose.table.TableColumnWidth
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.shared.Shared
 import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
@@ -269,7 +270,7 @@ fun MainElements(todayState: State<LocalDate>, launchSection: Section? = null, i
             }
         }
         LaunchedEffect (weatherInfo) {
-            val url = "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=".plus(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime(instance))
+            val url = "https://pda.weather.gov.hk/locspc/android_data/img/moonphase.jpg?t=${Shared.currentWeatherInfo.getLastSuccessfulUpdateTime(instance)}"
             moonPhaseUrl = url
             instance.imageLoader.execute(ImageRequest.Builder(instance).data(url).build())
         }
@@ -571,7 +572,7 @@ fun DateTimeElements(lunarDate: LunarDate?, instance: TitleActivity) {
             color = MaterialTheme.colors.primary,
             fontSize = 13F.sp,
             fontWeight = FontWeight.Bold,
-            text = "節氣: ".plus(lunarDate.climatology)
+            text = "節氣: ${lunarDate.climatology}"
         )
     }
 }
@@ -678,10 +679,10 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        var lastUpdateText = (if (Registry.getInstance(instance).language == "en") "Updated: " else "更新時間: ").plus(
-                            DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE).format(Date(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime(instance))))
+                        var lastUpdateText = (if (Registry.getInstance(instance).language == "en") "Updated: " else "更新時間: ") +
+                                DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE).format(Date(Shared.currentWeatherInfo.getLastSuccessfulUpdateTime(instance)))
                         if (!lastUpdateSuccessful && !combinedUpdating) {
-                            lastUpdateText = lastUpdateText.plus(if (Registry.getInstance(instance).language == "en") " (Update Failed)" else " (無法更新)")
+                            lastUpdateText = "$lastUpdateText${if (Registry.getInstance(instance).language == "en") " (Update Failed)" else " (無法更新)"}"
                         }
                         Text(
                             textAlign = TextAlign.Center,
@@ -777,7 +778,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                 ) {
                     var weatherDescription = if (Registry.getInstance(instance).language == "en") weatherInfo.weatherIcon.descriptionEn else weatherInfo.weatherIcon.descriptionZh
                     if (weatherInfo.nextWeatherIcon != null) {
-                        weatherDescription = weatherDescription.plus(if (Registry.getInstance(instance).language == "en") " to ".plus(weatherInfo.nextWeatherIcon.descriptionEn) else " 至 ".plus(weatherInfo.nextWeatherIcon.descriptionZh))
+                        weatherDescription = "$weatherDescription${if (Registry.getInstance(instance).language == "en") " to ${weatherInfo.nextWeatherIcon.descriptionEn}" else " 至 ${weatherInfo.nextWeatherIcon.descriptionZh}"}"
                     }
                     Box (
                         modifier = Modifier
@@ -828,7 +829,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                         color = MaterialTheme.colors.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = StringUtils.scaledSize(35, instance).dp.sp,
-                        text = String.format("%.1f", weatherInfo.currentTemperature).plus("°")
+                        text = "%.1f".format(weatherInfo.currentTemperature) + "°"
                     )
                 }
                 Column (
@@ -853,7 +854,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
                             fontSize = StringUtils.scaledSize(13, instance).dp.sp,
-                            text = String.format("%.1f", weatherInfo.highestTemperature).plus("° ")
+                            text = "%.1f".format(weatherInfo.highestTemperature) + "° "
                         )
                         Image(
                             modifier = Modifier
@@ -866,7 +867,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colors.primary,
                             fontSize = StringUtils.scaledSize(13, instance).dp.sp,
-                            text = String.format("%.1f", weatherInfo.lowestTemperature).plus("°")
+                            text = "%.1f".format(weatherInfo.lowestTemperature) + "°"
                         )
                     }
                     Row (
@@ -889,7 +890,8 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                             text = (if (Registry.getInstance(instance).language == "en") "Chance of Rain" else "降雨概率")
                                     + " "
                                     + weatherInfo.chanceOfRainRangeSign.symbolWithSpace
-                                    + String.format("%.0f", weatherInfo.chanceOfRain).plus("%")
+                                    + "%.0f".format(weatherInfo.chanceOfRain)
+                                    + "%"
                         )
                     }
                 }
@@ -1075,8 +1077,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
             itemList.add {
                 Spacer(modifier = Modifier.size(4.dp))
             }
-            val dateFormat = DateTimeFormatter.ofPattern(DateFormat.getDateFormat(instance).let { if (it is SimpleDateFormat) it.toPattern() else "d/M/yy" }
-                .plus(" ").plus(DateFormat.getTimeFormat(instance).let { if (it is SimpleDateFormat) it.toPattern() else "HH:mm" }))
+            val dateFormat = DateTimeFormatter.ofPattern("${DateFormat.getDateFormat(instance).let { if (it is SimpleDateFormat) it.toPattern() else "d/M/yy" }} ${DateFormat.getTimeFormat(instance).let { if (it is SimpleDateFormat) it.toPattern() else "HH:mm" }}")
             itemList.add {
                 Text(
                     modifier = Modifier.padding(5.dp, 0.dp),
@@ -1129,14 +1130,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                     Spacer(modifier = Modifier.size(4.dp))
                 }
                 val date = Date(tip.second)
-                val lastUpdateText =
-                    DateFormat.getDateFormat(instance).timeZone(Shared.HK_TIMEZONE)
-                        .format(date)
-                        .plus(" ")
-                        .plus(
-                            DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE)
-                                .format(date)
-                        )
+                val lastUpdateText = "${DateFormat.getDateFormat(instance).timeZone(Shared.HK_TIMEZONE).format(date)} ${DateFormat.getTimeFormat(instance).timeZone(Shared.HK_TIMEZONE).format(date)}"
                 itemList.add {
                     Text(
                         modifier = Modifier.padding(5.dp, 0.dp),
@@ -1222,8 +1216,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                     color = Color(uvIndexType.color),
                     fontSize = 25F.sp,
                     fontWeight = FontWeight.Bold,
-                    text = String.format("%.1f", weatherInfo.uvIndex).plus(" ")
-                        .plus(if (Registry.getInstance(instance).language == "en") uvIndexType.en else uvIndexType.zh)
+                    text = "${"%.1f".format(weatherInfo.uvIndex)} ${if (Registry.getInstance(instance).language == "en") uvIndexType.en else uvIndexType.zh}"
                 )
             }
         } else {
@@ -1268,7 +1261,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
                 color = Color(0xFF3CB0FF),
                 fontSize = 25F.sp,
                 fontWeight = FontWeight.Bold,
-                text = String.format("%.0f", weatherInfo.currentHumidity).plus("%")
+                text = "%.0f".format(weatherInfo.currentHumidity) + "%"
             )
         }
         itemList.add {
@@ -1299,8 +1292,7 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
         val windText = if (weatherInfo.windSpeed < 0F) {
             "-"
         } else {
-            weatherInfo.windDirection.plus(" ")
-                .plus("%.0f".format(weatherInfo.windSpeed)).plus(if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時")
+            "${weatherInfo.windDirection} ${"%.0f".format(weatherInfo.windSpeed)}${if (Registry.getInstance(instance).language == "en") " km/h" else "公里/小時"}"
         }
         itemList.add(Section.WIND) {
             Box (
@@ -1653,41 +1645,74 @@ fun generateWeatherInfoItems(updating: Boolean, combinedUpdating: Boolean, lastU
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
 fun HourlyItems(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFormatter, instance: TitleActivity) {
-    val columns = ImmutableList.of(
-        DataColumn(
+    val columns = remember { ImmutableList.of(
+        TableColumn(
             alignment = Alignment.Start,
             width = TableColumnWidth.Wrap
-        ) {},
-        DataColumn(
+        ),
+        TableColumn(
+            width = TableColumnWidth.Weight(1F)
+        ),
+        TableColumn(
             alignment = Alignment.Start,
             width = TableColumnWidth.Wrap
-        ) {},
-        DataColumn(
+        ),
+        TableColumn(
             alignment = Alignment.Start,
             width = TableColumnWidth.Wrap
-        ) {},
-        DataColumn(
+        ),
+        TableColumn(
+            width = TableColumnWidth.Weight(1F)
+        ),
+        TableColumn(
             alignment = Alignment.End,
             width = TableColumnWidth.Wrap
-        ) {},
-        DataColumn(
+        ),
+        TableColumn(
+            width = TableColumnWidth.Weight(1F)
+        ),
+        TableColumn(
             alignment = Alignment.End,
             width = TableColumnWidth.Wrap
-        ) {}
-    )
+        )
+    ) }
+    val rows = buildList {
+        var count = 0
+        val nowHour = LocalDateTime.now(Shared.HK_TIMEZONE.toZoneId())
+        for (hourInfo in weatherInfo.hourlyWeatherInfo) {
+            if (hourInfo.time.isBefore(nowHour)) {
+                continue
+            }
+            if (++count > 12) {
+                break
+            }
+            add(TableRow(
+                onClick = {
+                    val weatherIcon = hourInfo.weatherIcon
+                    val weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
+                    val intent = Intent(instance, DisplayInfoTextActivity::class.java)
+                    intent.putExtra("imageDrawable", weatherIcon.iconId)
+                    intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
+                    intent.putExtra("imageDescription", weatherDescription)
+                    intent.putExtra("text", hourInfo.toDisplayText(instance))
+                    instance.startActivity(intent)
+                }
+            ))
+        }
+    }
 
-    Box(
+    Box (
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.Center
     ) {
-        DataTable(
-            columns = columns,
-            rowHeight = 32.dp,
-            headerHeight = 0.dp,
-            horizontalPadding = 0.dp,
-            separator = { Spacer(modifier = Modifier.size(1.dp)) }
+        Table(
+            columns = { columns[it] },
+            columnsCount = columns.size,
+            rowSpacing = 5.dp,
+            columnSpacing = 2.dp,
+            rows = { rows[it] }
         ) {
             var count = 0
             val nowHour = LocalDateTime.now(Shared.HK_TIMEZONE.toZoneId())
@@ -1698,78 +1723,58 @@ fun HourlyItems(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFormatter, 
                 if (++count > 12) {
                     break
                 }
-                row(
-                    onClick = {
-                        val weatherIcon = hourInfo.weatherIcon
-                        val weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
-                        val intent = Intent(instance, DisplayInfoTextActivity::class.java)
-                        intent.putExtra("imageDrawable", weatherIcon.iconId)
-                        intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
-                        intent.putExtra("imageDescription", weatherDescription)
-                        intent.putExtra("text", hourInfo.toDisplayText(instance))
-                        instance.startActivity(intent)
-                    }
-                ) {
-                    val small = ScreenSizeUtils.getScreenWidth(instance) < 450
-                    val size = if (small) 10 else 15
-                    cell {
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = 14F.sp.clamp(max = 14.dp),
-                            fontWeight = FontWeight.Bold,
-                            text = hourInfo.time.format(timeFormat) + if (small) " " else "     "
-                        )
-                    }
-                    cell {
-                        Image(
-                            modifier = Modifier
-                                .padding(1.dp, 1.dp)
-                                .size(size.dp),
-                            painter = painterResource(R.mipmap.humidity),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
-                        )
-                    }
-                    cell {
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = (size - 1F).sp.clamp(max = (size - 1).dp),
-                            text = "%.0f".format(hourInfo.humidity) + "%" + if (small) " " else "  "
-                        )
-                    }
-                    cell {
-                        Image(
-                            modifier = Modifier
-                                .padding(1.dp, 1.dp)
-                                .size(20.dp)
-                                .combinedClickable(
-                                    onClick = {
-                                        instance.runOnUiThread {
-                                            Toast
-                                                .makeText(
-                                                    instance,
-                                                    if (Registry.getInstance(instance).language == "en") hourInfo.weatherIcon.descriptionEn else hourInfo.weatherIcon.descriptionZh,
-                                                    Toast.LENGTH_LONG
-                                                )
-                                                .show()
-                                        }
-                                    }
-                                ),
-                            painter = painterResource(hourInfo.weatherIcon.iconId),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") hourInfo.weatherIcon.descriptionEn else hourInfo.weatherIcon.descriptionZh
-                        )
-                    }
-                    cell {
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = 14F.sp.clamp(max = 14.dp),
-                            fontWeight = FontWeight.Bold,
-                            text = "%.1f".format(hourInfo.temperature) + "°"
-                        )
-                    }
-                }
+                val small = ScreenSizeUtils.getScreenWidth(instance) < 430
+                val size = if (small) 10 else 15
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = 14F.sp.clamp(max = 14.dp),
+                    fontWeight = FontWeight.Bold,
+                    text = hourInfo.time.format(timeFormat)
+                )
+                Spacer(modifier = Modifier.size(0.dp))
+                Image(
+                    modifier = Modifier
+                        .padding(1.dp, 1.dp)
+                        .size(size.dp),
+                    painter = painterResource(R.mipmap.humidity),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = (size - 1F).sp.clamp(max = (size - 1).dp),
+                    text = "%.0f".format(hourInfo.humidity) + "%"
+                )
+                Spacer(modifier = Modifier.size(0.dp))
+                Image(
+                    modifier = Modifier
+                        .padding(1.dp, 1.dp)
+                        .size(20.dp)
+                        .combinedClickable(
+                            onClick = {
+                                instance.runOnUiThread {
+                                    Toast
+                                        .makeText(
+                                            instance,
+                                            if (Registry.getInstance(instance).language == "en") hourInfo.weatherIcon.descriptionEn else hourInfo.weatherIcon.descriptionZh,
+                                            Toast.LENGTH_LONG
+                                        )
+                                        .show()
+                                }
+                            }
+                        ),
+                    painter = painterResource(hourInfo.weatherIcon.iconId),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") hourInfo.weatherIcon.descriptionEn else hourInfo.weatherIcon.descriptionZh
+                )
+                Spacer(modifier = Modifier.size(0.dp))
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = 14F.sp.clamp(max = 14.dp),
+                    fontWeight = FontWeight.Bold,
+                    text = "%.1f".format(hourInfo.temperature) + "°"
+                )
             }
         }
     }
@@ -1779,141 +1784,146 @@ fun HourlyItems(weatherInfo: CurrentWeatherInfo, timeFormat: DateTimeFormatter, 
 @OptIn(ExperimentalFoundationApi::class)
 fun ForecastItems(weatherInfo: CurrentWeatherInfo, instance: TitleActivity) {
     val columns = ImmutableList.of(
-        DataColumn(
+        TableColumn(
             alignment = Alignment.Start,
             width = TableColumnWidth.Wrap
-        ) {},
-        DataColumn(
+        ),
+        TableColumn(
+            width = TableColumnWidth.Weight(1F)
+        ),
+        TableColumn(
             alignment = Alignment.Start,
             width = TableColumnWidth.Wrap
-        ) {},
-        DataColumn(
+        ),
+        TableColumn(
             alignment = Alignment.Start,
             width = TableColumnWidth.Wrap
-        ) {},
-        DataColumn(
+        ),
+        TableColumn(
+            width = TableColumnWidth.Weight(1F)
+        ),
+        TableColumn(
             alignment = Alignment.Start,
             width = TableColumnWidth.Wrap
-        ) {},
-        DataColumn(
+        ),
+        TableColumn(
             alignment = Alignment.Start,
             width = TableColumnWidth.Wrap
-        ) {},
-        DataColumn(
+        ),
+        TableColumn(
+            width = TableColumnWidth.Weight(1F)
+        ),
+        TableColumn(
             alignment = Alignment.End,
             width = TableColumnWidth.Wrap
-        ) {},
-        DataColumn(
+        ),
+        TableColumn(
+            width = TableColumnWidth.Weight(1F)
+        ),
+        TableColumn(
             alignment = Alignment.End,
             width = TableColumnWidth.Wrap
-        ) {}
+        )
     )
+    val rows = buildList {
+        for (dayInfo in weatherInfo.forecastInfo) {
+            add(TableRow(
+                onClick = {
+                    val weatherIcon = dayInfo.weatherIcon
+                    val weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
+                    val intent = Intent(instance, DisplayInfoTextActivity::class.java)
+                    intent.putExtra("imageDrawable", weatherIcon.iconId)
+                    intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
+                    intent.putExtra("imageDescription", weatherDescription)
+                    intent.putExtra("text", dayInfo.toDisplayText(instance))
+                    instance.startActivity(intent)
+                }
+            ))
+        }
+    }
 
-    Box(
+    Box (
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.Center
     ) {
-        DataTable(
-            columns = columns,
-            rowHeight = 32.dp,
-            headerHeight = 0.dp,
-            horizontalPadding = 0.dp,
-            separator = { Spacer(modifier = Modifier.size(1.dp)) }
+        Table(
+            columns = { columns[it] },
+            columnsCount = columns.size,
+            rowSpacing = 5.dp,
+            columnSpacing = 1.dp,
+            rows = { rows[it] }
         ) {
             for (dayInfo in weatherInfo.forecastInfo) {
-                row(
-                    onClick = {
-                        val weatherIcon = dayInfo.weatherIcon
-                        val weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
-                        val intent = Intent(instance, DisplayInfoTextActivity::class.java)
-                        intent.putExtra("imageDrawable", weatherIcon.iconId)
-                        intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
-                        intent.putExtra("imageDescription", weatherDescription)
-                        intent.putExtra("text", dayInfo.toDisplayText(instance))
-                        instance.startActivity(intent)
-                    }
-                ) {
-                    cell {
-                        Text(
-                            modifier = Modifier.width(30.dp),
-                            textAlign = TextAlign.Start,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = 14F.sp.clamp(max = 14.dp),
-                            fontWeight = FontWeight.Bold,
-                            text = dayInfo.dayOfWeek.getDisplayName(
-                                TextStyle.SHORT,
-                                if (Registry.getInstance(instance).language == "en") Locale.ENGLISH else Locale.TRADITIONAL_CHINESE
-                            )
-                        )
-                    }
-                    cell {
-                        Image(
-                            modifier = Modifier
-                                .padding(1.dp, 1.dp)
-                                .size(10.dp),
-                            painter = painterResource(R.mipmap.humidity),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
-                        )
-                    }
-                    cell {
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = 9F.sp.clamp(max = 9.dp),
-                            text = "%.0f".format((dayInfo.minRelativeHumidity + dayInfo.maxRelativeHumidity) / 2F) + "%"
-                        )
-                    }
-                    cell {
-                        Image(
-                            modifier = Modifier
-                                .padding(1.dp, 1.dp)
-                                .size(10.dp),
-                            painter = painterResource(R.mipmap.umbrella),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") "Chance of Rain" else "降雨概率"
-                        )
-                    }
-                    cell {
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = 9F.sp.clamp(max = 9.dp),
-                            text = if (dayInfo.chanceOfRain >= 0) "%.0f".format(dayInfo.chanceOfRain) + "%" else "??%"
-                        )
-                    }
-                    cell {
-                        Image(
-                            modifier = Modifier
-                                .padding(1.dp, 1.dp)
-                                .size(20.dp)
-                                .combinedClickable(
-                                    onClick = {
-                                        instance.runOnUiThread {
-                                            Toast
-                                                .makeText(
-                                                    instance,
-                                                    if (Registry.getInstance(instance).language == "en") dayInfo.weatherIcon.descriptionEn else dayInfo.weatherIcon.descriptionZh,
-                                                    Toast.LENGTH_LONG
-                                                )
-                                                .show()
-                                        }
-                                    }
-                                ),
-                            painter = painterResource(dayInfo.weatherIcon.iconId),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") dayInfo.weatherIcon.descriptionEn else dayInfo.weatherIcon.descriptionZh
-                        )
-                    }
-                    cell {
-                        Text(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = 14F.sp.clamp(max = 14.dp),
-                            fontWeight = FontWeight.Bold,
-                            text = "%.0f".format(dayInfo.lowestTemperature) + "-" + "%.0f".format(dayInfo.highestTemperature) + "°"
-                        )
-                    }
-                }
+                Text(
+                    modifier = Modifier.width(30.dp),
+                    textAlign = TextAlign.Start,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = 14F.sp.clamp(max = 14.dp),
+                    fontWeight = FontWeight.Bold,
+                    text = dayInfo.dayOfWeek.getDisplayName(
+                        TextStyle.SHORT,
+                        if (Registry.getInstance(instance).language == "en") Locale.ENGLISH else Locale.TRADITIONAL_CHINESE
+                    )
+                )
+                Spacer(modifier = Modifier.size(0.dp))
+                Image(
+                    modifier = Modifier
+                        .padding(1.dp, 1.dp)
+                        .size(10.dp),
+                    painter = painterResource(R.mipmap.humidity),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Relative Humidity" else "相對濕度"
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = 9F.sp.clamp(max = 9.dp),
+                    text = "%.0f".format((dayInfo.minRelativeHumidity + dayInfo.maxRelativeHumidity) / 2F) + "%"
+                )
+                Spacer(modifier = Modifier.size(0.dp))
+                Image(
+                    modifier = Modifier
+                        .padding(1.dp, 1.dp)
+                        .size(10.dp),
+                    painter = painterResource(R.mipmap.umbrella),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Chance of Rain" else "降雨概率"
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = 9F.sp.clamp(max = 9.dp),
+                    text = if (dayInfo.chanceOfRain >= 0) "%.0f".format(dayInfo.chanceOfRain) + "%" else "??%"
+                )
+                Spacer(modifier = Modifier.size(0.dp))
+                Image(
+                    modifier = Modifier
+                        .padding(1.dp, 1.dp)
+                        .size(20.dp)
+                        .combinedClickable(
+                            onClick = {
+                                instance.runOnUiThread {
+                                    Toast
+                                        .makeText(
+                                            instance,
+                                            if (Registry.getInstance(instance).language == "en") dayInfo.weatherIcon.descriptionEn else dayInfo.weatherIcon.descriptionZh,
+                                            Toast.LENGTH_LONG
+                                        )
+                                        .show()
+                                }
+                            }
+                        ),
+                    painter = painterResource(dayInfo.weatherIcon.iconId),
+                    contentDescription = if (Registry.getInstance(instance).language == "en") dayInfo.weatherIcon.descriptionEn else dayInfo.weatherIcon.descriptionZh
+                )
+                Spacer(modifier = Modifier.size(0.dp))
+                Text(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = 14F.sp.clamp(max = 14.dp),
+                    fontWeight = FontWeight.Bold,
+                    text = "%.0f".format(dayInfo.lowestTemperature) + "-" + "%.0f".format(dayInfo.highestTemperature) + "°"
+                )
             }
         }
     }
@@ -1928,9 +1938,9 @@ fun LocalForecastButton(weatherIcon: WeatherStatusIcon, nextWeatherIcon: Weather
             })
             var weatherDescription = if (Registry.getInstance(instance).language == "en") weatherIcon.descriptionEn else weatherIcon.descriptionZh
             if (nextWeatherIcon != null) {
-                weatherDescription = weatherDescription.plus(if (Registry.getInstance(instance).language == "en") " to ".plus(nextWeatherIcon.descriptionEn) else " 至 ".plus(nextWeatherIcon.descriptionZh))
+                weatherDescription = "$weatherDescription${if (Registry.getInstance(instance).language == "en") " to ${nextWeatherIcon.descriptionEn}" else " 至 ${nextWeatherIcon.descriptionZh}"}"
             }
-            val text = (if (Registry.getInstance(instance).language == "en") "Now: " else "現時 ").plus(weatherDescription).plus("\n").plus(localForecastInfo.toDisplayText(instance))
+            val text = "${if (Registry.getInstance(instance).language == "en") "Now: " else "現時 "}$weatherDescription\n${localForecastInfo.toDisplayText(instance)}"
             val intent = Intent(instance, DisplayInfoTextActivity::class.java)
             if (nextWeatherIcon == null) {
                 intent.putExtra("imageDrawable", weatherIcon.iconId)
@@ -1993,7 +2003,7 @@ fun StormLatestButton(instance: TitleActivity, specialTyphoonInfo: SpecialTyphoo
                 intent.putExtra("imageWidth", StringUtils.scaledSize(60, instance))
                 intent.putExtra("imageDescription", if (Registry.getInstance(instance).language == "en") it.nameEn else it.nameZh)
             }
-            intent.putExtra("text", (if (Registry.getInstance(instance).language == "en") "Latest TC News" else "最新風暴消息").plus("\n").plus(specialTyphoonInfo.toDisplayText()))
+            intent.putExtra("text", "${if (Registry.getInstance(instance).language == "en") "Latest TC News" else "最新風暴消息"}\n${specialTyphoonInfo.toDisplayText()}")
             instance.startActivity(intent)
         },
         modifier = Modifier
@@ -2041,7 +2051,7 @@ fun ForecastGeneralButton(forecastGeneralSituation: String, instance: TitleActiv
                 putString("value", "forecast_general")
             })
             val intent = Intent(instance, DisplayInfoTextActivity::class.java)
-            intent.putExtra("text", (if (Registry.getInstance(instance).language == "en") "9-Day General Forecast" else "展望未來九天天氣概況").plus("\n").plus(forecastGeneralSituation))
+            intent.putExtra("text", "${if (Registry.getInstance(instance).language == "en") "9-Day General Forecast" else "展望未來九天天氣概況"}\n$forecastGeneralSituation")
             instance.startActivity(intent)
         },
         modifier = Modifier
@@ -2222,7 +2232,7 @@ fun StormTrackButton(instance: TitleActivity, backgroundColor: Color = MaterialT
 fun openHKOApp(instance: TitleActivity) {
     val intent = Intent(Intent.ACTION_VIEW)
         .addCategory(Intent.CATEGORY_BROWSABLE)
-        .setData(Uri.parse("myobservatory:"))
+        .setData("myobservatory:".toUri())
     RemoteActivityUtils.intentToPhone(
         instance = instance,
         intent = intent,
@@ -2234,7 +2244,7 @@ fun openHKOApp(instance: TitleActivity) {
         failed = {
             val playIntent = Intent(Intent.ACTION_VIEW)
                 .addCategory(Intent.CATEGORY_BROWSABLE)
-                .setData(Uri.parse("https://play.google.com/store/apps/details?id=hko.MyObservatory_v1_0"))
+                .setData("https://play.google.com/store/apps/details?id=hko.MyObservatory_v1_0".toUri())
             RemoteActivityUtils.intentToPhone(
                 instance = instance,
                 intent = playIntent,
@@ -2350,7 +2360,7 @@ fun SetRefreshRateButton(instance: TitleActivity) {
             val timeText = if (refreshRate >= Shared.NEVER_REFRESH_INTERVAL) {
                 if (Registry.getInstance(instance).language == "en") "Manual" else "手動更新"
             } else {
-                (refreshRate / 60000).toString().plus(if (Registry.getInstance(instance).language == "en") " Mins" else "分鐘")
+                "${refreshRate / 60000}${if (Registry.getInstance(instance).language == "en") " Mins" else "分鐘"}"
             }
             AutoResizeText(
                 modifier = Modifier.fillMaxWidth(0.9F),
@@ -2362,7 +2372,7 @@ fun SetRefreshRateButton(instance: TitleActivity) {
                     max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                 ),
                 maxLines = 2,
-                text = (if (Registry.getInstance(instance).language == "en") "Set Refresh Rate: " else "更新頻率: ").plus(timeText)
+                text = (if (Registry.getInstance(instance).language == "en") "Set Refresh Rate: " else "更新頻率: ") + timeText
             )
         }
     )
@@ -2459,7 +2469,7 @@ fun CreditVersionText(instance: TitleActivity) {
                 onClick = {
                     val intent = Intent(Intent.ACTION_VIEW)
                         .addCategory(Intent.CATEGORY_BROWSABLE)
-                        .setData(Uri.parse("https://play.google.com/store/apps/details?id=com.loohp.hkweatherwarnings"))
+                        .setData("https://play.google.com/store/apps/details?id=com.loohp.hkweatherwarnings".toUri())
                     RemoteActivityUtils.intentToPhone(
                         instance = instance,
                         intent = intent,
@@ -2475,7 +2485,7 @@ fun CreditVersionText(instance: TitleActivity) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     val intent = Intent(Intent.ACTION_VIEW)
                         .addCategory(Intent.CATEGORY_BROWSABLE)
-                        .setData(Uri.parse("https://loohpjames.com"))
+                        .setData("https://loohpjames.com".toUri())
                     RemoteActivityUtils.intentToPhone(
                         instance = instance,
                         intent = intent,
@@ -2491,6 +2501,6 @@ fun CreditVersionText(instance: TitleActivity) {
         textAlign = TextAlign.Center,
         color = MaterialTheme.colors.primary,
         fontSize = TextUnit(StringUtils.scaledSize(1.5F, instance), TextUnitType.Em),
-        text = instance.resources.getString(R.string.app_name).plus(" v").plus(packageInfo.versionName).plus(" (").plus(packageInfo.longVersionCode).plus(")\n@LoohpJames")
+        text = "${instance.resources.getString(R.string.app_name)} v${packageInfo.versionName} (${packageInfo.longVersionCode})\n@LoohpJames"
     )
 }
