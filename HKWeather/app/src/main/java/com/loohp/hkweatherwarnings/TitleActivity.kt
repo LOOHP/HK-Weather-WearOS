@@ -2120,7 +2120,7 @@ fun RadarButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.
                         .padding(0.dp, 0.dp, 2.dp, 0.dp)
                         .size(15.sp.clamp(max = 15.dp).dp),
                     painter = painterResource(R.mipmap.radar),
-                    contentDescription = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64公里)"
+                    contentDescription = if (Registry.getInstance(instance).language == "en") "Radar Image" else "雷達圖像"
                 )
                 AutoResizeText(
                     textAlign = TextAlign.Center,
@@ -2130,7 +2130,7 @@ fun RadarButton(instance: TitleActivity, backgroundColor: Color = MaterialTheme.
                         max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
                     ),
                     maxLines = 1,
-                    text = if (Registry.getInstance(instance).language == "en") "Radar Image (64 km)" else "雷達圖像 (64公里)"
+                    text = if (Registry.getInstance(instance).language == "en") "Radar Image" else "雷達圖像"
                 )
             }
         }

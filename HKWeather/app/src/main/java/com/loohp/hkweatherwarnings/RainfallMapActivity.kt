@@ -215,6 +215,7 @@ fun RainfallMapElement(instance: RainfallMapActivity) {
                                 ),
                                 content = {
                                     AutoResizeText(
+                                        modifier = Modifier.padding(horizontal = 10.dp),
                                         textAlign = TextAlign.Center,
                                         color = MaterialTheme.colors.primary,
                                         fontSizeRange = FontSizeRange(

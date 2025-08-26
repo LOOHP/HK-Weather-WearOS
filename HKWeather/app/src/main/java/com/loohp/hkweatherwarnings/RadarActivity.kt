@@ -23,6 +23,7 @@ package com.loohp.hkweatherwarnings
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -30,7 +31,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +41,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
@@ -69,6 +73,8 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.loohp.hkweatherwarnings.compose.AutoResizeText
+import com.loohp.hkweatherwarnings.compose.FontSizeRange
 import com.loohp.hkweatherwarnings.shared.Registry
 import com.loohp.hkweatherwarnings.theme.HKWeatherTheme
 import com.loohp.hkweatherwarnings.utils.ScreenSizeUtils
@@ -92,16 +98,65 @@ class RadarActivity : ComponentActivity() {
 
 }
 
+enum class RadarVariant(
+    val radarRange: Int,
+    val radarHeight: Int,
+    val framesRange: IntRange,
+    val urlProvider: (Int) -> String,
+    val background: Int,
+    val gridline: Int
+) {
+    RADAR_64KM_2KM(
+        radarRange = 64,
+        radarHeight = 2,
+        framesRange = 1..20,
+        urlProvider = { "https://pda.weather.gov.hk/locspc/android_data/radar/v2/rad_064_640_2km/${it}_64km.png" },
+        background = R.mipmap.radar_64_background,
+        gridline = R.mipmap.radar_64_gridline
+    ),
+    RADAR_64KM_3KM(
+        radarRange = 64,
+        radarHeight = 3,
+        framesRange = 1..20,
+        urlProvider = { "https://pda.weather.gov.hk/locspc/android_data/radar/v2/rad_064_640/${it}_64km.png" },
+        background = R.mipmap.radar_64_background,
+        gridline = R.mipmap.radar_64_gridline
+    ),
+    RADAR_128KM_3KM(
+        radarRange = 128,
+        radarHeight = 3,
+        framesRange = 1..20,
+        urlProvider = { "https://pda.weather.gov.hk/locspc/android_data/radar/v2/rad_128_640/${it}_128km.png" },
+        background = R.mipmap.radar_128_background,
+        gridline = R.mipmap.radar_128_gridline
+    ),
+    RADAR_256KM_3KM(
+        radarRange = 256,
+        radarHeight = 3,
+        framesRange = 1..20,
+        urlProvider = { "https://pda.weather.gov.hk/locspc/android_data/radar/v2/rad_256_640/${it}_256km.png" },
+        background = R.mipmap.radar_256_background,
+        gridline = R.mipmap.radar_256_gridline
+    );
+
+    val frameSize = framesRange.count()
+}
+
+private enum class RadarElementDisplayMode {
+    RADAR, LEGEND, CHOOSER
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RadarElement(instance: RadarActivity) {
     HKWeatherTheme {
+        var currentMode by remember { mutableStateOf(RadarElementDisplayMode.RADAR) }
+        var radarVariant by remember { mutableStateOf(RadarVariant.RADAR_64KM_2KM) }
         val focusRequester = remember { FocusRequester() }
         var currentPosition by remember { mutableIntStateOf(1) }
         var playback by remember { mutableStateOf(true) }
         var zoom by remember { mutableStateOf(false) }
-        var showLegend by remember { mutableStateOf(false) }
-        val ready: MutableMap<Int, Boolean> = remember { mutableStateMapOf() }
+        val ready: MutableMap<String, Boolean> = remember { mutableStateMapOf() }
 
         var currentProgress by remember { mutableFloatStateOf(0F) }
         val progressAnimation by animateFloatAsState(
@@ -109,9 +164,12 @@ fun RadarElement(instance: RadarActivity) {
             animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
             label = "LoadingProgressAnimation"
         )
-        LaunchedEffect (Unit) {
+
+        LaunchedEffect (radarVariant) {
             while (true) {
-                currentProgress = ready.values.sumOf { (if (it) 1 else 0).toInt() } / 20F
+                currentProgress = ready.asSequence()
+                    .filter { (k) -> k.startsWith(radarVariant.name) }
+                    .sumOf { (_, v) -> if (v) 1 else 0 } / radarVariant.frameSize.toFloat()
                 if (currentProgress >= 0.999999F) {
                     break
                 }
@@ -120,7 +178,6 @@ fun RadarElement(instance: RadarActivity) {
         }
 
         LaunchedEffect (Unit) {
-            focusRequester.requestFocus()
             while (true) {
                 if (playback) {
                     var pos = currentPosition
@@ -129,7 +186,7 @@ fun RadarElement(instance: RadarActivity) {
                     } else {
                         pos++
                     }
-                    if (ready.getOrDefault(pos, false)) {
+                    if (ready.getOrDefault("${radarVariant.name}-$pos", false)) {
                         currentPosition = pos
                     }
                 }
@@ -137,166 +194,238 @@ fun RadarElement(instance: RadarActivity) {
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .onRotaryScrollEvent {
-                    if (it.verticalScrollPixels > 0) {
-                        if (currentPosition >= 20) {
-                            currentPosition = 1
-                        } else {
-                            currentPosition++
-                        }
-                    } else {
-                        if (currentPosition <= 1) {
-                            currentPosition = 20
-                        } else {
-                            currentPosition--
-                        }
-                    }
-                    playback = false
-                    true
-                }
-                .focusRequester(focusRequester)
-                .focusable()
-        ) {
-            if (showLegend) {
-                Image(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(10.dp, 20.dp),
-                    painter = painterResource(R.mipmap.radar_legend),
-                    contentDescription = if (Registry.getInstance(instance).language == "en") "Legend" else "圖例"
-                )
-            } else {
-                val zoomPadding by remember { derivedStateOf { if (zoom) 0F else UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getMinScreenSize(instance) * 0.15F) } }
-                val animatedZoomPadding by animateFloatAsState(
-                    targetValue = zoomPadding,
-                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                    label = "AnimatedZoomPadding"
-                )
-                var modifier = Modifier
-                    .fillMaxSize()
-                    .padding(animatedZoomPadding.dp)
-                if (zoom) {
-                    modifier = modifier.zoomable(
-                        state = rememberZoomableState(),
-                        onClick = {
-                            zoom = !zoom
-                        }
-                    )
-                } else {
-                    modifier = modifier.combinedClickable(
-                        onClick = {
-                            zoom = !zoom
-                        }
-                    )
-                }
-
-                Box(
-                    modifier = modifier
-                ) {
-                    AsyncImage(
-                        modifier = Modifier.fillMaxSize(),
-                        model = ImageRequest.Builder(instance).size(640).data(R.mipmap.radar_64_background).build(),
-                        contentDescription = "",
-                    )
-                    AsyncImage(
-                        modifier = Modifier.fillMaxSize(),
-                        model = ImageRequest.Builder(instance).size(640).data(R.mipmap.radar_64_gridline).build(),
-                        contentDescription = "",
-                    )
-                    for (i in 1..20) {
-                        @Suppress("UnnecessaryVariable")
-                        val index = i
-                        AsyncImage(
-                            modifier = Modifier.fillMaxSize(),
-                            onSuccess = {
-                                ready[index] = true
-                            },
-                            model = ImageRequest.Builder(instance).size(640).data("https://pda.weather.gov.hk/locspc/android_data/radar/rad_064_640/${index}_64km.png").build(),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") "Radar Image $index / 20" else "雷達圖像 $index / 20",
-                            alpha = if (currentPosition == index) 1F else 0F
-                        )
-                    }
-                    if (currentProgress < 0.999999F) {
-                        LinearProgressIndicator(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth(),
-                            color = Color(0xFFF9DE09),
-                            trackColor = Color(0xFF797979),
-                            progress = { progressAnimation }
-                        )
-                    }
-                }
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(if (zoom) Alignment.BottomCenter else Alignment.TopCenter)
-                        .padding(0.dp, 6.dp),
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colors.primary,
-                    fontWeight = if (zoom) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = 14F.sp.clamp(max = 14.dp),
-                    text = currentPosition.toString().plus(" / 20")
-                )
+        LaunchedEffect (currentMode) {
+            if (currentMode != RadarElementDisplayMode.CHOOSER) {
+                focusRequester.requestFocus()
             }
-            if (!zoom) {
-                if (!showLegend) {
-                    Button(
-                        onClick = {
-                            playback = !playback
-                        },
+        }
+
+        AnimatedContent(
+            targetState = currentMode,
+            label = "CurrentMode"
+        ) { mode ->
+            when (mode) {
+                RadarElementDisplayMode.CHOOSER -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(StringUtils.scaledSize(5F, instance).dp, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        for (variant in RadarVariant.entries) {
+                            Button(
+                                onClick = {
+                                    currentMode = RadarElementDisplayMode.RADAR
+                                    radarVariant = variant
+                                },
+                                modifier = Modifier
+                                    .width(StringUtils.scaledSize(120, instance).dp)
+                                    .height(StringUtils.scaledSize(35, instance).dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = MaterialTheme.colors.secondary,
+                                    contentColor = MaterialTheme.colors.primary
+                                ),
+                                content = {
+                                    AutoResizeText(
+                                        modifier = Modifier.padding(horizontal = 10.dp),
+                                        textAlign = TextAlign.Center,
+                                        color = MaterialTheme.colors.primary,
+                                        fontSizeRange = FontSizeRange(
+                                            min = 1F.sp,
+                                            max = StringUtils.scaledSize(16F, instance).sp.clamp(max = 16.dp)
+                                        ),
+                                        fontWeight = FontWeight.Bold.takeIf { radarVariant == variant },
+                                        maxLines = 1,
+                                        text = if (Registry.getInstance(instance).language == "en") "${variant.radarRange} km (${variant.radarHeight} km height)" else "${variant.radarRange}公里 (${variant.radarHeight}公里高)"
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+                else -> {
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(0.dp, 0.dp, 0.dp, 1.dp)
-                            .width(StringUtils.scaledSize(30, instance).dp)
-                            .height(StringUtils.scaledSize(30, instance).dp),
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = MaterialTheme.colors.secondary,
-                            contentColor = Color(0xFFFFFFFF)
-                        ),
-                        content = {
-                            if (playback) {
-                                Icon(
-                                    modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
-                                    painter = painterResource(R.drawable.baseline_pause_24),
-                                    contentDescription = if (Registry.getInstance(instance).language == "en") "Toggle Playback" else "開始/暫停播放",
-                                    tint = Color(0xFFFFFFFF)
+                            .fillMaxSize()
+                            .onRotaryScrollEvent {
+                                if (it.verticalScrollPixels > 0) {
+                                    if (currentPosition >= 20) {
+                                        currentPosition = 1
+                                    } else {
+                                        currentPosition++
+                                    }
+                                } else {
+                                    if (currentPosition <= 1) {
+                                        currentPosition = 20
+                                    } else {
+                                        currentPosition--
+                                    }
+                                }
+                                playback = false
+                                true
+                            }
+                            .focusRequester(focusRequester)
+                            .focusable()
+                    ) {
+                        if (mode == RadarElementDisplayMode.LEGEND) {
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(10.dp, 20.dp),
+                                painter = painterResource(R.mipmap.radar_legend),
+                                contentDescription = if (Registry.getInstance(instance).language == "en") "Legend" else "圖例"
+                            )
+                        } else {
+                            val zoomPadding by remember { derivedStateOf { if (zoom) 0F else UnitUtils.pixelsToDp(instance, ScreenSizeUtils.getMinScreenSize(instance) * 0.15F) } }
+                            val animatedZoomPadding by animateFloatAsState(
+                                targetValue = zoomPadding,
+                                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                                label = "AnimatedZoomPadding"
+                            )
+                            var modifier = Modifier
+                                .fillMaxSize()
+                                .padding(animatedZoomPadding.dp)
+                            if (zoom) {
+                                modifier = modifier.zoomable(
+                                    state = rememberZoomableState(),
+                                    onClick = {
+                                        zoom = !zoom
+                                    }
                                 )
                             } else {
-                                Icon(
-                                    modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
-                                    imageVector = Icons.Filled.PlayArrow,
-                                    contentDescription = if (Registry.getInstance(instance).language == "en") "Toggle Playback" else "開始/暫停播放",
-                                    tint = Color(0xFFFFFFFF)
+                                modifier = modifier.combinedClickable(
+                                    onClick = {
+                                        zoom = !zoom
+                                    }
                                 )
                             }
+
+                            Box(
+                                modifier = modifier
+                            ) {
+                                AsyncImage(
+                                    modifier = Modifier.fillMaxSize(),
+                                    model = ImageRequest.Builder(instance).size(640).data(radarVariant.background).build(),
+                                    contentDescription = "",
+                                )
+                                AsyncImage(
+                                    modifier = Modifier.fillMaxSize(),
+                                    model = ImageRequest.Builder(instance).size(640).data(radarVariant.gridline).build(),
+                                    contentDescription = "",
+                                )
+                                for (i in radarVariant.framesRange) {
+                                    @Suppress("UnnecessaryVariable")
+                                    val index = i
+                                    AsyncImage(
+                                        modifier = Modifier.fillMaxSize(),
+                                        onSuccess = { ready["${radarVariant.name}-$index"] = true },
+                                        model = ImageRequest.Builder(instance).size(640).data(radarVariant.urlProvider.invoke(index)).build(),
+                                        contentDescription = if (Registry.getInstance(instance).language == "en") "Radar Image $index / 20" else "雷達圖像 $index / 20",
+                                        alpha = if (currentPosition == index) 1F else 0F
+                                    )
+                                }
+                                if (currentProgress < 0.999999F) {
+                                    LinearProgressIndicator(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .fillMaxWidth(),
+                                        color = Color(0xFFF9DE09),
+                                        trackColor = Color(0xFF797979),
+                                        progress = { progressAnimation }
+                                    )
+                                }
+                            }
+                            Text(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(if (zoom) Alignment.BottomCenter else Alignment.TopCenter)
+                                    .padding(0.dp, 6.dp),
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colors.primary,
+                                fontWeight = if (zoom) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 14F.sp.clamp(max = 14.dp),
+                                text = currentPosition.toString().plus(" / 20")
+                            )
                         }
-                    )
-                }
-                Button(
-                    onClick = {
-                        showLegend = !showLegend
-                    },
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(0.dp, 0.dp, 1.dp, 0.dp)
-                        .width(StringUtils.scaledSize(30, instance).dp)
-                        .height(StringUtils.scaledSize(30, instance).dp),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = MaterialTheme.colors.secondary,
-                        contentColor = Color(0xFFFFFFFF)
-                    ),
-                    content = {
-                        Image(
-                            modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
-                            painter = painterResource(R.mipmap.radar_legend),
-                            contentDescription = if (Registry.getInstance(instance).language == "en") "Toggle Show Legend" else "顯示/隱藏圖例"
-                        )
+                        if (!zoom) {
+                            if (mode == RadarElementDisplayMode.RADAR) {
+                                Button(
+                                    onClick = {
+                                        playback = !playback
+                                    },
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(0.dp, 0.dp, 0.dp, 1.dp)
+                                        .width(StringUtils.scaledSize(30, instance).dp)
+                                        .height(StringUtils.scaledSize(30, instance).dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        backgroundColor = MaterialTheme.colors.secondary,
+                                        contentColor = Color(0xFFFFFFFF)
+                                    ),
+                                    content = {
+                                        if (playback) {
+                                            Icon(
+                                                modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
+                                                painter = painterResource(R.drawable.baseline_pause_24),
+                                                contentDescription = if (Registry.getInstance(instance).language == "en") "Toggle Playback" else "開始/暫停播放",
+                                                tint = Color(0xFFFFFFFF)
+                                            )
+                                        } else {
+                                            Icon(
+                                                modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
+                                                imageVector = Icons.Filled.PlayArrow,
+                                                contentDescription = if (Registry.getInstance(instance).language == "en") "Toggle Playback" else "開始/暫停播放",
+                                                tint = Color(0xFFFFFFFF)
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    currentMode = RadarElementDisplayMode.LEGEND
+                                },
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(0.dp, 0.dp, 1.dp, 0.dp)
+                                    .width(StringUtils.scaledSize(30, instance).dp)
+                                    .height(StringUtils.scaledSize(30, instance).dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = MaterialTheme.colors.secondary,
+                                    contentColor = Color(0xFFFFFFFF)
+                                ),
+                                content = {
+                                    Image(
+                                        modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
+                                        painter = painterResource(R.mipmap.radar_legend),
+                                        contentDescription = if (Registry.getInstance(instance).language == "en") "Toggle Show Legend" else "顯示/隱藏圖例"
+                                    )
+                                }
+                            )
+                            Button(
+                                onClick = {
+                                    currentMode = RadarElementDisplayMode.CHOOSER
+                                },
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(1.dp, 0.dp, 0.dp, 0.dp)
+                                    .width(StringUtils.scaledSize(30, instance).dp)
+                                    .height(StringUtils.scaledSize(30, instance).dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = MaterialTheme.colors.secondary,
+                                    contentColor = Color(0xFFFFFFFF)
+                                ),
+                                content = {
+                                    Icon(
+                                        modifier = Modifier.size(StringUtils.scaledSize(20, instance).dp),
+                                        imageVector = Icons.AutoMirrored.Filled.List,
+                                        contentDescription = if (Registry.getInstance(instance).language == "en") "Choose Radar Image Variant" else "選擇雷達圖像模式",
+                                        tint = Color(0xFFFFFFFF)
+                                    )
+                                }
+                            )
+                        }
                     }
-                )
+                }
             }
         }
     }
